@@ -55,11 +55,13 @@ class SeismicDataset(Dataset):
 
         noise_seq_len = len(noise['noise_waveform_Z'])
 
+        assert noise_seq_len >= 6000
+
         eq_start = 0
         noise_start = 0
         if self.randomized:
             eq_start = np.random.randint(low = 0, high = 6000)
-            noise_start = np.random.randint(low = 0, high = noise_seq_len - 6000)
+            noise_start = np.random.randint(low = 0, high = max(noise_seq_len - 6000, 1))
 
         Z_eq = eq['earthquake_waveform_Z'][eq_start:eq_start+6000]
         N_eq = eq['earthquake_waveform_N'][eq_start:eq_start+6000]
@@ -81,4 +83,4 @@ class SeismicDataset(Dataset):
 
         noisy_eq = eq_tensor + noise_tensor
 
-        return noisy_eq, eq_tensor
+        return noisy_eq / noisy_eq.abs().max(), eq_tensor / eq_tensor.abs().max()

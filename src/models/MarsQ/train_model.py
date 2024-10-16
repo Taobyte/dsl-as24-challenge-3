@@ -9,7 +9,7 @@ from data import get_dataloaders
 os.environ["KERAS_BACKEND"] = "jax"
 
 
-def train_model(signal_path: str, noise_path: str):
+def train_model(signal_path: str, noise_path: str) -> keras.Model:
 
     model = keras.Sequential(
         [
@@ -31,7 +31,8 @@ def train_model(signal_path: str, noise_path: str):
         keras.callbacks.EarlyStopping(monitor="val_loss", patience=2),
     ]
 
-    train_dl, validation_dl = get_dataloaders(signal_path, noise_path, batch_size=64)
+    train_dl, validation_dl = get_dataloaders(signal_path, noise_path, batch_size=32)
+    
     epochs = 100 
 
     model.fit(train_dl, epochs=epochs, validation_data=validation_dl, callbacks=callbacks)
