@@ -7,10 +7,12 @@ from numpy import ndarray
 import os 
 from argparse import Namespace
 from models.DeepDenoiser.deep_denoiser_model import Unet2D
-from data import get_dataloaders
+from data import SeismicDataset, get_dataloaders
 
 import matplotlib.pyplot as plt
 import scipy
+from scipy.signal import butter, filtfilt
+import optuna
 
 
 def train_model(args: Namespace) -> keras.Model:
@@ -18,30 +20,18 @@ def train_model(args: Namespace) -> keras.Model:
     # set seed (default: 123)
     np.random.seed(args.seed)
 
-    model = Unet2D()
-    model.compile(
-        loss=keras.losses.BinaryCrossentropy(from_logits=True),
-        optimizer=keras.optimizers.Adam(learning_rate=args.lr),
-        metrics=[
-            keras.metrics.BinaryCrossentropy(
-                name="binary_crossentropy", dtype=None, from_logits=True
-            )
+    if args.deepdenoiser:
 
-        ],
-    )
+        model = fit_deep_denoiser(args)
 
-    callbacks = [
-        keras.callbacks.ModelCheckpoint(filepath=args.path_model + "/model_at_epoch_{epoch}.keras"),
-        keras.callbacks.EarlyStopping(monitor="val_loss", patience=2),
-    ]
-
-    train_dl, validation_dl = get_dataloaders(args.signal_path, args.noise_path, args.batch_size, args.length_dataset)
+        return model
     
-    model.fit(train_dl, epochs=args.epochs, validation_data=validation_dl, callbacks=callbacks)
+    elif args.butterworth:
 
-    model.evaluate(validation_dl, batch_size=32, verbose=2, steps = 1)
+        best_params = get_best_params(args)
+    
 
-    return model
+    return None
 
 
 def test_model(args: Namespace) -> ndarray:
@@ -102,3 +92,84 @@ def test_model(args: Namespace) -> ndarray:
     
     return np.zeros(1)
 
+
+def fit_deep_denoiser(args: Namespace) -> keras.Model:
+    
+    model = Unet2D()
+    model.compile(
+        loss=keras.losses.BinaryCrossentropy(from_logits=True),
+        optimizer=keras.optimizers.Adam(learning_rate=args.lr),
+        metrics=[
+            keras.metrics.BinaryCrossentropy(
+                name="binary_crossentropy", dtype=None, from_logits=True
+            )
+
+        ],
+    )
+
+    callbacks = [
+        keras.callbacks.ModelCheckpoint(filepath=args.path_model + "/model_at_epoch_{epoch}.keras"),
+        keras.callbacks.EarlyStopping(monitor="val_loss", patience=2),
+    ]
+
+    train_dl, validation_dl = get_dataloaders(args.signal_path, args.noise_path, args.batch_size, args.length_dataset)
+    
+    model.fit(train_dl, epochs=args.epochs, validation_data=validation_dl, callbacks=callbacks)
+
+    model.evaluate(validation_dl, batch_size=32, verbose=2, steps = 1)
+
+    return model
+
+
+def get_best_params(args: Namespace) -> dict:
+
+    def butter_bandpass(lowcut, highcut, fs, order=5):
+        nyquist = 0.5 * fs  # Nyquist frequency
+        low = lowcut / nyquist
+        high = highcut / nyquist
+        b, a = butter(order, [low, high], btype='band')
+        return b, a
+
+    # Apply the filter
+    def apply_bandpass_filter(data, lowcut, highcut, fs, order=5):
+        b, a = butter_bandpass(lowcut, highcut, fs, order=order)
+        y = filtfilt(b, a, data)
+        return y
+
+
+    def objective(trial):
+
+        lowcut = trial.suggest_float('low_cutoff', 1, 15)
+        highcut = trial.suggest_float('high_cutoff', 20, 50)
+        order = trial.suggest_int('order', 2, 6)
+
+        fs = 100
+
+        dataset = SeismicDataset(args.signal_path, args.noise_path)
+        dataloader = DataLoader(dataset, batch_size=args.batch_size, shuffle=True)
+
+        dataset_length = len(dataset)
+        
+        mean = 0
+        for i, batch in enumerate(dataloader):
+            
+            noisy_eq, ground_truth = batch
+            noisy_eq_np = noisy_eq.numpy()
+
+            filtered_signals = []
+            for i in range(len(noisy_eq)):
+                filtered_signal = apply_bandpass_filter(noisy_eq_np[i], lowcut, highcut, fs, order)
+                filtered_signals.append(filtered_signal)
+
+            # Convert the filtered signals back to a PyTorch tensor
+            filtered_eq = th.tensor(np.array(filtered_signals))
+
+            mean += (1/dataset_length) * th.sum(th.square(ground_truth - filtered_eq))
+        
+        return mean
+    
+
+    study = optuna.create_study()
+    study.optimize(objective, n_trials=100)
+
+    return study
