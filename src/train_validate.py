@@ -1,18 +1,19 @@
 import keras
+import scipy.optimize
 import torch as th
 from torch.nn.functional import sigmoid
 from torch.utils.data import DataLoader
 import numpy as np 
 from numpy import ndarray
-import os 
+import matplotlib.pyplot as plt
 from argparse import Namespace
+import scipy
+from scipy.signal import butter, filtfilt
+from tqdm import tqdm
+
 from models.DeepDenoiser.deep_denoiser_model import Unet2D
 from data import SeismicDataset, get_dataloaders
 
-import matplotlib.pyplot as plt
-import scipy
-from scipy.signal import butter, filtfilt
-import optuna
 
 
 def train_model(args: Namespace) -> keras.Model:
@@ -23,13 +24,13 @@ def train_model(args: Namespace) -> keras.Model:
     if args.deepdenoiser:
 
         model = fit_deep_denoiser(args)
-
         return model
     
     elif args.butterworth:
 
-        best_params = get_best_params(args)
-    
+        params = get_best_params(args)
+        print(params)
+        return params
 
     return None
 
@@ -137,21 +138,19 @@ def get_best_params(args: Namespace) -> dict:
         return y
 
 
-    def objective(trial):
+    def objective(params):
 
-        lowcut = trial.suggest_float('low_cutoff', 1, 15)
-        highcut = trial.suggest_float('high_cutoff', 20, 50)
-        order = trial.suggest_int('order', 2, 6)
+        lowcut, highcut, order = params
+        order = int(round(order))
 
         fs = 100
 
-        dataset = SeismicDataset(args.signal_path, args.noise_path)
+        dataset = SeismicDataset(args.signal_path, args.noise_path, randomized=True)
         dataloader = DataLoader(dataset, batch_size=args.batch_size, shuffle=True)
 
         dataset_length = len(dataset)
-        
         mean = 0
-        for i, batch in enumerate(dataloader):
+        for i, batch in tqdm(enumerate(dataloader), total=len(dataloader)):
             
             noisy_eq, ground_truth = batch
             noisy_eq_np = noisy_eq.numpy()
@@ -169,7 +168,17 @@ def get_best_params(args: Namespace) -> dict:
         return mean
     
 
-    study = optuna.create_study()
-    study.optimize(objective, n_trials=100)
+    # Initial guess for the parameters
+    initial_guess = [20.0, 40.0, 4] 
 
-    return study
+    # Define bounds for the parameters: (lowcut, highcut, order)
+    bounds = [(0.1, 20.0),  # Lowcut bounds
+            (20.0, 50.0),  # Highcut bounds
+            (1, 6)]        # Order bounds
+
+    result = scipy.optimize.minimize(objective, initial_guess, bounds=bounds, method='L-BFGS-B', options={'disp': True, 'maxiter': 21})
+
+    # Display the optimized result
+    print(f'Optimized lowcut: {result.x[0]}, highcut: {result.x[1]}, order: {result.x[2]}')
+
+    return result
