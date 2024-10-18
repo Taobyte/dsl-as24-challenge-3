@@ -1,6 +1,6 @@
 import numpy as np
 
-from src.models.DeepDenoiser.deep_denoiser_model import UNET, DownsamplingLayer, UpsamplingLayer
+from src.models.DeepDenoiser.deep_denoiser_model import Unet2D, DownsamplingLayer, UpsamplingLayer
 
 
 def test_downsampling_before_max_pooling():
@@ -111,7 +111,7 @@ def test_upsampling_forth():
 
 
 def test_unet():
-    u_net = UNET()
+    u_net = Unet2D()
     input = np.zeros((1,31,201,2))
     output = u_net(input)
 

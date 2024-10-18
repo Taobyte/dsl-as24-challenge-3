@@ -3,10 +3,10 @@ import os
 import glob
 import numpy as np
 import scipy
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import Dataset, DataLoader, Subset
 from numpy import ndarray
 
-def get_dataloaders(signal_path: str, noise_path: str, batch_size: int) -> tuple[DataLoader, DataLoader]:
+def get_dataloaders(signal_path: str, noise_path: str, batch_size: int, dataset_length = None) -> tuple[DataLoader, DataLoader]:
 
     signal_train_path = signal_path + "/train"
     signal_validation_path = signal_path + "/validation"
@@ -16,7 +16,13 @@ def get_dataloaders(signal_path: str, noise_path: str, batch_size: int) -> tuple
 
     train_dataset = DeepDenoiserDataset(signal_train_path, noise_train_path)
     validation_dataset = DeepDenoiserDataset(signal_validation_path, noise_validation_path)
-    
+
+    if dataset_length:
+        train_indices = th.randint(len(train_dataset), (dataset_length,))
+        validation_indices = th.randint(len(validation_dataset), (dataset_length, ))
+        train_dataset = Subset(train_dataset, train_indices)
+        validation_dataset = Subset(validation_dataset, validation_indices)
+        
     train_dl = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
     validation_dl = DataLoader(validation_dataset, batch_size=batch_size, shuffle=True)
 
@@ -120,10 +126,16 @@ class DeepDenoiserDataset(Dataset):
             if np.isinf(stft_noise).any() or np.isnan(stft_noise).any():
                 continue
 
-            if np.random.random() < 0.9:
-
-                stft_eq = stft_eq / np.std(stft_eq)
+            if np.random.random() < 0.9 and np.std(stft_eq) > 0.001:
                 
+                stft_eq = stft_eq / np.std(stft_eq)
+
+                if np.isinf(stft_eq).any() or np.isnan(stft_eq).any():
+                    continue
+                
+                if np.isinf(stft_noise).any() or np.isnan(stft_noise).any():
+                    continue
+
                 if np.random.random() < 0.2:
                     stft_eq = np.fliplr(stft_eq)
             
@@ -221,3 +233,72 @@ class SeismicDataset(Dataset):
         noisy_eq = eq + noise
 
         return noisy_eq, eq
+    
+
+class ColdDiffusionDataset(Dataset):
+
+    def __init__(self, signal_folder_path: str, noise_folder_path: str, range_rnf: tuple[int,int], channel_type: int):
+        
+        self.signal_folder_path = signal_folder_path
+        self.noise_folder_path = noise_folder_path
+        self.eq_signal_files = glob.glob(f'{signal_folder_path}/**/*.npz', recursive=True)
+        self.noise_files = glob.glob(f'{noise_folder_path}/**/*.npz', recursive=True)
+
+        self.signal_length = 6000
+
+        self.range_rnf = range_rnf
+        self.channel_type = channel_type
+
+
+    def __len__(self):
+        return len(self.eq_signal_files)
+
+    def __getitem__(self, idx):
+
+        while True:
+
+            eq_path = self.eq_signal_files[idx]
+            eq = np.load(eq_path, allow_pickle=True)
+            eq_name = (os.path.splitext(os.path.basename(eq_path)))[0]
+
+            noise_to_small = True
+            while noise_to_small:
+                noise_idx = np.random.randint(0, len(self.noise_files))
+                noise_path = self.noise_files[noise_idx]
+                noise = np.load(noise_path, allow_pickle=True)
+                if len(noise['noise_waveform_Z']) >= self.signal_length:
+                    noise_to_small = False
+            
+            noise_name = (os.path.splitext(os.path.basename(noise_path)))[0]
+
+            noise_seq_len = len(noise['noise_waveform_Z'])
+            assert noise_seq_len >= self.signal_length
+
+            eq_start = np.random.randint(low = 0, high = 6000)
+            noise_start = np.random.randint(low = 0, high = max(noise_seq_len - self.signal_length, 1))
+
+            Z_eq = eq['earthquake_waveform_Z'][eq_start:eq_start+self.signal_length]
+            N_eq = eq['earthquake_waveform_N'][eq_start:eq_start+self.signal_length]
+            E_eq = eq['earthquake_waveform_E'][eq_start:eq_start+self.signal_length]
+            eq_stacked = np.stack([Z_eq, N_eq, E_eq], axis=0)
+            eq_tensor = th.from_numpy(eq_stacked)
+            eq_tensor_normalized = eq_tensor / eq_tensor.abs().max()
+
+            Z_noise = noise['noise_waveform_Z'][noise_start:noise_start+self.signal_length]
+            N_noise = noise['noise_waveform_N'][noise_start:noise_start+self.signal_length]
+            E_noise = noise['noise_waveform_E'][noise_start:noise_start+self.signal_length]
+
+            if Z_noise.shape != N_noise.shape or Z_noise.shape != E_noise.shape or N_noise.shape != E_noise.shape:
+                continue
+
+            noise_stacked = np.stack([Z_noise, N_noise, E_noise], axis=0)
+            noise_tensor = th.from_numpy(noise_stacked)
+            noise_tensor_normalized = noise_tensor / noise_tensor.abs().max()
+
+            noise_reduction = th.randint(*self.range_rnf) * 0.01
+
+            noisy_eq = eq_tensor_normalized[self.channel_type] + noise_reduction * noise_tensor_normalized[self.channel_type]
+
+            return noisy_eq, eq_tensor_normalized[self.channel_type]
+
+        
