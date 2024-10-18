@@ -32,14 +32,18 @@ def test_output_shape():
     noise_folder = "C:/Users/cleme/ETH/Master/DataLab/dsl-as24-challenge-3/data/noise/train"
     dataset = DeepDenoiserDataset(signal_folder, noise_folder)
     dataloader = DataLoader(dataset, batch_size=1, shuffle=True)
-    next_tensor,  = next(iter(dataloader))
+    next_tensor,_ = next(iter(dataloader))
     assert next_tensor.shape == (1,31,201,2)
 
-def test_output_shape():
+def test_output_is_real_mask():
     signal_folder = "C:/Users/cleme/ETH/Master/DataLab/dsl-as24-challenge-3/data/signal/train"
     noise_folder = "C:/Users/cleme/ETH/Master/DataLab/dsl-as24-challenge-3/data/noise/train"
     dataset = DeepDenoiserDataset(signal_folder, noise_folder)
     dataloader = DataLoader(dataset, batch_size=1, shuffle=True)
     _, mask  = next(iter(dataloader))
-    assert th.all(mask >= 0)
+    assert th.all(mask >= 0) and th.all(mask <= 1)
+
+
+
+
 
