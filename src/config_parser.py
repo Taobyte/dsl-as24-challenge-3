@@ -3,6 +3,24 @@ import os
 
 def configure_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
+    
+    # Butterworth model
+    parser.add_argument("--butterworth",
+                default=False,
+                type=bool,
+                help="Use butterworth bandpass filter model")
+    
+    # DeepDenoiser model
+    parser.add_argument("--deepdenoiser",
+                default=False,
+                type=bool,
+                help="Use DeepDenoiser model")
+    
+    # ColdDiffusion model
+    parser.add_argument("--colddiffusion",
+                default=False,
+                type=bool,
+                help="Use ColdDiffusion model")
 
     # signal path
     parser.add_argument("--signal_path",
