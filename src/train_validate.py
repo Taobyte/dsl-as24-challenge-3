@@ -5,11 +5,13 @@ from torch.nn.functional import sigmoid
 from torch.utils.data import DataLoader
 import numpy as np 
 from numpy import ndarray
+import pandas as pd
 import matplotlib.pyplot as plt
 from argparse import Namespace
 import scipy
 from scipy.signal import butter, filtfilt
 from tqdm import tqdm
+import wandb
 
 from models.DeepDenoiser.deep_denoiser_model import Unet2D
 from data import SeismicDataset, get_dataloaders
@@ -95,6 +97,21 @@ def test_model(args: Namespace) -> ndarray:
 
 
 def fit_deep_denoiser(args: Namespace) -> keras.Model:
+
+    if args.wandb:
+        wandb.init(
+        # set the wandb project where this run will be logged
+        project="my-awesome-project",
+
+        # track hyperparameters and run metadata
+        config={
+        "learning_rate": 0.02,
+        "architecture": "CNN",
+        "dataset": "CIFAR-100",
+        "epochs": 10,
+        }
+    )
+
     
     model = Unet2D()
     model.compile(
@@ -137,46 +154,49 @@ def get_best_params(args: Namespace) -> dict:
         y = filtfilt(b, a, data)
         return y
 
+    def vectorized_bandpass_filter(data, lowcut, highcut, fs, order=5):
+        # Apply the bandpass filter along each row (axis=1) for 2D arrays or across the entire array if 1D
+        return np.apply_along_axis(apply_bandpass_filter, axis=-1, arr=data, lowcut=lowcut, highcut=highcut, fs=fs, order=order)
+
+    signal_df = pd.read_pickle(args.signal_path)
+    noise_df = pd.read_pickle(args.noise_path)
+
+    signal = np.stack([np.array(x) for x in signal_df['Z']])
+    noise = np.stack([np.array(x) for x in noise_df['Z']])
+
+    n = len(signal)
+    len_sample = 6000
+    noise = noise[:n]
+    signal_std = np.std(signal[:, 6000:6500], axis=1)
+    noise_std = np.std(noise[:, 6000:6500], axis=1)
+    snr_original = signal_std / noise_std
+    noise_snr_mod = noise * snr_original[:,np.newaxis]  # rescale noise so that SNR=1
+    snr_random = np.random.uniform(0.5,2,n)  # random SNR    
+    event_snr_mod = signal * snr_random[:, np.newaxis]  # rescale event to desired SNR
+
+    # event_shift = np.random.randint(1000,6000, n)
+    start_pos = 3000
+    ground_truth = event_snr_mod[:,start_pos:len_sample+start_pos]
+    noisy_event = ground_truth + noise_snr_mod[:, :len_sample] 
 
     def objective(params):
-
+        print("filtering")
         lowcut, highcut, order = params
         order = int(round(order))
-
-        fs = 100
-
-        dataset = SeismicDataset(args.signal_path, args.noise_path, randomized=True)
-        dataloader = DataLoader(dataset, batch_size=args.batch_size, shuffle=True)
-
-        dataset_length = len(dataset)
-        mean = 0
-        for i, batch in tqdm(enumerate(dataloader), total=len(dataloader)):
-            
-            noisy_eq, ground_truth = batch
-            noisy_eq_np = noisy_eq.numpy()
-
-            filtered_signals = []
-            for i in range(len(noisy_eq)):
-                filtered_signal = apply_bandpass_filter(noisy_eq_np[i], lowcut, highcut, fs, order)
-                filtered_signals.append(filtered_signal)
-
-            # Convert the filtered signals back to a PyTorch tensor
-            filtered_eq = th.tensor(np.array(filtered_signals))
-
-            mean += (1/dataset_length) * th.sum(th.square(ground_truth - filtered_eq))
-        
-        return mean
-    
+        filtered = vectorized_bandpass_filter(noisy_event, lowcut, highcut, 100, order)
+        mean = np.mean(np.square(filtered - ground_truth))
+        print(mean)
+        return mean * 1000
 
     # Initial guess for the parameters
-    initial_guess = [20.0, 40.0, 4] 
+    initial_guess = [5.0, 30.0, 4] 
 
     # Define bounds for the parameters: (lowcut, highcut, order)
-    bounds = [(0.1, 20.0),  # Lowcut bounds
-            (20.0, 50.0),  # Highcut bounds
+    bounds = [(0.1, 30.0),  # Lowcut bounds
+            (30.0, 50.0),  # Highcut bounds
             (1, 6)]        # Order bounds
-
-    result = scipy.optimize.minimize(objective, initial_guess, bounds=bounds, method='L-BFGS-B', options={'disp': True, 'maxiter': 21})
+    print("Start minimizing")
+    result = scipy.optimize.minimize(objective, initial_guess, bounds=bounds, method='L-BFGS-B', options={'disp': True, 'maxiter': 50})
 
     # Display the optimized result
     print(f'Optimized lowcut: {result.x[0]}, highcut: {result.x[1]}, order: {result.x[2]}')
