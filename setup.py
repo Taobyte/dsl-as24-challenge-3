@@ -1,10 +1,10 @@
 from setuptools import find_packages, setup
 
 setup(
-    name='src',
+    name="src",
     packages=find_packages(),
-    version='0.1.0',
-    description='AI-powered Earthquake Data Denoising',
-    author='Clemens Keusch',
-    license='',
+    version="0.1.0",
+    description="AI-powered Earthquake Data Denoising",
+    author="Clemens Keusch",
+    license="",
 )

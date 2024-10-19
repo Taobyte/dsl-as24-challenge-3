@@ -6,7 +6,10 @@ import scipy
 from torch.utils.data import Dataset, DataLoader, Subset
 from numpy import ndarray
 
-def get_dataloaders(signal_path: str, noise_path: str, batch_size: int, dataset_length = None) -> tuple[DataLoader, DataLoader]:
+
+def get_dataloaders(
+    signal_path: str, noise_path: str, batch_size: int, dataset_length=None
+) -> tuple[DataLoader, DataLoader]:
 
     signal_train_path = signal_path + "/train"
     signal_validation_path = signal_path + "/validation"
@@ -15,25 +18,25 @@ def get_dataloaders(signal_path: str, noise_path: str, batch_size: int, dataset_
     noise_validation_path = noise_path + "/validation"
 
     train_dataset = DeepDenoiserDataset(signal_train_path, noise_train_path)
-    validation_dataset = DeepDenoiserDataset(signal_validation_path, noise_validation_path)
+    validation_dataset = DeepDenoiserDataset(
+        signal_validation_path, noise_validation_path
+    )
 
     if dataset_length:
         train_indices = th.randint(len(train_dataset), (dataset_length,))
-        validation_indices = th.randint(len(validation_dataset), (dataset_length, ))
+        validation_indices = th.randint(len(validation_dataset), (dataset_length,))
         train_dataset = Subset(train_dataset, train_indices)
         validation_dataset = Subset(validation_dataset, validation_indices)
-        
+
     train_dl = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
     validation_dl = DataLoader(validation_dataset, batch_size=batch_size, shuffle=True)
 
     return train_dl, validation_dl
 
 
-
 class DeepDenoiserDataset(Dataset):
 
     def __init__(self, signal_folder_path: str, noise_folder_path: str):
-
         """
         Args:
             signal_folder_path (str): Path to earthquake signal folder containing .npz files.
@@ -42,11 +45,13 @@ class DeepDenoiserDataset(Dataset):
 
         self.signal_folder_path = signal_folder_path
         self.noise_folder_path = noise_folder_path
-        self.eq_signal_files = glob.glob(f'{signal_folder_path}/**/*.npz', recursive=True)
-        self.noise_files = glob.glob(f'{noise_folder_path}/**/*.npz', recursive=True)
+        self.eq_signal_files = glob.glob(
+            f"{signal_folder_path}/**/*.npz", recursive=True
+        )
+        self.noise_files = glob.glob(f"{noise_folder_path}/**/*.npz", recursive=True)
         self.signal_length = 3000
 
-        #scipy hyperparameters
+        # scipy hyperparameters
         self.fs = 100
         self.nperseg = 30
         self.nfft = 60
@@ -55,12 +60,11 @@ class DeepDenoiserDataset(Dataset):
         self.noise_mean = 2
         self.noise_std = 1
 
-
     def __len__(self) -> int:
         return len(self.eq_signal_files)
 
     def __getitem__(self, idx) -> th.Tensor:
-        
+
         while True:
 
             eq_path = self.eq_signal_files[idx]
@@ -72,28 +76,40 @@ class DeepDenoiserDataset(Dataset):
                 noise_idx = np.random.randint(0, len(self.noise_files))
                 noise_path = self.noise_files[noise_idx]
                 noise = np.load(noise_path, allow_pickle=True)
-                if len(noise['noise_waveform_Z']) >= self.signal_length:
+                if len(noise["noise_waveform_Z"]) >= self.signal_length:
                     noise_to_small = False
-            
+
             noise_name = (os.path.splitext(os.path.basename(noise_path)))[0]
 
-            noise_seq_len = len(noise['noise_waveform_Z'])
+            noise_seq_len = len(noise["noise_waveform_Z"])
             assert noise_seq_len >= self.signal_length
 
-            eq_start = np.random.randint(low = 0, high = 6000)
-            noise_start = np.random.randint(low = 0, high = max(noise_seq_len - self.signal_length, 1))
+            eq_start = np.random.randint(low=0, high=6000)
+            noise_start = np.random.randint(
+                low=0, high=max(noise_seq_len - self.signal_length, 1)
+            )
 
-            Z_eq = eq['earthquake_waveform_Z'][eq_start:eq_start+self.signal_length]
-            N_eq = eq['earthquake_waveform_N'][eq_start:eq_start+self.signal_length]
-            E_eq = eq['earthquake_waveform_E'][eq_start:eq_start+self.signal_length]
+            Z_eq = eq["earthquake_waveform_Z"][eq_start : eq_start + self.signal_length]
+            N_eq = eq["earthquake_waveform_N"][eq_start : eq_start + self.signal_length]
+            E_eq = eq["earthquake_waveform_E"][eq_start : eq_start + self.signal_length]
             eq_stacked = np.stack([Z_eq, N_eq, E_eq], axis=0)
             eq_tensor = th.from_numpy(eq_stacked)
 
-            Z_noise = noise['noise_waveform_Z'][noise_start:noise_start+self.signal_length]
-            N_noise = noise['noise_waveform_N'][noise_start:noise_start+self.signal_length]
-            E_noise = noise['noise_waveform_E'][noise_start:noise_start+self.signal_length]
+            Z_noise = noise["noise_waveform_Z"][
+                noise_start : noise_start + self.signal_length
+            ]
+            N_noise = noise["noise_waveform_N"][
+                noise_start : noise_start + self.signal_length
+            ]
+            E_noise = noise["noise_waveform_E"][
+                noise_start : noise_start + self.signal_length
+            ]
 
-            if Z_noise.shape != N_noise.shape or Z_noise.shape != E_noise.shape or N_noise.shape != E_noise.shape:
+            if (
+                Z_noise.shape != N_noise.shape
+                or Z_noise.shape != E_noise.shape
+                or N_noise.shape != E_noise.shape
+            ):
                 continue
 
             noise_stacked = np.stack([Z_noise, N_noise, E_noise], axis=0)
@@ -112,37 +128,37 @@ class DeepDenoiserDataset(Dataset):
                     fs=self.fs,
                     nperseg=self.nperseg,
                     nfft=self.nfft,
-                    boundary='zeros',
+                    boundary="zeros",
                 )
-                
+
                 return transform
-            
+
             stft_eq = compute_stft(eq)
             stft_noise = compute_stft(noise)
 
             if np.isinf(stft_eq).any() or np.isnan(stft_eq).any():
                 continue
-            
+
             if np.isinf(stft_noise).any() or np.isnan(stft_noise).any():
                 continue
 
             if np.random.random() < 0.9 and np.std(stft_eq) > 0.001:
-                
+
                 stft_eq = stft_eq / np.std(stft_eq)
 
                 if np.isinf(stft_eq).any() or np.isnan(stft_eq).any():
                     continue
-                
+
                 if np.isinf(stft_noise).any() or np.isnan(stft_noise).any():
                     continue
 
                 if np.random.random() < 0.2:
                     stft_eq = np.fliplr(stft_eq)
-            
+
             ratio = 0
             while ratio <= 0:
                 ratio = self.noise_mean + np.random.randn() * self.noise_std
-            
+
             noisy = stft_eq + ratio * stft_noise
             noisy = np.stack([noisy.real, noisy.imag], axis=-1)
 
@@ -150,7 +166,9 @@ class DeepDenoiserDataset(Dataset):
                 continue
 
             noisy = noisy / np.std(noisy)
-            tmp_mask = np.abs(stft_eq) / (np.abs(stft_eq) + np.abs(ratio * stft_noise) + 1e-4)
+            tmp_mask = np.abs(stft_eq) / (
+                np.abs(stft_eq) + np.abs(ratio * stft_noise) + 1e-4
+            )
             tmp_mask[tmp_mask >= 1] = 1
             tmp_mask[tmp_mask <= 0] = 0
             mask = np.zeros([tmp_mask.shape[0], tmp_mask.shape[1], 2])
@@ -161,13 +179,13 @@ class DeepDenoiserDataset(Dataset):
             th_noisy = th.from_numpy(noisy)
 
             return th_noisy, th_mask
-    
 
 
 class SeismicDataset(Dataset):
 
-    def __init__(self, signal_folder_path: str, noise_folder_path: str, randomized = False):
-
+    def __init__(
+        self, signal_folder_path: str, noise_folder_path: str, randomized=False
+    ):
         """
         Args:
             signal_folder_path (str): Path to earthquake signal folder containing .npz files.
@@ -176,12 +194,13 @@ class SeismicDataset(Dataset):
 
         self.signal_folder_path = signal_folder_path
         self.noise_folder_path = noise_folder_path
-        self.eq_signal_files = glob.glob(f'{signal_folder_path}/**/*.npz', recursive=True)
-        self.noise_files = glob.glob(f'{noise_folder_path}/**/*.npz', recursive=True)
+        self.eq_signal_files = glob.glob(
+            f"{signal_folder_path}/**/*.npz", recursive=True
+        )
+        self.noise_files = glob.glob(f"{noise_folder_path}/**/*.npz", recursive=True)
         self.randomized = randomized
 
         self.signal_length = 6000
-
 
     def __len__(self) -> int:
         return len(self.eq_signal_files)
@@ -199,44 +218,56 @@ class SeismicDataset(Dataset):
                 noise_idx = np.random.randint(0, len(self.noise_files))
                 noise_path = self.noise_files[noise_idx]
                 noise = np.load(noise_path, allow_pickle=True)
-                if len(noise['noise_waveform_Z']) >= self.signal_length:
+                if len(noise["noise_waveform_Z"]) >= self.signal_length:
                     noise_to_small = False
-            
-            noise_length = len(noise['noise_waveform_Z'])
+
+            noise_length = len(noise["noise_waveform_Z"])
 
             noise_name = (os.path.splitext(os.path.basename(noise_path)))[0]
 
             eq_start = 0
             noise_start = 0
             if self.randomized:
-                eq_start = np.random.randint(low = 0, high = 6000)
-                noise_start = np.random.randint(low = 0, high = max(noise_length - self.signal_length,1))
+                eq_start = np.random.randint(low=0, high=6000)
+                noise_start = np.random.randint(
+                    low=0, high=max(noise_length - self.signal_length, 1)
+                )
 
-            Z_eq = eq['earthquake_waveform_Z'][eq_start:eq_start+self.signal_length]
-            N_eq = eq['earthquake_waveform_N'][eq_start:eq_start+self.signal_length]
-            E_eq = eq['earthquake_waveform_E'][eq_start:eq_start+self.signal_length]
+            Z_eq = eq["earthquake_waveform_Z"][eq_start : eq_start + self.signal_length]
+            N_eq = eq["earthquake_waveform_N"][eq_start : eq_start + self.signal_length]
+            E_eq = eq["earthquake_waveform_E"][eq_start : eq_start + self.signal_length]
             eq_stacked = np.stack([Z_eq, N_eq, E_eq], axis=0)
 
-            Z_noise = noise['noise_waveform_Z'][noise_start:noise_start+self.signal_length]
-            N_noise = noise['noise_waveform_N'][noise_start:noise_start+self.signal_length]
-            E_noise = noise['noise_waveform_E'][noise_start:noise_start+self.signal_length]
+            Z_noise = noise["noise_waveform_Z"][
+                noise_start : noise_start + self.signal_length
+            ]
+            N_noise = noise["noise_waveform_N"][
+                noise_start : noise_start + self.signal_length
+            ]
+            E_noise = noise["noise_waveform_E"][
+                noise_start : noise_start + self.signal_length
+            ]
 
-            if Z_noise.shape != N_noise.shape or Z_noise.shape != E_noise.shape or N_noise.shape != E_noise.shape:
+            if (
+                Z_noise.shape != N_noise.shape
+                or Z_noise.shape != E_noise.shape
+                or N_noise.shape != E_noise.shape
+            ):
                 continue
-            
+
             noise_stacked = np.stack([Z_noise, N_noise, E_noise], axis=0)
 
             j = np.random.choice([0, 1, 2])
 
             p_wave_start = 6000 - eq_start
-            
+
             noise = noise_stacked[j]
             noise_max = np.max(np.abs(noise))
             if noise_max > 0.00001:
                 noise = noise / noise_max
             eq = eq_stacked[j]
             eq_max = np.max(np.abs(eq))
-            if eq_max> 0.00001:
+            if eq_max > 0.00001:
                 eq = eq / eq_max
 
             noise_scaling = 0.5
@@ -244,22 +275,29 @@ class SeismicDataset(Dataset):
             noisy_eq = eq + noise * noise_scaling
 
             return noisy_eq, eq
-    
+
 
 class ColdDiffusionDataset(Dataset):
 
-    def __init__(self, signal_folder_path: str, noise_folder_path: str, range_rnf: tuple[int,int], channel_type: int):
-        
+    def __init__(
+        self,
+        signal_folder_path: str,
+        noise_folder_path: str,
+        range_rnf: tuple[int, int],
+        channel_type: int,
+    ):
+
         self.signal_folder_path = signal_folder_path
         self.noise_folder_path = noise_folder_path
-        self.eq_signal_files = glob.glob(f'{signal_folder_path}/**/*.npz', recursive=True)
-        self.noise_files = glob.glob(f'{noise_folder_path}/**/*.npz', recursive=True)
+        self.eq_signal_files = glob.glob(
+            f"{signal_folder_path}/**/*.npz", recursive=True
+        )
+        self.noise_files = glob.glob(f"{noise_folder_path}/**/*.npz", recursive=True)
 
         self.signal_length = 6000
 
         self.range_rnf = range_rnf
         self.channel_type = channel_type
-
 
     def __len__(self):
         return len(self.eq_signal_files)
@@ -277,29 +315,41 @@ class ColdDiffusionDataset(Dataset):
                 noise_idx = np.random.randint(0, len(self.noise_files))
                 noise_path = self.noise_files[noise_idx]
                 noise = np.load(noise_path, allow_pickle=True)
-                if len(noise['noise_waveform_Z']) >= self.signal_length:
+                if len(noise["noise_waveform_Z"]) >= self.signal_length:
                     noise_to_small = False
-            
+
             noise_name = (os.path.splitext(os.path.basename(noise_path)))[0]
 
-            noise_seq_len = len(noise['noise_waveform_Z'])
+            noise_seq_len = len(noise["noise_waveform_Z"])
             assert noise_seq_len >= self.signal_length
 
-            eq_start = np.random.randint(low = 0, high = 6000)
-            noise_start = np.random.randint(low = 0, high = max(noise_seq_len - self.signal_length, 1))
+            eq_start = np.random.randint(low=0, high=6000)
+            noise_start = np.random.randint(
+                low=0, high=max(noise_seq_len - self.signal_length, 1)
+            )
 
-            Z_eq = eq['earthquake_waveform_Z'][eq_start:eq_start+self.signal_length]
-            N_eq = eq['earthquake_waveform_N'][eq_start:eq_start+self.signal_length]
-            E_eq = eq['earthquake_waveform_E'][eq_start:eq_start+self.signal_length]
+            Z_eq = eq["earthquake_waveform_Z"][eq_start : eq_start + self.signal_length]
+            N_eq = eq["earthquake_waveform_N"][eq_start : eq_start + self.signal_length]
+            E_eq = eq["earthquake_waveform_E"][eq_start : eq_start + self.signal_length]
             eq_stacked = np.stack([Z_eq, N_eq, E_eq], axis=0)
             eq_tensor = th.from_numpy(eq_stacked)
             eq_tensor_normalized = eq_tensor / eq_tensor.abs().max()
 
-            Z_noise = noise['noise_waveform_Z'][noise_start:noise_start+self.signal_length]
-            N_noise = noise['noise_waveform_N'][noise_start:noise_start+self.signal_length]
-            E_noise = noise['noise_waveform_E'][noise_start:noise_start+self.signal_length]
+            Z_noise = noise["noise_waveform_Z"][
+                noise_start : noise_start + self.signal_length
+            ]
+            N_noise = noise["noise_waveform_N"][
+                noise_start : noise_start + self.signal_length
+            ]
+            E_noise = noise["noise_waveform_E"][
+                noise_start : noise_start + self.signal_length
+            ]
 
-            if Z_noise.shape != N_noise.shape or Z_noise.shape != E_noise.shape or N_noise.shape != E_noise.shape:
+            if (
+                Z_noise.shape != N_noise.shape
+                or Z_noise.shape != E_noise.shape
+                or N_noise.shape != E_noise.shape
+            ):
                 continue
 
             noise_stacked = np.stack([Z_noise, N_noise, E_noise], axis=0)
@@ -308,17 +358,17 @@ class ColdDiffusionDataset(Dataset):
 
             noise_reduction = th.randint(*self.range_rnf) * 0.01
 
-            noisy_eq = eq_tensor_normalized[self.channel_type] + noise_reduction * noise_tensor_normalized[self.channel_type]
+            noisy_eq = (
+                eq_tensor_normalized[self.channel_type]
+                + noise_reduction * noise_tensor_normalized[self.channel_type]
+            )
 
             return noisy_eq, eq_tensor_normalized[self.channel_type]
-
-        
 
 
 class DeepDenoiserDatasetTest(Dataset):
 
     def __init__(self, signal_folder_path: str, noise_folder_path: str):
-
         """
         Args:
             signal_folder_path (str): Path to earthquake signal folder containing .npz files.
@@ -327,11 +377,13 @@ class DeepDenoiserDatasetTest(Dataset):
 
         self.signal_folder_path = signal_folder_path
         self.noise_folder_path = noise_folder_path
-        self.eq_signal_files = glob.glob(f'{signal_folder_path}/**/*.npz', recursive=True)
-        self.noise_files = glob.glob(f'{noise_folder_path}/**/*.npz', recursive=True)
+        self.eq_signal_files = glob.glob(
+            f"{signal_folder_path}/**/*.npz", recursive=True
+        )
+        self.noise_files = glob.glob(f"{noise_folder_path}/**/*.npz", recursive=True)
         self.signal_length = 3000
 
-        #scipy hyperparameters
+        # scipy hyperparameters
         self.fs = 100
         self.nperseg = 30
         self.nfft = 60
@@ -340,12 +392,11 @@ class DeepDenoiserDatasetTest(Dataset):
         self.noise_mean = 2
         self.noise_std = 1
 
-
     def __len__(self) -> int:
         return len(self.eq_signal_files)
 
     def __getitem__(self, idx) -> th.Tensor:
-        
+
         while True:
 
             eq_path = self.eq_signal_files[idx]
@@ -357,28 +408,40 @@ class DeepDenoiserDatasetTest(Dataset):
                 noise_idx = np.random.randint(0, len(self.noise_files))
                 noise_path = self.noise_files[noise_idx]
                 noise = np.load(noise_path, allow_pickle=True)
-                if len(noise['noise_waveform_Z']) >= self.signal_length:
+                if len(noise["noise_waveform_Z"]) >= self.signal_length:
                     noise_to_small = False
-            
+
             noise_name = (os.path.splitext(os.path.basename(noise_path)))[0]
 
-            noise_seq_len = len(noise['noise_waveform_Z'])
+            noise_seq_len = len(noise["noise_waveform_Z"])
             assert noise_seq_len >= self.signal_length
 
-            eq_start = np.random.randint(low = 0, high = 6000)
-            noise_start = np.random.randint(low = 0, high = max(noise_seq_len - self.signal_length, 1))
+            eq_start = np.random.randint(low=0, high=6000)
+            noise_start = np.random.randint(
+                low=0, high=max(noise_seq_len - self.signal_length, 1)
+            )
 
-            Z_eq = eq['earthquake_waveform_Z'][eq_start:eq_start+self.signal_length]
-            N_eq = eq['earthquake_waveform_N'][eq_start:eq_start+self.signal_length]
-            E_eq = eq['earthquake_waveform_E'][eq_start:eq_start+self.signal_length]
+            Z_eq = eq["earthquake_waveform_Z"][eq_start : eq_start + self.signal_length]
+            N_eq = eq["earthquake_waveform_N"][eq_start : eq_start + self.signal_length]
+            E_eq = eq["earthquake_waveform_E"][eq_start : eq_start + self.signal_length]
             eq_stacked = np.stack([Z_eq, N_eq, E_eq], axis=0)
             eq_tensor = th.from_numpy(eq_stacked)
 
-            Z_noise = noise['noise_waveform_Z'][noise_start:noise_start+self.signal_length]
-            N_noise = noise['noise_waveform_N'][noise_start:noise_start+self.signal_length]
-            E_noise = noise['noise_waveform_E'][noise_start:noise_start+self.signal_length]
+            Z_noise = noise["noise_waveform_Z"][
+                noise_start : noise_start + self.signal_length
+            ]
+            N_noise = noise["noise_waveform_N"][
+                noise_start : noise_start + self.signal_length
+            ]
+            E_noise = noise["noise_waveform_E"][
+                noise_start : noise_start + self.signal_length
+            ]
 
-            if Z_noise.shape != N_noise.shape or Z_noise.shape != E_noise.shape or N_noise.shape != E_noise.shape:
+            if (
+                Z_noise.shape != N_noise.shape
+                or Z_noise.shape != E_noise.shape
+                or N_noise.shape != E_noise.shape
+            ):
                 continue
 
             noise_stacked = np.stack([Z_noise, N_noise, E_noise], axis=0)
@@ -397,37 +460,37 @@ class DeepDenoiserDatasetTest(Dataset):
                     fs=self.fs,
                     nperseg=self.nperseg,
                     nfft=self.nfft,
-                    boundary='zeros',
+                    boundary="zeros",
                 )
-                
+
                 return transform
-            
+
             stft_eq = compute_stft(eq)
             stft_noise = compute_stft(noise)
 
             if np.isinf(stft_eq).any() or np.isnan(stft_eq).any():
                 continue
-            
+
             if np.isinf(stft_noise).any() or np.isnan(stft_noise).any():
                 continue
 
             if np.random.random() < 0.9 and np.std(stft_eq) > 0.001:
-                
+
                 stft_eq = stft_eq / np.std(stft_eq)
 
                 if np.isinf(stft_eq).any() or np.isnan(stft_eq).any():
                     continue
-                
+
                 if np.isinf(stft_noise).any() or np.isnan(stft_noise).any():
                     continue
 
                 if np.random.random() < 0.2:
                     stft_eq = np.fliplr(stft_eq)
-            
+
             ratio = 0
             while ratio <= 0:
                 ratio = self.noise_mean + np.random.randn() * self.noise_std
-            
+
             noisy = stft_eq + ratio * stft_noise
             noisy = np.stack([noisy.real, noisy.imag], axis=-1)
 
@@ -435,7 +498,9 @@ class DeepDenoiserDatasetTest(Dataset):
                 continue
 
             noisy = noisy / np.std(noisy)
-            tmp_mask = np.abs(stft_eq) / (np.abs(stft_eq) + np.abs(ratio * stft_noise) + 1e-4)
+            tmp_mask = np.abs(stft_eq) / (
+                np.abs(stft_eq) + np.abs(ratio * stft_noise) + 1e-4
+            )
             tmp_mask[tmp_mask >= 1] = 1
             tmp_mask[tmp_mask <= 0] = 0
             mask = np.zeros([tmp_mask.shape[0], tmp_mask.shape[1], 2])
