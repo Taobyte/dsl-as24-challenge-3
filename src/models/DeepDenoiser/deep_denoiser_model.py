@@ -18,7 +18,7 @@ class DownsamplingLayer(keras.layers.Layer):
         self.conv = keras.layers.Conv2D(
             channel_size,
             kernel_size=(3, 3),
-            activation="relu",
+            activation=None,
             padding="same",
             use_bias=False,
         )
@@ -31,7 +31,7 @@ class DownsamplingLayer(keras.layers.Layer):
                 channel_size,
                 kernel_size=(3, 3),
                 strides=(2, 2),
-                activation="relu",
+                activation=None,
                 padding="same",
                 use_bias=False,
             )
@@ -172,8 +172,10 @@ class Unet2D(keras.Model):
         self.ul4 = UpsamplingLayer(8, dropout_rate, change_concat_dim_both=True)
 
         self.output_layer = keras.layers.Conv2D(
-            2, kernel_size=1, activation="sigmoid", padding="same", use_bias=True
+            2, kernel_size=1, activation=None, padding="same", use_bias=True
         )
+
+        self.softmax = keras.layers.Softmax(axis=-1)
 
     def call(self, x: ndarray) -> ndarray:
 
@@ -191,7 +193,7 @@ class Unet2D(keras.Model):
         x = self.ul4(x, skip_tensors[0])
 
         output = self.output_layer(x)
-
+        
         return output
 
     def get_config(self):

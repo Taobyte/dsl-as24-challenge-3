@@ -5,6 +5,7 @@ from torch.nn.functional import sigmoid
 from torch.utils.data import DataLoader
 import numpy as np
 from numpy import ndarray
+import tensorflow as tf
 import pandas as pd
 import matplotlib.pyplot as plt
 from argparse import Namespace
@@ -121,10 +122,15 @@ def fit_deep_denoiser(args: Namespace) -> keras.Model:
         )
 
     model = Unet2D()
+
+    def custom_softmax_cross_entropy(labels, logits):
+        flat_logits = tf.reshape(logits, [-1, 2], name="logits")
+        flat_labels = tf.reshape(labels, [-1, 2], name="labels")
+        return tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=flat_labels, logits=flat_logits))
+
     model.compile(
-        loss=keras.losses.KLDivergence(),
+        loss=custom_softmax_cross_entropy,
         optimizer=keras.optimizers.Adam(learning_rate=args.lr),
-        metrics=[keras.metrics.KLDivergence(name="KLDivergence")],
     )
 
     callbacks = [
