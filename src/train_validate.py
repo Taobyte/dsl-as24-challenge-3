@@ -15,7 +15,7 @@ from tqdm import tqdm
 import wandb
 from wandb.integration.keras import WandbMetricsLogger
 
-from models.DeepDenoiser.deep_denoiser_model import Unet2D
+from models.DeepDenoiser.deep_denoiser_model import Unet2D, CustomSoftmaxCrossEntropy
 from data import SeismicDataset, get_dataloaders
 
 
@@ -123,13 +123,8 @@ def fit_deep_denoiser(args: Namespace) -> keras.Model:
 
     model = Unet2D()
 
-    def custom_softmax_cross_entropy(labels, logits):
-        flat_logits = tf.reshape(logits, [-1, 2], name="logits")
-        flat_labels = tf.reshape(labels, [-1, 2], name="labels")
-        return tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=flat_labels, logits=flat_logits))
-
     model.compile(
-        loss=custom_softmax_cross_entropy,
+        loss=CustomSoftmaxCrossEntropy(),
         optimizer=keras.optimizers.Adam(learning_rate=args.lr),
     )
 

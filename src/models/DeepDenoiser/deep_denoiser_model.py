@@ -4,6 +4,20 @@ import keras
 from numpy import ndarray
 import tensorflow as tf
 
+@keras.saving.register_keras_serializable()
+class CustomSoftmaxCrossEntropy(keras.losses.Loss):
+    def __init__(self, name= "custom_softmax_cross_entropy" , reduction='sum_over_batch_size'):
+        super().__init__(name = name, reduction=reduction)
+
+    def call(self, y_true, y_pred):
+        flat_logits = tf.reshape(y_pred, [-1, 2], name="logits")
+        flat_labels = tf.reshape(y_true, [-1, 2], name="labels")
+        return tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=flat_labels, logits=flat_logits))
+
+    def get_config(self):
+        config = super().get_config()
+        return config
+
 
 @keras.saving.register_keras_serializable()
 class DownsamplingLayer(keras.layers.Layer):
