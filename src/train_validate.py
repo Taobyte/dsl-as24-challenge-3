@@ -2,6 +2,7 @@ import keras
 import torch as th
 import torch.nn.functional as F
 from torch.nn.functional import sigmoid
+from torch.utils.data import DataLoader
 import numpy as np
 from numpy import ndarray
 import pandas as pd
@@ -15,10 +16,8 @@ from argparse import Namespace
 import wandb
 from wandb.integration.keras import WandbMetricsLogger
 
-from models.DeepDenoiser.deep_denoiser_model import Unet2D, CustomSoftmaxCrossEntropy
-from models.ColdDiffusion.ColdDiffusion_model_pytorch import Unet1D
-from models.ColdDiffusion.scheduler import *
-from data import get_dataloaders
+from models.DeepDenoiser.deep_denoiser_model import Unet2D
+from data import get_dataloaders, get_signal_noise_assoc, EventMasks, InputSignals, CombinedDeepDenoiserDataset
 
 
 def train_model(args: Namespace) -> keras.Model:
@@ -37,10 +36,6 @@ def train_model(args: Namespace) -> keras.Model:
         model = fit_deep_denoiser(args)
         return model
 
-    elif args.colddiffusion:
-
-        model = fit_cold_diffusion(args)
-        return model
     
     return None
 
@@ -211,84 +206,35 @@ def fit_deep_denoiser(args: Namespace) -> keras.Model:
     model = Unet2D()
 
     model.compile(
-        loss=CustomSoftmaxCrossEntropy(),
+        loss=keras.losses.BinaryCrossentropy(),
         optimizer=keras.optimizers.Adam(learning_rate=args.lr),
     )
 
     callbacks = [
         keras.callbacks.ModelCheckpoint(
             filepath=args.path_model + "/model_at_epoch_{epoch}.keras"
-        ),
+        ), 
+        keras.callbacks.EarlyStopping(monitor="val_loss", patience=2)
     ]
-
-    # keras.callbacks.EarlyStopping(monitor="val_loss", patience=2),
 
     if args.wandb:
         wandb_callbacks = [WandbMetricsLogger()]
         callbacks = callbacks + wandb_callbacks
 
-    train_dl, validation_dl = get_dataloaders(
-        args.signal_path, args.noise_path, args.batch_size, args.length_dataset
-    )
+    train_assoc = get_signal_noise_assoc(args.signal_path, args.noise_path)
+    val_assoc = get_signal_noise_assoc(args.signal_path, args.noise_path, train=False)
 
+    train_dl = DataLoader(CombinedDeepDenoiserDataset(InputSignals(train_assoc), EventMasks(train_assoc)), batch_size=args.batch_size, shuffle=False)
+    val_dl = DataLoader(CombinedDeepDenoiserDataset(InputSignals(val_assoc), EventMasks(val_assoc)), batch_size=args.batch_size, shuffle=False)
+    
     model.fit(
-        train_dl, epochs=args.epochs, validation_data=validation_dl, callbacks=callbacks
+        train_dl, epochs=args.epochs, validation_data=val_dl, callbacks=callbacks
     )
 
-    model.evaluate(validation_dl, batch_size=32, verbose=2, steps=1)
+    model.evaluate(val_dl, batch_size=32, verbose=2, steps=1)
 
     wandb.finish()
 
     return model
 
 
-def cold_diffusion_losses(args, denoise_model, eq_in, noise_real, t, sqrt_alphas_cumprod, sqrt_one_minus_alphas_cumprod, device, loss_type="l1"):
-    '''
-    Computes the loss for the denoising model.
-    
-    Args:
-        args (argparse.Namespace): The arguments containing training parameters.
-        denoise_model (Unet1D): The denoising model.
-        eq_in (torch.Tensor): The input tensor.
-        noise_real (torch.Tensor): The real noise tensor.
-        t (torch.Tensor): The time steps tensor.
-        sqrt_alphas_cumprod (torch.Tensor): The cumulative product of alphas.
-        sqrt_one_minus_alphas_cumprod (torch.Tensor): The square root of one minus the cumulative product of alphas.
-        device (torch.device): The device to run the model on.
-        loss_type (str): The type of loss to use ('l1', 'l2', 'huber').
-        
-    Returns:
-        final_loss (torch.Tensor): The computed loss.
-    '''
-    x_start = eq_in
-    x_end = eq_in + noise_real
-    x_noisy = forward_diffusion_sample(x_start, x_end, t, sqrt_alphas_cumprod, sqrt_one_minus_alphas_cumprod).to(torch.float32)
-    predicted_eq = denoise_model(x_noisy.to(th.float32), t.to(th.float32))
-    x = x_noisy
-    new_x_start = predicted_eq
-    predicted_noise = ((x - get_index_from_list(sqrt_alphas_cumprod, t, x.shape) * predicted_eq) / get_index_from_list(sqrt_one_minus_alphas_cumprod, t, x.shape))
-    new_x_end = predicted_noise + predicted_eq
-    new_t = th.randint(0, args.T, (x.shape[0],), device=device).long()
-    new_x_noisy = forward_diffusion_sample(new_x_start, new_x_end, new_t, sqrt_alphas_cumprod, sqrt_one_minus_alphas_cumprod).to(device)
-    new_predicted_eq = denoise_model(new_x_noisy.to(th.float32), new_t.to(th.float32))
-
-    if loss_type == 'l1':
-        loss = F.l1_loss(eq_in, predicted_eq)
-        loss2 = F.l1_loss(eq_in, new_predicted_eq)
-        final_loss = (loss + args.penalization * loss2)
-    elif loss_type == 'l2':
-        loss = F.mse_loss(eq_in, predicted_eq)
-        loss2 = F.mse_loss(eq_in, new_predicted_eq)
-        final_loss = (loss + args.penalization * loss2)
-    elif loss_type == "huber":
-        loss = F.smooth_l1_loss(eq_in, predicted_eq)
-        loss2 = F.smooth_l1_loss(eq_in, new_predicted_eq)
-        final_loss = (loss + args.penalization * loss2)
-    else:
-        raise NotImplementedError()
-
-    return final_loss
-
-
-def fit_cold_diffusion(args: Namespace):
-    pass

@@ -3,55 +3,51 @@ dsl-as24-challenge-3
 
 AI-powered Earthquake Data Denoising
 
-Project Organization
-------------
-
-    ├── LICENSE
-    ├── Makefile           <- Makefile with commands like `make data` or `make train`
-    ├── README.md          <- The top-level README for developers using this project.
-    ├── data
-    │   ├── external       <- Data from third party sources.
-    │   ├── interim        <- Intermediate data that has been transformed.
-    │   ├── processed      <- The final, canonical data sets for modeling.
-    │   └── raw            <- The original, immutable data dump.
-    │
-    ├── docs               <- A default Sphinx project; see sphinx-doc.org for details
-    │
-    ├── models             <- Trained and serialized models, model predictions, or model summaries
-    │
-    ├── notebooks          <- Jupyter notebooks. Naming convention is a number (for ordering),
-    │                         the creator's initials, and a short `-` delimited description, e.g.
-    │                         `1.0-jqp-initial-data-exploration`.
-    │
-    ├── references         <- Data dictionaries, manuals, and all other explanatory materials.
-    │
-    ├── reports            <- Generated analysis as HTML, PDF, LaTeX, etc.
-    │   └── figures        <- Generated graphics and figures to be used in reporting
-    │
-    ├── requirements.txt   <- The requirements file for reproducing the analysis environment, e.g.
-    │                         generated with `pip freeze > requirements.txt`
-    │
-    ├── setup.py           <- makes project pip installable (pip install -e .) so src can be imported
-    ├── src                <- Source code for use in this project.
-    │   ├── __init__.py    <- Makes src a Python module
-    │   │
-    │   ├── data           <- Scripts to download or generate data
-    │   │   └── make_dataset.py
-    │   │
-    │   ├── features       <- Scripts to turn raw data into features for modeling
-    │   │   └── build_features.py
-    │   │
-    │   ├── models         <- Scripts to train models and then use trained models to make
-    │   │   │                 predictions
-    │   │   ├── predict_model.py
-    │   │   └── train_model.py
-    │   │
-    │   └── visualization  <- Scripts to create exploratory and results oriented visualizations
-    │       └── visualize.py
-    │
-    └── tox.ini            <- tox file with settings for running tox; see tox.readthedocs.io
+# Dataset
+The dataset consists of 20'000 noise-free earthquake events and 20'000 pure noise events. The data was collected by the swiss seismological service (SED) http://seismo.ethz.ch/en/home/. 
 
 
---------
 
-<p><small>Project based on the <a target="_blank" href="https://drivendata.github.io/cookiecutter-data-science/">cookiecutter data science project template</a>. #cookiecutterdatascience</small></p>
+# Butterworth
+
+We use the bandpass butterworth filter as a baseline. We use `scipy.optimize.minimize` function to find the optimal values for the order and the lower and upper bound of the band. 
+
+![alt text](Butterworth_orders.svg.png)
+
+For running the training use
+
+```
+python main.py --butterworth --training True --signal_path 'path_to_signals' --noise_path 'path_to_noise'
+```
+. This function returns the optimized parameters `lowcut, highcut, order`. 
+
+
+# Deep Denoiser
+
+We implement the architecture from the DeepDenoiser paper https://github.com/AI4EPS/DeepDenoiser in keras and train it with the Swiss SED dataset. 
+
+### Data Normalization
+As a first step, the authors propose to normalize the earthquake event and noise timeseries by dividing by the standard deviation. 
+```
+normalized_eq = eq / eq.std()
+normalized_noise = noise / noise.std()
+```
+Then the combine the noise and earthquake. 
+
+```
+noisy_eq = normalized_eq + ratio * normalized_noise
+noisy_eq = noisy_eq / noisy_eq.std()
+```
+Then they create the ground truth masks. 
+
+```
+tmp_mask = np.abs(noisy_eq) /  
+```
+
+
+
+# Cold Diffusion
+
+We use the model from the Cold Diffusion Model for Seismic Signal Denoising paper https://github.com/Daniele-Trappolini/Diffusion-Model-for-Earthquake/tree/main/CDiffSD/utils. The proposed architecture uses the cold diffusion method to iteratively denoise a noisy earthquake signal. 
+
+### Data Normalization

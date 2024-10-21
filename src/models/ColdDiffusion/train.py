@@ -206,8 +206,6 @@ if __name__ == '__main__':
     df = pd.read_pickle(args.dataset_path + "/signal/signal_validation.pkl")
     df_noise = pd.read_pickle(args.dataset_path + "/noise/noise_validation.pkl")
 
-
-
     # Change df columns to correct names
     columns = ['Z', 'N', 'E']
     df = df[columns]

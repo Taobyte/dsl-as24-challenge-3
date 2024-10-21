@@ -594,8 +594,8 @@ class DeepDenoiserDatasetTest(Dataset):
             return th_noisy, th_mask, eq, noise
 
 
-def get_signal_noise_assoc(signal_path, noise_path, train=True):
-    """generates a singal to noise file association from folders
+def get_signal_noise_assoc(signal_path: str, noise_path: str, train=True) -> list[tuple[str, str, float, int]]:
+    """generates a signal to noise file association from folders
     Allows defining a standard data association for reproducibility. 
     Args:
         - signal_path: path to the signal folder
@@ -643,10 +643,10 @@ class InputSignals(th.utils.data.Dataset):
     def __len__(self) -> int:
         return len(self.signal_noise_assoc)
 
-    def __getitem__(self, idx) -> th.Tensor:
+    def __getitem__(self, idx: int) -> th.Tensor:
 
         while True:
-
+            
             eq = np.load(self.signal_noise_assoc[idx][0], allow_pickle=True)
             noise = np.load(self.signal_noise_assoc[idx][1], allow_pickle=True)
             snr_random = self.signal_noise_assoc[idx][2]
@@ -666,7 +666,7 @@ class InputSignals(th.utils.data.Dataset):
                 or Z_noise.shape != E_noise.shape
                 or N_noise.shape != E_noise.shape
             ):
-                idx=idx+1
+                idx = (idx + 1) % len(self.signal_noise_assoc)
                 continue
 
             noise_stacked = np.stack([Z_noise, N_noise, E_noise], axis=0)
@@ -693,7 +693,7 @@ class EventMasks(th.utils.data.Dataset):
         self.signal_noise_assoc = signal_noise_association
         self.signal_length = 6120
 
-        # scipy hyperparameters
+        # STFT parameters
         self.frame_length = 100
         self.frame_step = 24
         self.fft_size = 126
@@ -724,7 +724,7 @@ class EventMasks(th.utils.data.Dataset):
                 or Z_noise.shape != E_noise.shape
                 or N_noise.shape != E_noise.shape
             ):
-                idx=idx+1
+                idx=(idx + 1) % len(self.signal_noise_assoc)
                 continue
 
             noise_stacked = np.stack([Z_noise, N_noise, E_noise], axis=0)
@@ -744,5 +744,28 @@ class EventMasks(th.utils.data.Dataset):
 
             mask = np.abs(stft_eq) / (np.abs(stft_noise) + np.abs(stft_eq) + 1e-4)
             
-
             return mask
+        
+
+class CombinedDeepDenoiserDataset(th.utils.data.Dataset):
+    def __init__(self, input_signals: InputSignals, event_masks: EventMasks):
+        """
+        Args:
+            input_signals: Instance of the InputSignals dataset.
+            event_masks: Instance of the EventMasks dataset.
+        """
+        self.input_signals = input_signals
+        self.event_masks = event_masks
+        assert len(self.input_signals) == len(self.event_masks), "Datasets must be of equal length."
+
+    def __len__(self):
+        return len(self.input_signals)
+
+    def __getitem__(self, idx):
+        # Fetch the noisy earthquake signal (input)
+        noisy_eq = self.input_signals[idx]
+        
+        # Fetch the corresponding mask (ground truth)
+        mask = self.event_masks[idx]
+        
+        return noisy_eq, mask
