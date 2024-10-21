@@ -92,7 +92,7 @@ def test_visualize_deep_denoiser_dataloader():
 
         return time_domain_signal
 
-    fig, ax = plt.subplots(1, 4)
+    fig, ax = plt.subplots(1, 5)
     ax[0].plot(range(3000), inverse_stft(noisy_eq[0, :, :, 0]))
     ax[1].plot(range(3000), eq.reshape((3000,)))
     ax[2].plot(range(3000), noise.reshape((3000,)))
@@ -100,8 +100,19 @@ def test_visualize_deep_denoiser_dataloader():
     cax1 = ax[3].imshow(
         ground_truth_mask[0, :, :, 0], cmap="plasma", interpolation="none"
     )
+    cax1 = ax[4].imshow(
+        ground_truth_mask[0, :, :, 1], cmap="plasma", interpolation="none"
+    )
     fig.colorbar(cax1, ax=ax[3])
     ax[3].invert_yaxis()
+    fig.colorbar(cax1, ax=ax[4])
+    ax[4].invert_yaxis()
+
+    ax[0].set_title('Noisy earthquake signal')
+    ax[1].set_title('Clean earthquake signal')
+    ax[2].set_title('Noise')
+    ax[3].set_title('Ground truth eq mask')
+    ax[4].set_title('Ground truth noise mask')
 
     plt.show()
 

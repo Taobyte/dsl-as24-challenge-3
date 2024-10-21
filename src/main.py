@@ -5,10 +5,6 @@ from train_validate import train_model, test_model
 os.environ["TF_ENABLE_ONEDNN_OPTS"] = "0"
 os.environ["KERAS_BACKEND"] = "jax"
 
-import keras.backend as K
-
-print(K.backend())
-
 args = cp.configure_args()
 
 print(args.signal_path)

@@ -3,33 +3,42 @@ import os
 import glob
 import numpy as np
 import scipy
+import pandas as pd
 from torch.utils.data import Dataset, DataLoader, Subset
 from numpy import ndarray
+from argparse import Namespace
 
 
-def get_dataloaders(
-    signal_path: str, noise_path: str, batch_size: int, dataset_length=None
-) -> tuple[DataLoader, DataLoader]:
+def get_dataloaders(args: Namespace) -> tuple[DataLoader, DataLoader]:
 
-    signal_train_path = signal_path + "/train"
-    signal_validation_path = signal_path + "/validation"
+    signal_train_path = args.signal_path + "/train"
+    signal_validation_path = args.signal_path + "/validation"
 
-    noise_train_path = noise_path + "/train"
-    noise_validation_path = noise_path + "/validation"
+    noise_train_path = args.noise_path + "/train"
+    noise_validation_path = args.noise_path + "/validation"
 
-    train_dataset = DeepDenoiserDataset(signal_train_path, noise_train_path)
-    validation_dataset = DeepDenoiserDataset(
-        signal_validation_path, noise_validation_path
-    )
+    if args.deepdenoiser:
 
-    if dataset_length:
-        train_indices = th.randint(len(train_dataset), (dataset_length,))
-        validation_indices = th.randint(len(validation_dataset), (dataset_length,))
+        train_dataset = DeepDenoiserDataset(signal_train_path, noise_train_path)
+        validation_dataset = DeepDenoiserDataset(
+            signal_validation_path, noise_validation_path
+        )
+    elif args.colddiffusion:
+
+        train_dataset = ColdDiffusionDataset(signal_train_path, noise_train_path)
+        validation_dataset = ColdDiffusionDataset(
+            signal_validation_path, noise_validation_path
+        )
+
+
+    if args.dataset_length:
+        train_indices = th.randint(len(train_dataset), (args.dataset_length,))
+        validation_indices = th.randint(len(validation_dataset), (args.dataset_length,))
         train_dataset = Subset(train_dataset, train_indices)
         validation_dataset = Subset(validation_dataset, validation_indices)
 
-    train_dl = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
-    validation_dl = DataLoader(validation_dataset, batch_size=batch_size, shuffle=True)
+    train_dl = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True)
+    validation_dl = DataLoader(validation_dataset, batch_size=args.batch_size, shuffle=True)
 
     return train_dl, validation_dl
 
@@ -84,7 +93,7 @@ class DeepDenoiserDataset(Dataset):
             noise_seq_len = len(noise["noise_waveform_Z"])
             assert noise_seq_len >= self.signal_length
 
-            eq_start = np.random.randint(low=0, high=6000)
+            eq_start = np.random.randint(low=3000, high=6000)
             noise_start = np.random.randint(
                 low=0, high=max(noise_seq_len - self.signal_length, 1)
             )
@@ -281,23 +290,15 @@ class ColdDiffusionDataset(Dataset):
 
     def __init__(
         self,
-        signal_folder_path: str,
-        noise_folder_path: str,
-        range_rnf: tuple[int, int],
-        channel_type: int,
+        path: str,
+        is_noise = False
     ):
 
-        self.signal_folder_path = signal_folder_path
-        self.noise_folder_path = noise_folder_path
         self.eq_signal_files = glob.glob(
-            f"{signal_folder_path}/**/*.npz", recursive=True
+            f"{path}/**/*.npz", recursive=True
         )
-        self.noise_files = glob.glob(f"{noise_folder_path}/**/*.npz", recursive=True)
 
-        self.signal_length = 6000
-
-        self.range_rnf = range_rnf
-        self.channel_type = channel_type
+        self.signal_length = 3000
 
     def __len__(self):
         return len(self.eq_signal_files)
@@ -323,7 +324,7 @@ class ColdDiffusionDataset(Dataset):
             noise_seq_len = len(noise["noise_waveform_Z"])
             assert noise_seq_len >= self.signal_length
 
-            eq_start = np.random.randint(low=0, high=6000)
+            eq_start = np.random.randint(low=3000, high=6000)
             noise_start = np.random.randint(
                 low=0, high=max(noise_seq_len - self.signal_length, 1)
             )
@@ -364,6 +365,83 @@ class ColdDiffusionDataset(Dataset):
             )
 
             return noisy_eq, eq_tensor_normalized[self.channel_type]
+
+
+class NikoDataset(Dataset):
+
+    def __init__(self, signal_folder_path: str, noise_folder_path: str, train = True):
+        """
+        Args:
+            signal_folder_path (str): Path to earthquake signal folder containing .npz files.
+            noise_folder_path (str): Path to noise folder containing .npz files.
+        """
+        if train:
+            signal_df = pd.read_pickle(signal_folder_path + "/signal_train.pkl")
+            noise_df = pd.read_pickle(noise_folder_path + "/noise_train.pkl")
+        else:
+            signal_df = pd.read_pickle(signal_folder_path + "/signal_validation.pkl")
+            noise_df = pd.read_pickle(noise_folder_path + "/noise_validation.pkl")
+        
+        self.signal_df = signal_df
+        self.noise_df = noise_df
+
+        self.signal_length = 3000
+    
+    def __len__(self):
+        return len(self.signal_df)
+    
+    def __getitem__(self, idx):
+
+        random_channel = np.random.choice(['Z', 'E', 'N'])
+        noise_idx = np.random.randint(0, len(self.noise_df))
+
+        signal = self.signal_df[random_channel].iloc[idx]
+        noise = self.noise_df[random_channel].iloc[noise_idx]
+
+        signal_std = np.std(signal[6000:6500])  # compute signals std over main event signal
+        noise_std = np.std(noise[6000:6500])  #  compute nosie std 
+        snr_original = signal_std / noise_std
+
+        # randomly shift event start
+        event_shift = np.random.randint(1000,6000)
+
+        # change the SNR
+        noise_snr_mod = (noise * snr_original)[event_shift: event_shift + self.signal_length]  # rescale noise so that SNR=1
+        snr_random = np.random.uniform(0.5,2)  # random SNR     
+        event_snr_mod = (signal * snr_random)[:self.signal_length]  # rescale event to desired SNR
+
+        def compute_stft(signal: ndarray) -> ndarray:
+
+            f, t, transform = scipy.signal.stft(
+                signal,
+                fs=self.fs,
+                nperseg=self.nperseg,
+                nfft=self.nfft,
+                boundary="zeros",
+            )
+
+            return transform
+
+        stft_eq = compute_stft(event_snr_mod)
+        stft_noise = compute_stft(noise_snr_mod)
+
+        noisy = stft_eq + stft_noise
+        noisy = np.stack([noisy.real, noisy.imag], axis=-1)
+
+        noisy = noisy / np.std(noisy)
+        tmp_mask = np.abs(stft_eq) / (
+            np.abs(stft_eq) + np.abs(stft_noise) + 1e-4
+        )
+        tmp_mask[tmp_mask >= 1] = 1
+        tmp_mask[tmp_mask <= 0] = 0
+        mask = np.zeros([tmp_mask.shape[0], tmp_mask.shape[1], 2])
+        mask[:, :, 0] = tmp_mask
+        mask[:, :, 1] = 1 - tmp_mask
+
+        th_mask = th.from_numpy(mask)
+        th_noisy = th.from_numpy(noisy)    
+        
+        return th_noisy, th_mask
 
 
 class DeepDenoiserDatasetTest(Dataset):
@@ -416,7 +494,7 @@ class DeepDenoiserDatasetTest(Dataset):
             noise_seq_len = len(noise["noise_waveform_Z"])
             assert noise_seq_len >= self.signal_length
 
-            eq_start = np.random.randint(low=0, high=6000)
+            eq_start = np.random.randint(low=3000, high=6000)
             noise_start = np.random.randint(
                 low=0, high=max(noise_seq_len - self.signal_length, 1)
             )

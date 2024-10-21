@@ -1,22 +1,24 @@
 import keras
-import scipy.optimize
 import torch as th
+import torch.nn.functional as F
 from torch.nn.functional import sigmoid
-from torch.utils.data import DataLoader
 import numpy as np
 from numpy import ndarray
-import tensorflow as tf
 import pandas as pd
 import matplotlib.pyplot as plt
-from argparse import Namespace
 import scipy
 from scipy.signal import butter, filtfilt
-from tqdm import tqdm
+import scipy.optimize
+
+from argparse import Namespace
+
 import wandb
 from wandb.integration.keras import WandbMetricsLogger
 
 from models.DeepDenoiser.deep_denoiser_model import Unet2D, CustomSoftmaxCrossEntropy
-from data import SeismicDataset, get_dataloaders
+from models.ColdDiffusion.ColdDiffusion_model_pytorch import Unet1D
+from models.ColdDiffusion.scheduler import *
+from data import get_dataloaders
 
 
 def train_model(args: Namespace) -> keras.Model:
@@ -24,17 +26,22 @@ def train_model(args: Namespace) -> keras.Model:
     # set seed (default: 123)
     np.random.seed(args.seed)
 
-    if args.deepdenoiser:
+    if args.butterworth:
+        
+        params = fit_butterworth(args)
+        print(params)
+        return params
+
+    elif args.deepdenoiser:
 
         model = fit_deep_denoiser(args)
         return model
 
-    elif args.butterworth:
+    elif args.colddiffusion:
 
-        params = get_best_params(args)
-        print(params)
-        return params
-
+        model = fit_cold_diffusion(args)
+        return model
+    
     return None
 
 
@@ -105,66 +112,15 @@ def test_model(args: Namespace) -> ndarray:
 
     return np.zeros(1)
 
-
-def fit_deep_denoiser(args: Namespace) -> keras.Model:
-
-    if args.wandb:
-        wandb.init(
-            # set the wandb project where this run will be logged
-            project="earthquake denoising",
-            # track hyperparameters and run metadata
-            config={
-                "learning_rate": args.lr,
-                "architecture": "DeepDenoiser Unet2D",
-                "dataset": "SED dataset",
-                "epochs": args.epochs,
-            },
-        )
-
-    model = Unet2D()
-
-    model.compile(
-        loss=CustomSoftmaxCrossEntropy(),
-        optimizer=keras.optimizers.Adam(learning_rate=args.lr),
-    )
-
-    callbacks = [
-        keras.callbacks.ModelCheckpoint(
-            filepath=args.path_model + "/model_at_epoch_{epoch}.keras"
-        ),
-    ]
-
-    # keras.callbacks.EarlyStopping(monitor="val_loss", patience=2),
-
-    if args.wandb:
-        wandb_callbacks = [WandbMetricsLogger()]
-        callbacks = callbacks + wandb_callbacks
-
-    train_dl, validation_dl = get_dataloaders(
-        args.signal_path, args.noise_path, args.batch_size, args.length_dataset
-    )
-
-    model.fit(
-        train_dl, epochs=args.epochs, validation_data=validation_dl, callbacks=callbacks
-    )
-
-    model.evaluate(validation_dl, batch_size=32, verbose=2, steps=1)
-
-    wandb.finish()
-
-    return model
-
-
-def get_best_params(args: Namespace) -> dict:
+def fit_butterworth(args: Namespace) -> dict:
 
     def butter_bandpass(lowcut, highcut, fs, order=5):
-        nyquist = 0.5 * fs  # Nyquist frequency
+        nyquist = 0.5 * fs
         low = lowcut / nyquist
         high = highcut / nyquist
         b, a = butter(order, [low, high], btype="band")
         return b, a
 
-    # Apply the filter
     def apply_bandpass_filter(data, lowcut, highcut, fs, order=5):
         b, a = butter_bandpass(lowcut, highcut, fs, order=order)
         y = filtfilt(b, a, data)
@@ -236,3 +192,103 @@ def get_best_params(args: Namespace) -> dict:
     )
 
     return result
+
+def fit_deep_denoiser(args: Namespace) -> keras.Model:
+
+    if args.wandb:
+        wandb.init(
+            # set the wandb project where this run will be logged
+            project="earthquake denoising",
+            # track hyperparameters and run metadata
+            config={
+                "learning_rate": args.lr,
+                "architecture": "DeepDenoiser Unet2D",
+                "dataset": "SED dataset",
+                "epochs": args.epochs,
+            },
+        )
+
+    model = Unet2D()
+
+    model.compile(
+        loss=CustomSoftmaxCrossEntropy(),
+        optimizer=keras.optimizers.Adam(learning_rate=args.lr),
+    )
+
+    callbacks = [
+        keras.callbacks.ModelCheckpoint(
+            filepath=args.path_model + "/model_at_epoch_{epoch}.keras"
+        ),
+    ]
+
+    # keras.callbacks.EarlyStopping(monitor="val_loss", patience=2),
+
+    if args.wandb:
+        wandb_callbacks = [WandbMetricsLogger()]
+        callbacks = callbacks + wandb_callbacks
+
+    train_dl, validation_dl = get_dataloaders(
+        args.signal_path, args.noise_path, args.batch_size, args.length_dataset
+    )
+
+    model.fit(
+        train_dl, epochs=args.epochs, validation_data=validation_dl, callbacks=callbacks
+    )
+
+    model.evaluate(validation_dl, batch_size=32, verbose=2, steps=1)
+
+    wandb.finish()
+
+    return model
+
+
+def cold_diffusion_losses(args, denoise_model, eq_in, noise_real, t, sqrt_alphas_cumprod, sqrt_one_minus_alphas_cumprod, device, loss_type="l1"):
+    '''
+    Computes the loss for the denoising model.
+    
+    Args:
+        args (argparse.Namespace): The arguments containing training parameters.
+        denoise_model (Unet1D): The denoising model.
+        eq_in (torch.Tensor): The input tensor.
+        noise_real (torch.Tensor): The real noise tensor.
+        t (torch.Tensor): The time steps tensor.
+        sqrt_alphas_cumprod (torch.Tensor): The cumulative product of alphas.
+        sqrt_one_minus_alphas_cumprod (torch.Tensor): The square root of one minus the cumulative product of alphas.
+        device (torch.device): The device to run the model on.
+        loss_type (str): The type of loss to use ('l1', 'l2', 'huber').
+        
+    Returns:
+        final_loss (torch.Tensor): The computed loss.
+    '''
+    x_start = eq_in
+    x_end = eq_in + noise_real
+    x_noisy = forward_diffusion_sample(x_start, x_end, t, sqrt_alphas_cumprod, sqrt_one_minus_alphas_cumprod).to(torch.float32)
+    predicted_eq = denoise_model(x_noisy.to(th.float32), t.to(th.float32))
+    x = x_noisy
+    new_x_start = predicted_eq
+    predicted_noise = ((x - get_index_from_list(sqrt_alphas_cumprod, t, x.shape) * predicted_eq) / get_index_from_list(sqrt_one_minus_alphas_cumprod, t, x.shape))
+    new_x_end = predicted_noise + predicted_eq
+    new_t = th.randint(0, args.T, (x.shape[0],), device=device).long()
+    new_x_noisy = forward_diffusion_sample(new_x_start, new_x_end, new_t, sqrt_alphas_cumprod, sqrt_one_minus_alphas_cumprod).to(device)
+    new_predicted_eq = denoise_model(new_x_noisy.to(th.float32), new_t.to(th.float32))
+
+    if loss_type == 'l1':
+        loss = F.l1_loss(eq_in, predicted_eq)
+        loss2 = F.l1_loss(eq_in, new_predicted_eq)
+        final_loss = (loss + args.penalization * loss2)
+    elif loss_type == 'l2':
+        loss = F.mse_loss(eq_in, predicted_eq)
+        loss2 = F.mse_loss(eq_in, new_predicted_eq)
+        final_loss = (loss + args.penalization * loss2)
+    elif loss_type == "huber":
+        loss = F.smooth_l1_loss(eq_in, predicted_eq)
+        loss2 = F.smooth_l1_loss(eq_in, new_predicted_eq)
+        final_loss = (loss + args.penalization * loss2)
+    else:
+        raise NotImplementedError()
+
+    return final_loss
+
+
+def fit_cold_diffusion(args: Namespace):
+    pass
