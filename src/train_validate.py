@@ -1,7 +1,6 @@
 import keras
 from torch.utils.data import DataLoader
 import numpy as np
-from numpy import ndarray
 import pandas as pd
 import matplotlib.pyplot as plt
 import scipy
@@ -15,6 +14,8 @@ from wandb.integration.keras import WandbMetricsLogger
 
 from models.DeepDenoiser.deep_denoiser_model import Unet2D
 from data import get_dataloaders, get_signal_noise_assoc, EventMasks, InputSignals, CombinedDeepDenoiserDataset
+from utils import Mode
+
 
 def train_model(args: Namespace) -> keras.Model:
 
@@ -33,7 +34,65 @@ def train_model(args: Namespace) -> keras.Model:
     return None
 
 
-def test_model(args: Namespace) -> ndarray:
+def test_model(args: Namespace) -> pd.DataFrame:
+
+    signal_path = ""
+    noise_path = ""
+    result_path = ""
+    model_path = ""
+    model_name = "DeepDenoiser"
+    batch_size = 32
+
+    snrs = [0.1 * i for i in range(1,11)]
+    signal_length = 6120
+
+    assoc = get_signal_noise_assoc(signal_path, noise_path, Mode.TEST)
+
+    eq_traces = []
+    noise_traces = []
+    shifts = []
+    
+    for eq_path, noise_path, _, shift in assoc:
+
+        eq = np.load(eq_path, allow_pickle=True)
+        noise = np.load(noise_path, allow_pickle=True)
+        
+        Z_eq = eq["earthquake_waveform_Z"][event_shift : event_shift + signal_length]
+        N_eq = eq["earthquake_waveform_N"][event_shift : event_shift + signal_length]
+        E_eq = eq["earthquake_waveform_E"][event_shift : event_shift + signal_length]
+        eq_stacked = np.stack([Z_eq, N_eq, E_eq], axis=0)
+
+        Z_noise = noise["noise_waveform_Z"][:signal_length]
+        N_noise = noise["noise_waveform_N"][:signal_length]
+        E_noise = noise["noise_waveform_E"][:signal_length]
+        noise_stacked = np.stack([Z_noise, N_noise, E_noise], axis=0)
+
+        eq_traces.append(eq_stacked)
+        noise_traces.append(noise_stacked)
+        shifts.append(shift)
+    
+    model = keras.saving.load_model(model_path)
+    predictions = {}
+    for snr in snrs:
+        test_dataset = InputSignals(assoc, Mode.TEST, snr)
+        test_dl = DataLoader(test_dataset, batch_size, shuffle=False)
+        predicted_mask = model.predict(test_dl)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     if args.deepdenoiser:
 

@@ -83,8 +83,6 @@ def test_input_signals():
 
     assert len(input_signals[0]) == 3
 
-
-
 def test_output_event_masks():
     signal_folder = (
         "C:/Users/cleme/ETH/Master/DataLab/dsl-as24-challenge-3/data/signal/"
