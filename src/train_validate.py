@@ -1,7 +1,4 @@
 import keras
-import torch as th
-import torch.nn.functional as F
-from torch.nn.functional import sigmoid
 from torch.utils.data import DataLoader
 import numpy as np
 from numpy import ndarray
@@ -19,11 +16,7 @@ from wandb.integration.keras import WandbMetricsLogger
 from models.DeepDenoiser.deep_denoiser_model import Unet2D
 from data import get_dataloaders, get_signal_noise_assoc, EventMasks, InputSignals, CombinedDeepDenoiserDataset
 
-
 def train_model(args: Namespace) -> keras.Model:
-
-    # set seed (default: 123)
-    np.random.seed(args.seed)
 
     if args.butterworth:
         
@@ -229,12 +222,8 @@ def fit_deep_denoiser(args: Namespace) -> keras.Model:
         wandb_callbacks = [WandbMetricsLogger()]
         callbacks = callbacks + wandb_callbacks
 
-    train_assoc = get_signal_noise_assoc(args.signal_path, args.noise_path)
-    val_assoc = get_signal_noise_assoc(args.signal_path, args.noise_path, train=False)
+    train_dl, val_dl = get_dataloaders(args.signal_path, args.noise_path, args.batch_size)
 
-    train_dl = DataLoader(CombinedDeepDenoiserDataset(InputSignals(train_assoc), EventMasks(train_assoc)), batch_size=args.batch_size, shuffle=False)
-    val_dl = DataLoader(CombinedDeepDenoiserDataset(InputSignals(val_assoc), EventMasks(val_assoc)), batch_size=args.batch_size, shuffle=False)
-    
     model.fit(
         train_dl, epochs=args.epochs, validation_data=val_dl, callbacks=callbacks
     )
