@@ -7,6 +7,7 @@ from scheduler import *
 from torch.optim import Adam
 from ColdDiffusion_model_pytorch import Unet1D
 import torch.optim.lr_scheduler as lr_scheduler
+import testing as testing
 
 from dataset import create_dataloader
 
@@ -199,28 +200,78 @@ def train_model(args, tr_dl, tr_dl_noise, val_dl, val_dl_noise):
     return min_loss
 
 
+def test_model(args, test_loader, noise_test_loader):
+    '''
+    Tests the model on the test dataset and saves the results.
+    
+    Args:
+        args (argparse.Namespace): The arguments containing test parameters.
+        test_loader (DataLoader): The test data loader.
+        noise_test_loader (DataLoader): The noisy test data loader.
+    '''
+    device = torch.device(f"cuda:{args.gpu}" if torch.cuda.is_available() else "cpu")
+    testing.initialize_parameters(args.T)
+    model = load_model_and_weights(args.path_model)
+    model = model.to(device)
+
+    Original, restored_direct, restored_sampling, Noised = [], [], [], []
+    
+    T = args.T
+
+    with torch.no_grad():
+        model.eval()
+        for eq_in, noise_in in tqdm(zip(test_loader, noise_test_loader), total=len(test_loader)):
+            eq_in = eq_in[1][:,args.channel_type,:].unsqueeze(dim=1).to(device)
+            reduce_noise = random.randint(*args.Range_RNF) * 0.01
+            noise_real = (noise_in[1][:,args.channel_type,:].unsqueeze(dim=1) * reduce_noise).to(device)
+            signal_noisy = eq_in + noise_real
+            t = torch.Tensor([T-1]).long().to(device)
+            
+            restored_ch1 = testing.direct_denoising(model, signal_noisy.to(device).float().reshape(-1,1,args.trace_size), t)
+            restored_direct.extend([x[0].cpu().numpy() for x in restored_ch1])
+
+            t = T-1
+            restored_sample = testing.sample(
+                                            model,
+                                            signal_noisy.float().reshape(-1, 1, args.trace_size),
+                                            t,
+                                            batch_size=signal_noisy.shape[0]
+                                            )
+            restored_sampling.extend([x[0].cpu().numpy() for x in restored_sample[-1]])
+            Original.extend(eq_in.squeeze().cpu().numpy())
+            Noised.extend(signal_noisy.squeeze().cpu().numpy())
+
+    np.save(f"./Restored/Restored_direct_0.npy", np.array(restored_direct))
+    np.save(f"./Restored/Restored_sampling_0.npy", np.array(restored_sampling))
+    np.save(f"./Restored/Original.npy", np.array(Original))
+    np.save(f"./Restored/Noised.npy", np.array(Noised))
+
+
 if __name__ == '__main__':
 
     args = cp.configure_args()
 
-    df = pd.read_pickle(args.dataset_path + "/signal/signal_validation.pkl")
-    df_noise = pd.read_pickle(args.dataset_path + "/noise/noise_validation.pkl")
+    df = pd.read_pickle(args.dataset_path + "/signal/signal_train.pkl")
+    df_noise = pd.read_pickle(args.dataset_path + "/noise/noise_train.pkl")
 
     # Change df columns to correct names
     columns = ['Z', 'N', 'E']
     df = df[columns]
     df_noise = df_noise[columns]
 
-    for column in columns:
-        df[column] = df[column].apply(lambda x: x[3000:9000])
-        df_noise[column] = df_noise[column].apply(lambda x: x[:6000])
+    start = 4500
+    signal_length = 6000
 
-    df['p_arrival_sample'] = 3000
+    for column in columns:
+        df[column] = df[column].apply(lambda x: x[start:start + signal_length])
+        df_noise[column] = df_noise[column].apply(lambda x: x[:signal_length])
+
+    df['p_arrival_sample'] = 6000 - start
     df['s_arrival_sample'] = 0
-    df_noise['p_arrival_sample'] = 3000
+    df_noise['p_arrival_sample'] = 6000 - start
     df_noise['s_arrival_sample'] = 0
-    df['trace_name'] = '.'
-    df_noise['trace_name'] = '.'
+    df['trace_name'] = df['code']
+    df_noise['trace_name'] = pd.Series(df_noise.index)
 
     df = df.rename(columns={'Z': 'Z_channel', 'N': 'N_channel', 'E': 'E_channel'}, inplace=False)
     df_noise = df_noise.rename(columns={'Z': 'Z_channel', 'N': 'N_channel', 'E': 'E_channel'}, inplace=False)

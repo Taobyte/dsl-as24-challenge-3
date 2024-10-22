@@ -12,7 +12,7 @@ def configure_args(T=300, channel_type=0, dataset_type="stead"):
                         help="Choose the dataset type. Options: [stead, instance]")
 
     parser.add_argument("--dataset_path",
-                        default="C:/Users/cleme/ETH/Master/DataLab/dsl-as24-challenge-3/data/",
+                        default="/cluster/scratch/ckeusch/dsl-as24-challenge-3/data",
                         type=str,
                         help="Path to the dataset")
 
@@ -138,7 +138,7 @@ def configure_args(T=300, channel_type=0, dataset_type="stead"):
                         help="Whether to log in wandb (default: False)")
 
     parser.add_argument("--checkpoint_path",
-                        default="C:/Users/cleme/ETH/Master/DataLab/dsl-as24-challenge-3/models/ColdDiffusion/",
+                        default="/cluster/scratch/ckeusch/dsl-as24-challenge-3/models/ColdDiffusion",
                         type=str,
                         help="Path to save checkpoints (default: ./Checkpoint/Channel_E/)")
 

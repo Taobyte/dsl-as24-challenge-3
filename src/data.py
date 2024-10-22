@@ -27,13 +27,16 @@ def get_dataloaders(signal_path: str, noise_path: str, shuffle = False, model = 
     return train_dl, validation_dl
 
 
-def get_signal_noise_assoc(signal_path: str, noise_path: str, mode: Mode, size_test_set = 1000) -> list[tuple[str, str, float, int]]:
+def get_signal_noise_assoc(signal_path: str, noise_path: str, mode: Mode, size_testset = 1000, snr=None) -> list[tuple[str, str, float, int]]:
     """generates a signal to noise file association from folders
     Allows defining a standard data association for reproducibility. 
     Args:
         - signal_path: path to the signal folder
         - noise_path: path to the noise_folder
         - train: boolean (use training set)
+        - mode: enum TRAIN, VALIDATION, TEST 
+        - size_testset: integer for fixing testset size
+        - snr: float for fixing the signal to noise ratio
     Returns:
         - a list of tuples, where each tuple contains:
           (signal file, noise file, random SNR, random event shift)
@@ -47,19 +50,18 @@ def get_signal_noise_assoc(signal_path: str, noise_path: str, mode: Mode, size_t
 
     elif mode == Mode.VALIDATION:
 
-        signal_files = glob.glob(f"{signal_path}/validation/**/*.npz", recursive=True)[:-size_test_set]
-        noise_files = glob.glob(f"{noise_path}/validation/**/*.npz", recursive=True)[:-size_test_set]
+        signal_files = glob.glob(f"{signal_path}/validation/**/*.npz", recursive=True)[:-size_testset]
+        noise_files = glob.glob(f"{noise_path}/validation/**/*.npz", recursive=True)[:-size_testset]
     
     elif mode == Mode.TEST:
 
-        signal_files = glob.glob(f"{signal_path}/validation/**/*.npz", recursive=True)[-size_test_set:]
-        noise_files = glob.glob(f"{noise_path}/validation/**/*.npz", recursive=True)[-size_test_set:]
+        signal_files = glob.glob(f"{signal_path}/validation/**/*.npz", recursive=True)[-size_testset:]
+        noise_files = glob.glob(f"{noise_path}/validation/**/*.npz", recursive=True)[-size_testset:]
     
     else:
 
         print(f"Mode {mode} not supported!")
         
-
     # shuffle
     random.shuffle(signal_files)
     random.shuffle(noise_files)
@@ -67,7 +69,7 @@ def get_signal_noise_assoc(signal_path: str, noise_path: str, mode: Mode, size_t
     assoc = []
     for i in range(len(signal_files)):
         n = np.random.randint(0, len(noise_files))
-        snr_random = np.random.uniform(0.2,1.5)
+        snr_random = snr if snr else np.random.uniform(0.2,1.5)
         event_shift = np.random.randint(1000,6000)
         assoc.append((signal_files[i], noise_files[n], snr_random, event_shift))
 
