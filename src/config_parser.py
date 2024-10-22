@@ -103,7 +103,7 @@ def configure_args() -> argparse.Namespace:
 
     parser.add_argument(
         "--checkpoint_path",
-        default="./models",
+        default="C:/Users/cleme/ETH/Master/DataLab/dsl-as24-challenge-3/models/DeepDenoiser",
         type=str,
         help="Path to save checkpoints (default: ./models)",
     )
@@ -117,7 +117,7 @@ def configure_args() -> argparse.Namespace:
 
     parser.add_argument(
         "--path_model",
-        default="./models",
+        default="C:/Users/cleme/ETH/Master/DataLab/dsl-as24-challenge-3/models/DeepDenoiser",
         type=str,
         help="Path to the model weights (default: full path)",
     )

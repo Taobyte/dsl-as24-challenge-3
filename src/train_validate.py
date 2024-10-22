@@ -44,49 +44,57 @@ def test_model(args: Namespace) -> ndarray:
 
     if args.deepdenoiser:
 
-        _, validation_dl = get_dataloaders(
-            args.signal_path, args.noise_path, args.batch_size, args.length_dataset
-        )
-
+        val_assoc = get_signal_noise_assoc(args.signal_path, args.noise_path, train=False)
+        val_dl = DataLoader(CombinedDeepDenoiserDataset(InputSignals(val_assoc), EventMasks(val_assoc)), batch_size=1, shuffle=False)
+    
         model = keras.models.load_model(args.path_model)
-        x, ground_truth = next(iter(validation_dl))
-        predictions = sigmoid(th.from_numpy(model.predict(x))).numpy()
+        x, ground_truth = next(iter(val_dl))
+        predictions = model.predict(x)
 
-        print(predictions)
-        print(ground_truth)
+        print(x.shape)
+        print(ground_truth.shape)
 
-        def inverse_stft(signal):
+        real, imag = keras.ops.stft(x, 100, 24, 126)
+        stft = np.concatenate([real,imag], axis=1)
 
-            t, time_domain_signal = scipy.signal.istft(
-                signal,
-                fs=100,
-                nperseg=30,
-                nfft=60,
-                boundary="zeros",
-            )
+        masked_out = stft * predictions
 
-            return time_domain_signal
+        time_domain_pred = keras.ops.istft((masked_out[0][0],masked_out[0][3]), 100, 24, 126)
 
-        time_domain_pred = inverse_stft(predictions[0, :, :, 0])
-        time_domain_ground_truth = inverse_stft(ground_truth[0, :, :, 0])
         time = list(range(time_domain_pred.shape[0]))
 
         fig, axs = plt.subplots(2, 2, figsize=(30, 30))
 
         # Plot time domain signal
         axs[0][0].plot(time, time_domain_pred)
-        axs[1][0].plot(time, time_domain_ground_truth)
+        axs[1][0].plot(time, x[0][0])
 
+        axs[0][0].set_title("Predicted denoised eq")
+        axs[1][0].set_title("Noisy eq input")
+
+        signal_file, noise_file, snr, event_shift = val_assoc[0]
+
+        print(f"Event shift: {event_shift}")
+        print(f"Signal to noise ratio snr={snr}")
+
+        eq = np.load(signal_file, allow_pickle=True)
+        noise = np.load(noise_file, allow_pickle=True)['noise_waveform_Z'][:6120]
+        
+        Z_eq = eq["earthquake_waveform_Z"][event_shift : event_shift + 6120]
+
+        axs[0][1].plot(time, Z_eq)
+        axs[1][1].plot(time, noise)
+
+        axs[0][1].set_title("Clean earthquake signal")
+        axs[1][1].set_title("Noise")
+
+        """
         # Plot masks
         cax0 = axs[0][1].imshow(
-            predictions[0, :, :, 0], cmap="plasma", interpolation="none"
+            predictions[0, 0, :, :], cmap="plasma", interpolation="none"
         )  # 'viridis' is a colormap
         cax1 = axs[1][1].imshow(
-            ground_truth[0, :, :, 0], cmap="plasma", interpolation="none"
-        )
-
-        print(
-            th.sum((ground_truth[0, :, :, 0] > 0.1) & (ground_truth[0, :, :, 0] < 0.9))
+            ground_truth[0, 0, :, :], cmap="plasma", interpolation="none"
         )
 
         axs[0][0].set_title("Prediction time domain")
@@ -97,9 +105,9 @@ def test_model(args: Namespace) -> ndarray:
 
         fig.colorbar(cax0, ax=axs[0][1])
         fig.colorbar(cax1, ax=axs[1][1])
-
         axs[0][1].invert_yaxis()
         axs[1][1].invert_yaxis()
+        """
 
         plt.show()
 

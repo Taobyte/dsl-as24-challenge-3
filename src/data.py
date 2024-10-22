@@ -664,7 +664,8 @@ class InputSignals(th.utils.data.Dataset):
             if (
                 Z_noise.shape != N_noise.shape
                 or Z_noise.shape != E_noise.shape
-                or N_noise.shape != E_noise.shape
+                or N_noise.shape != E_noise.shape 
+                or len(Z_noise) < self.signal_length
             ):
                 idx = (idx + 1) % len(self.signal_noise_assoc)
                 continue
@@ -674,6 +675,11 @@ class InputSignals(th.utils.data.Dataset):
             signal_std = np.std(eq_stacked[:,6000-event_shift:6500-event_shift], axis=1).reshape(-1,1)  
             noise_std = np.std(noise_stacked[:,6000-event_shift:6500-event_shift], axis=1).reshape(-1,1)
             snr_original = signal_std / noise_std
+
+            if np.isinf(snr_original).any() or np.isnan(snr_original).any():
+                idx = (idx + 1) % len(self.signal_noise_assoc)
+                continue
+
             # change the SNR
             noise_stacked = noise_stacked * snr_original  # rescale noise so that SNR=1
             eq_stacked = eq_stacked * snr_random  # rescale event to desired SNR
@@ -723,6 +729,7 @@ class EventMasks(th.utils.data.Dataset):
                 Z_noise.shape != N_noise.shape
                 or Z_noise.shape != E_noise.shape
                 or N_noise.shape != E_noise.shape
+                or len(Z_noise) < self.signal_length
             ):
                 idx=(idx + 1) % len(self.signal_noise_assoc)
                 continue
@@ -732,6 +739,10 @@ class EventMasks(th.utils.data.Dataset):
             signal_std = np.std(eq_stacked[:,6000-event_shift:6500-event_shift], axis=1).reshape(-1,1)  
             noise_std = np.std(noise_stacked[:,6000-event_shift:6500-event_shift], axis=1).reshape(-1,1)
             snr_original = signal_std / noise_std
+
+            if np.isinf(snr_original).any() or np.isnan(snr_original).any():
+                idx = (idx + 1) % len(self.signal_noise_assoc)
+                continue
             # change the SNR
             noise_stacked = noise_stacked * snr_original  # rescale noise so that SNR=1
             eq_stacked = eq_stacked * snr_random  # rescale event to desired SNR
