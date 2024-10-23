@@ -6,15 +6,17 @@ import matplotlib.pyplot as plt
 import scipy
 from scipy.signal import butter, filtfilt
 import scipy.optimize
+from tqdm import tqdm
 
 from argparse import Namespace
 
 import wandb
 from wandb.integration.keras import WandbMetricsLogger
 
-from models.DeepDenoiser.deep_denoiser_model import Unet2D
-from data import get_dataloaders, get_signal_noise_assoc, EventMasks, InputSignals, CombinedDeepDenoiserDataset
-from utils import Mode
+from src.models.DeepDenoiser.deep_denoiser_model import Unet2D
+from src.data import get_dataloaders, get_signal_noise_assoc, InputSignals 
+from src.utils import Mode
+from src.metrics import cross_correlation, max_amplitude_difference, p_wave_onset_difference
 
 
 def train_model(args: Namespace) -> keras.Model:
@@ -34,25 +36,27 @@ def train_model(args: Namespace) -> keras.Model:
     return None
 
 
-def test_model(args: Namespace) -> pd.DataFrame:
+def compute_metrics(size_testset: int) -> pd.DataFrame:
 
-    signal_path = ""
-    noise_path = ""
-    result_path = ""
-    model_path = ""
-    model_name = "DeepDenoiser"
-    batch_size = 32
+    signal_path = "C:/Users/cleme/ETH/Master/DataLab/dsl-as24-challenge-3/data/signal"
+    noise_path = "C:/Users/cleme/ETH/Master/DataLab/dsl-as24-challenge-3/data/noise"
+    result_path = "C:/Users/cleme/ETH/Master/DataLab/dsl-as24-challenge-3/predictions/DeepDenoiser/"
+    model_path = "C:/Users/cleme/ETH/Master/DataLab/dsl-as24-challenge-3/models/DeepDenoiser/model_at_epoch_3.keras"
+    model_name = "deep_denoiser_metrics_test.csv"
+    batch_size = 3
 
     snrs = [0.1 * i for i in range(1,11)]
     signal_length = 6120
 
-    assoc = get_signal_noise_assoc(signal_path, noise_path, Mode.TEST)
+    assoc = get_signal_noise_assoc(signal_path, noise_path, Mode.TEST, size_testset)
+
+    length_test_dataset = len(assoc)
 
     eq_traces = []
     noise_traces = []
     shifts = []
     
-    for eq_path, noise_path, _, shift in assoc:
+    for eq_path, noise_path, _, event_shift in assoc:
 
         eq = np.load(eq_path, allow_pickle=True)
         noise = np.load(noise_path, allow_pickle=True)
@@ -69,103 +73,60 @@ def test_model(args: Namespace) -> pd.DataFrame:
 
         eq_traces.append(eq_stacked)
         noise_traces.append(noise_stacked)
-        shifts.append(shift)
+        shifts.append(event_shift)
+    
+    eq_traces = np.array(eq_traces)
+    noise_traces = np.array(noise_traces)
+    shifts = np.array(shifts)
+
+    predictions = {'cc_mean' : [], 'cc_std': [], 'max_amp_diff_mean': [], 'max_amp_diff_std': [], 'p_wave_mean': [], 'p_wave_std': []}
     
     model = keras.saving.load_model(model_path)
-    predictions = {}
-    for snr in snrs:
+    for snr in tqdm(snrs, total=len(snrs)):
         test_dataset = InputSignals(assoc, Mode.TEST, snr)
         test_dl = DataLoader(test_dataset, batch_size, shuffle=False)
-        predicted_mask = model.predict(test_dl)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    if args.deepdenoiser:
-
-        val_assoc = get_signal_noise_assoc(args.signal_path, args.noise_path, train=False)
-        val_dl = DataLoader(CombinedDeepDenoiserDataset(InputSignals(val_assoc), EventMasks(val_assoc)), batch_size=1, shuffle=False)
-    
-        model = keras.models.load_model(args.path_model)
-        x, ground_truth = next(iter(val_dl))
-        predictions = model.predict(x)
-
-        print(x.shape)
-        print(ground_truth.shape)
-
-        real, imag = keras.ops.stft(x, 100, 24, 126)
-        stft = np.concatenate([real,imag], axis=1)
-
-        masked_out = stft * predictions
-
-        time_domain_pred = keras.ops.istft((masked_out[0][0],masked_out[0][3]), 100, 24, 126)
-
-        time = list(range(time_domain_pred.shape[0]))
-
-        fig, axs = plt.subplots(2, 2, figsize=(30, 30))
-
-        # Plot time domain signal
-        axs[0][0].plot(time, time_domain_pred)
-        axs[1][0].plot(time, x[0][0])
-
-        axs[0][0].set_title("Predicted denoised eq")
-        axs[1][0].set_title("Noisy eq input")
-
-        signal_file, noise_file, snr, event_shift = val_assoc[0]
-
-        print(f"Event shift: {event_shift}")
-        print(f"Signal to noise ratio snr={snr}")
-
-        eq = np.load(signal_file, allow_pickle=True)
-        noise = np.load(noise_file, allow_pickle=True)['noise_waveform_Z'][:6120]
+        masks = []
+        for batch in test_dl: 
+            predicted_mask = model(batch)
+            masks.append(predicted_mask)
         
-        Z_eq = eq["earthquake_waveform_Z"][event_shift : event_shift + 6120]
+        results = []
+        for (input_batch, mask_batch) in zip(test_dl, masks):
+            stft_real, stft_imag = keras.ops.stft(input_batch, 100, 24, 126)
+            stft = np.concatenate([stft_real,stft_imag], axis=1)
+            masked = stft * mask_batch
+            time_domain_result = keras.ops.istft((masked[:,:3,:,:], masked[:,3:6,:,:]), 100, 24, 126)
+            results.append(time_domain_result)
+        
+        denoised_eq = np.concatenate(results,axis=0)
 
-        axs[0][1].plot(time, Z_eq)
-        axs[1][1].plot(time, noise)
+        assert len(denoised_eq) == length_test_dataset
 
-        axs[0][1].set_title("Clean earthquake signal")
-        axs[1][1].set_title("Noise")
+        # cross, SNR, max amplitude difference
+        cross_correlations = np.array([cross_correlation(a, b) for a, b in zip(eq_traces, denoised_eq)])
+        cross_correlation_mean = np.mean(cross_correlations)
+        cross_correlation_std = np.std(cross_correlations)
+        max_amplitude_differences = np.array([max_amplitude_difference(a, b) for a, b in zip(eq_traces, denoised_eq)])
+        max_amplitude_difference_mean = np.mean(max_amplitude_differences)
+        max_amplitude_difference_std = np.std(max_amplitude_differences)
+        p_wave_onset_differences = np.array([p_wave_onset_difference(a, b, shift) for a, b, shift in zip(eq_traces, denoised_eq, shifts)])
+        p_wave_onset_difference_mean = np.mean(p_wave_onset_differences)
+        p_wave_onset_difference_std = np.std(p_wave_onset_differences)
 
-        """
-        # Plot masks
-        cax0 = axs[0][1].imshow(
-            predictions[0, 0, :, :], cmap="plasma", interpolation="none"
-        )  # 'viridis' is a colormap
-        cax1 = axs[1][1].imshow(
-            ground_truth[0, 0, :, :], cmap="plasma", interpolation="none"
-        )
+        predictions['cc_mean'].append(cross_correlation_mean)
+        predictions['cc_std'].append(cross_correlation_std)
+        predictions['max_amp_diff_mean'].append(max_amplitude_difference_mean)
+        predictions['max_amp_diff_std'].append(max_amplitude_difference_std)
+        predictions['p_wave_mean'].append(p_wave_onset_difference_mean)
+        predictions['p_wave_std'].append(p_wave_onset_difference_std)
 
-        axs[0][0].set_title("Prediction time domain")
-        axs[1][0].set_title("Ground Truth time domain")
+    df = pd.DataFrame(predictions)
+    df['snr'] = snrs
 
-        axs[0][1].set_title("Prediction stft mask")
-        axs[1][1].set_title("Ground Truth stft mask")
+    df.to_csv(result_path + model_name)
 
-        fig.colorbar(cax0, ax=axs[0][1])
-        fig.colorbar(cax1, ax=axs[1][1])
-        axs[0][1].invert_yaxis()
-        axs[1][1].invert_yaxis()
-        """
+    return df
 
-        plt.show()
-
-        return predictions
-
-    return np.zeros(1)
 
 def fit_butterworth(args: Namespace) -> dict:
 

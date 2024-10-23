@@ -30,7 +30,7 @@ def configure_args() -> argparse.Namespace:
         help="Path to earthquake signal folder",
     )
 
-    # signal path
+    # noise path
     parser.add_argument(
         "--noise_path",
         default="C:/Users/cleme/ETH/Master/DataLab/dsl-as24-challenge-3/data/noise",

@@ -1,4 +1,3 @@
-import os
 import glob
 import random
 
@@ -7,7 +6,7 @@ import torch as th
 import numpy as np
 from torch.utils.data import Dataset, DataLoader
 
-from utils import Mode, Model
+from src.utils import Mode, Model
 
 
 def get_dataloaders(signal_path: str, noise_path: str, shuffle = False, model = Model.DeepDenoiser, batch_size=32) -> tuple[DataLoader, DataLoader]:
@@ -87,6 +86,7 @@ class InputSignals(Dataset):
         self.signal_noise_assoc = signal_noise_association
         self.signal_length = 6120
         self.mode = mode
+        self.snr = snr
 
     def __len__(self) -> int:
         return len(self.signal_noise_assoc)
