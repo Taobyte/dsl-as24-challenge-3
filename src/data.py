@@ -16,8 +16,8 @@ def get_dataloaders(signal_path: str, noise_path: str, shuffle = False, model = 
         train_assoc = get_signal_noise_assoc(signal_path, noise_path, Mode.TRAIN)
         val_assoc = get_signal_noise_assoc(signal_path, noise_path, Mode.VALIDATION)
         
-        train_dataset = CombinedDeepDenoiserDataset(InputSignals(train_assoc), EventMasks(train_assoc))
-        val_dataset = CombinedDeepDenoiserDataset(InputSignals(val_assoc), EventMasks(val_assoc))
+        train_dataset = CombinedDeepDenoiserDataset(train_assoc)
+        val_dataset = CombinedDeepDenoiserDataset(val_assoc)
     
 
     train_dl = DataLoader(train_dataset, batch_size=batch_size, shuffle=shuffle)
@@ -26,7 +26,9 @@ def get_dataloaders(signal_path: str, noise_path: str, shuffle = False, model = 
     return train_dl, validation_dl
 
 
-def get_signal_noise_assoc(signal_path: str, noise_path: str, mode: Mode, size_testset = 1000, snr=None) -> list[tuple[str, str, float, int]]:
+def get_signal_noise_assoc(signal_path: str, noise_path: str, mode: Mode, size_testset = 1000, 
+                           snr:function=lambda : np.random.uniform(0.1,1.1)
+                           ) -> list[tuple[str, str, float, int]]:
     """generates a signal to noise file association from folders
     Allows defining a standard data association for reproducibility. 
     Args:
@@ -68,7 +70,7 @@ def get_signal_noise_assoc(signal_path: str, noise_path: str, mode: Mode, size_t
     assoc = []
     for i in range(len(signal_files)):
         n = np.random.randint(0, len(noise_files))
-        snr_random = snr if snr else np.random.uniform(0.2,1.5)
+        snr_random = snr()
         event_shift = np.random.randint(1000,6000)
         assoc.append((signal_files[i], noise_files[n], snr_random, event_shift))
 
