@@ -14,15 +14,21 @@ import wandb
 from wandb.integration.keras import WandbMetricsLogger
 
 from src.models.DeepDenoiser.deep_denoiser_model import Unet2D
-from src.data import get_dataloaders, get_signal_noise_assoc, InputSignals 
+from src.data import get_dataloaders, get_signal_noise_assoc, InputSignals
 from src.utils import Mode
-from src.metrics import cross_correlation, max_amplitude_difference, p_wave_onset_difference
+from src.metrics import (
+    cross_correlation,
+    max_amplitude_difference,
+    p_wave_onset_difference,
+)
+
+from obspy.signal.filter import bandpass
 
 
 def train_model(args: Namespace) -> keras.Model:
 
     if args.butterworth:
-        
+
         params = fit_butterworth(args)
         print(params)
         return params
@@ -32,7 +38,6 @@ def train_model(args: Namespace) -> keras.Model:
         model = fit_deep_denoiser(args)
         return model
 
-    
     return None
 
 
@@ -45,7 +50,7 @@ def compute_metrics(size_testset: int) -> pd.DataFrame:
     model_name = "deep_denoiser_metrics_test.csv"
     batch_size = 3
 
-    snrs = [0.1 * i for i in range(1,11)]
+    snrs = [0.1 * i for i in range(1, 11)]
     signal_length = 6120
 
     assoc = get_signal_noise_assoc(signal_path, noise_path, Mode.TEST, size_testset)
@@ -55,12 +60,12 @@ def compute_metrics(size_testset: int) -> pd.DataFrame:
     eq_traces = []
     noise_traces = []
     shifts = []
-    
+
     for eq_path, noise_path, _, event_shift in assoc:
 
         eq = np.load(eq_path, allow_pickle=True)
         noise = np.load(noise_path, allow_pickle=True)
-        
+
         Z_eq = eq["earthquake_waveform_Z"][event_shift : event_shift + signal_length]
         N_eq = eq["earthquake_waveform_N"][event_shift : event_shift + signal_length]
         E_eq = eq["earthquake_waveform_E"][event_shift : event_shift + signal_length]
@@ -74,54 +79,72 @@ def compute_metrics(size_testset: int) -> pd.DataFrame:
         eq_traces.append(eq_stacked)
         noise_traces.append(noise_stacked)
         shifts.append(event_shift)
-    
+
     eq_traces = np.array(eq_traces)
     noise_traces = np.array(noise_traces)
     shifts = np.array(shifts)
 
-    predictions = {'cc_mean' : [], 'cc_std': [], 'max_amp_diff_mean': [], 'max_amp_diff_std': [], 'p_wave_mean': [], 'p_wave_std': []}
-    
+    predictions = {
+        "cc_mean": [],
+        "cc_std": [],
+        "max_amp_diff_mean": [],
+        "max_amp_diff_std": [],
+        "p_wave_mean": [],
+        "p_wave_std": [],
+    }
+
     model = keras.saving.load_model(model_path)
     for snr in tqdm(snrs, total=len(snrs)):
         test_dataset = InputSignals(assoc, Mode.TEST, snr)
         test_dl = DataLoader(test_dataset, batch_size, shuffle=False)
         masks = []
-        for batch in test_dl: 
+        for batch in test_dl:
             predicted_mask = model(batch)
             masks.append(predicted_mask)
-        
+
         results = []
-        for (input_batch, mask_batch) in zip(test_dl, masks):
+        for input_batch, mask_batch in zip(test_dl, masks):
             stft_real, stft_imag = keras.ops.stft(input_batch, 100, 24, 126)
-            stft = np.concatenate([stft_real,stft_imag], axis=1)
+            stft = np.concatenate([stft_real, stft_imag], axis=1)
             masked = stft * mask_batch
-            time_domain_result = keras.ops.istft((masked[:,:3,:,:], masked[:,3:6,:,:]), 100, 24, 126)
+            time_domain_result = keras.ops.istft(
+                (masked[:, :3, :, :], masked[:, 3:6, :, :]), 100, 24, 126
+            )
             results.append(time_domain_result)
-        
-        denoised_eq = np.concatenate(results,axis=0)
+
+        denoised_eq = np.concatenate(results, axis=0)
 
         assert len(denoised_eq) == length_test_dataset
 
         # cross, SNR, max amplitude difference
-        cross_correlations = np.array([cross_correlation(a, b) for a, b in zip(eq_traces, denoised_eq)])
+        cross_correlations = np.array(
+            [cross_correlation(a, b) for a, b in zip(eq_traces, denoised_eq)]
+        )
         cross_correlation_mean = np.mean(cross_correlations)
         cross_correlation_std = np.std(cross_correlations)
-        max_amplitude_differences = np.array([max_amplitude_difference(a, b) for a, b in zip(eq_traces, denoised_eq)])
+        max_amplitude_differences = np.array(
+            [max_amplitude_difference(a, b) for a, b in zip(eq_traces, denoised_eq)]
+        )
         max_amplitude_difference_mean = np.mean(max_amplitude_differences)
         max_amplitude_difference_std = np.std(max_amplitude_differences)
-        p_wave_onset_differences = np.array([p_wave_onset_difference(a, b, shift) for a, b, shift in zip(eq_traces, denoised_eq, shifts)])
+        p_wave_onset_differences = np.array(
+            [
+                p_wave_onset_difference(a, b, shift)
+                for a, b, shift in zip(eq_traces, denoised_eq, shifts)
+            ]
+        )
         p_wave_onset_difference_mean = np.mean(p_wave_onset_differences)
         p_wave_onset_difference_std = np.std(p_wave_onset_differences)
 
-        predictions['cc_mean'].append(cross_correlation_mean)
-        predictions['cc_std'].append(cross_correlation_std)
-        predictions['max_amp_diff_mean'].append(max_amplitude_difference_mean)
-        predictions['max_amp_diff_std'].append(max_amplitude_difference_std)
-        predictions['p_wave_mean'].append(p_wave_onset_difference_mean)
-        predictions['p_wave_std'].append(p_wave_onset_difference_std)
+        predictions["cc_mean"].append(cross_correlation_mean)
+        predictions["cc_std"].append(cross_correlation_std)
+        predictions["max_amp_diff_mean"].append(max_amplitude_difference_mean)
+        predictions["max_amp_diff_std"].append(max_amplitude_difference_std)
+        predictions["p_wave_mean"].append(p_wave_onset_difference_mean)
+        predictions["p_wave_std"].append(p_wave_onset_difference_std)
 
     df = pd.DataFrame(predictions)
-    df['snr'] = snrs
+    df["snr"] = snrs
 
     df.to_csv(result_path + model_name)
 
@@ -209,6 +232,7 @@ def fit_butterworth(args: Namespace) -> dict:
 
     return result
 
+
 def fit_deep_denoiser(args: Namespace) -> keras.Model:
 
     if args.wandb:
@@ -234,24 +258,22 @@ def fit_deep_denoiser(args: Namespace) -> keras.Model:
     callbacks = [
         keras.callbacks.ModelCheckpoint(
             filepath=args.path_model + "/model_at_epoch_{epoch}.keras"
-        ), 
-        keras.callbacks.EarlyStopping(monitor="val_loss", patience=2)
+        ),
+        keras.callbacks.EarlyStopping(monitor="val_loss", patience=2),
     ]
 
     if args.wandb:
         wandb_callbacks = [WandbMetricsLogger()]
         callbacks = callbacks + wandb_callbacks
 
-    train_dl, val_dl = get_dataloaders(args.signal_path, args.noise_path, args.batch_size)
-
-    model.fit(
-        train_dl, epochs=args.epochs, validation_data=val_dl, callbacks=callbacks
+    train_dl, val_dl = get_dataloaders(
+        args.signal_path, args.noise_path, args.batch_size
     )
+
+    model.fit(train_dl, epochs=args.epochs, validation_data=val_dl, callbacks=callbacks)
 
     model.evaluate(val_dl, batch_size=32, verbose=2, steps=1)
 
     wandb.finish()
 
     return model
-
-

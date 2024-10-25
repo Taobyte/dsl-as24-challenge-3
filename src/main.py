@@ -5,7 +5,7 @@ import tensorflow as tf
 import torch as th
 import jax
 import os
-from train_validate import train_model, test_model
+from train_validate import train_model, compute_metrics
 
 os.environ["TF_ENABLE_ONEDNN_OPTS"] = "0"
 os.environ["KERAS_BACKEND"] = "jax"
@@ -27,4 +27,4 @@ jax_key = jax.random.PRNGKey(args.seed)
 if args.training:
     model = train_model(args)
 else:
-    loss = test_model(args)
+    loss = compute_metrics(10)

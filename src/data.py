@@ -27,7 +27,7 @@ def get_dataloaders(signal_path: str, noise_path: str, shuffle = False, model = 
 
 
 def get_signal_noise_assoc(signal_path: str, noise_path: str, mode: Mode, size_testset = 1000, 
-                           snr:function=lambda : np.random.uniform(0.1,1.1)
+                           snr=lambda : np.random.uniform(0.1,1.1)
                            ) -> list[tuple[str, str, float, int]]:
     """generates a signal to noise file association from folders
     Allows defining a standard data association for reproducibility. 
