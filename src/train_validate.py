@@ -1,20 +1,22 @@
 import keras
 from torch.utils.data import DataLoader
 import numpy as np
+from numpy import ndarray
 import pandas as pd
-import matplotlib.pyplot as plt
 import scipy
 from scipy.signal import butter, filtfilt
 import scipy.optimize
 from tqdm import tqdm
 
-from argparse import Namespace
-
+import os
+import hydra
+from omegaconf import DictConfig
+from pathlib import Path
 import wandb
 from wandb.integration.keras import WandbMetricsLogger
 
 from src.models.DeepDenoiser.deep_denoiser_model import Unet2D
-from src.data import get_dataloaders, get_signal_noise_assoc, InputSignals
+from src.data import get_dataloaders, get_signal_noise_assoc, load_traces_and_shift, InputSignals
 from src.utils import Mode
 from src.metrics import (
     cross_correlation,
@@ -22,67 +24,40 @@ from src.metrics import (
     p_wave_onset_difference,
 )
 
-from obspy.signal.filter import bandpass
 
+def train_model(cfg: DictConfig) -> keras.Model:
 
-def train_model(args: Namespace) -> keras.Model:
+    model = fit_deep_denoiser(cfg)
+    
+    return model
 
-    if args.butterworth:
+def get_predictions(model: keras.Model, assoc: list, snr: int, cfg: DictConfig) -> ndarray: 
+    
+    test_dataset = InputSignals(assoc, Mode.TEST, snr)
+    test_dl = DataLoader(test_dataset, cfg.model.batch_size, shuffle=False)
+    masks = []
+    for batch in test_dl:
+        predicted_mask = model(batch)
+        masks.append(predicted_mask)
 
-        params = fit_butterworth(args)
-        print(params)
-        return params
+    results = []
+    for input_batch, mask_batch in zip(test_dl, masks):
+        stft_real, stft_imag = keras.ops.stft(input_batch, 100, 24, 126)
+        stft = np.concatenate([stft_real, stft_imag], axis=1)
+        masked = stft * mask_batch
+        time_domain_result = keras.ops.istft(
+            (masked[:, :3, :, :], masked[:, 3:6, :, :]), 100, 24, 126
+        )
+        results.append(time_domain_result)
 
-    elif args.deepdenoiser:
+    denoised_eq = np.concatenate(results, axis=0)
+    
+    return denoised_eq
 
-        model = fit_deep_denoiser(args)
-        return model
+def compute_metrics(cfg: DictConfig) -> pd.DataFrame:
 
-    return None
-
-
-def compute_metrics(size_testset: int) -> pd.DataFrame:
-
-    signal_path = "C:/Users/cleme/ETH/Master/DataLab/dsl-as24-challenge-3/data/signal"
-    noise_path = "C:/Users/cleme/ETH/Master/DataLab/dsl-as24-challenge-3/data/noise"
-    result_path = "C:/Users/cleme/ETH/Master/DataLab/dsl-as24-challenge-3/predictions/DeepDenoiser/"
-    model_path = "C:/Users/cleme/ETH/Master/DataLab/dsl-as24-challenge-3/models/DeepDenoiser/model_at_epoch_3.keras"
-    model_name = "deep_denoiser_metrics_test.csv"
-    batch_size = 3
-
-    snrs = [0.1 * i for i in range(1, 11)]
-    signal_length = 6120
-
-    assoc = get_signal_noise_assoc(signal_path, noise_path, Mode.TEST, size_testset)
-
-    length_test_dataset = len(assoc)
-
-    eq_traces = []
-    noise_traces = []
-    shifts = []
-
-    for eq_path, noise_path, _, event_shift in assoc:
-
-        eq = np.load(eq_path, allow_pickle=True)
-        noise = np.load(noise_path, allow_pickle=True)
-
-        Z_eq = eq["earthquake_waveform_Z"][event_shift : event_shift + signal_length]
-        N_eq = eq["earthquake_waveform_N"][event_shift : event_shift + signal_length]
-        E_eq = eq["earthquake_waveform_E"][event_shift : event_shift + signal_length]
-        eq_stacked = np.stack([Z_eq, N_eq, E_eq], axis=0)
-
-        Z_noise = noise["noise_waveform_Z"][:signal_length]
-        N_noise = noise["noise_waveform_N"][:signal_length]
-        E_noise = noise["noise_waveform_E"][:signal_length]
-        noise_stacked = np.stack([Z_noise, N_noise, E_noise], axis=0)
-
-        eq_traces.append(eq_stacked)
-        noise_traces.append(noise_stacked)
-        shifts.append(event_shift)
-
-    eq_traces = np.array(eq_traces)
-    noise_traces = np.array(noise_traces)
-    shifts = np.array(shifts)
+    assoc = get_signal_noise_assoc(cfg.data.signal_path, cfg.data.noise_path, Mode.TEST, cfg.size_testset)
+    eq_traces, _, shifts = load_traces_and_shift(assoc, cfg.model.signal_length)
 
     predictions = {
         "cc_mean": [],
@@ -93,28 +68,10 @@ def compute_metrics(size_testset: int) -> pd.DataFrame:
         "p_wave_std": [],
     }
 
-    model = keras.saving.load_model(model_path)
-    for snr in tqdm(snrs, total=len(snrs)):
-        test_dataset = InputSignals(assoc, Mode.TEST, snr)
-        test_dl = DataLoader(test_dataset, batch_size, shuffle=False)
-        masks = []
-        for batch in test_dl:
-            predicted_mask = model(batch)
-            masks.append(predicted_mask)
+    model = keras.saving.load_model(cfg.model.model_path)
+    for snr in tqdm(cfg.snrs, total=len(cfg.snrs)):
 
-        results = []
-        for input_batch, mask_batch in zip(test_dl, masks):
-            stft_real, stft_imag = keras.ops.stft(input_batch, 100, 24, 126)
-            stft = np.concatenate([stft_real, stft_imag], axis=1)
-            masked = stft * mask_batch
-            time_domain_result = keras.ops.istft(
-                (masked[:, :3, :, :], masked[:, 3:6, :, :]), 100, 24, 126
-            )
-            results.append(time_domain_result)
-
-        denoised_eq = np.concatenate(results, axis=0)
-
-        assert len(denoised_eq) == length_test_dataset
+        denoised_eq = get_predictions(model, assoc, snr, cfg)
 
         # cross, SNR, max amplitude difference
         cross_correlations = np.array(
@@ -144,14 +101,14 @@ def compute_metrics(size_testset: int) -> pd.DataFrame:
         predictions["p_wave_std"].append(p_wave_onset_difference_std)
 
     df = pd.DataFrame(predictions)
-    df["snr"] = snrs
-
-    df.to_csv(result_path + model_name)
+    df["snr"] = cfg.snrs
+    output_dir = Path(hydra.core.hydra_config.HydraConfig.get().runtime.output_dir)
+    df.to_csv(output_dir / 'metrics.csv')
 
     return df
 
 
-def fit_butterworth(args: Namespace) -> dict:
+def fit_butterworth(cfg: DictConfig) -> dict:
 
     def butter_bandpass(lowcut, highcut, fs, order=5):
         nyquist = 0.5 * fs
@@ -177,8 +134,8 @@ def fit_butterworth(args: Namespace) -> dict:
             order=order,
         )
 
-    signal_df = pd.read_pickle(args.signal_path)
-    noise_df = pd.read_pickle(args.noise_path)
+    signal_df = pd.read_pickle(cfg.data.signal_path)
+    noise_df = pd.read_pickle(cfg.data.noise_path)
 
     signal = np.stack([np.array(x) for x in signal_df["Z"]])
     noise = np.stack([np.array(x) for x in noise_df["Z"]])
@@ -233,46 +190,49 @@ def fit_butterworth(args: Namespace) -> dict:
     return result
 
 
-def fit_deep_denoiser(args: Namespace) -> keras.Model:
+def fit_deep_denoiser(cfg: DictConfig) -> keras.Model:
 
-    if args.wandb:
+    output_dir = Path(hydra.core.hydra_config.HydraConfig.get().runtime.output_dir)
+
+    if cfg.wandb:
         wandb.init(
             # set the wandb project where this run will be logged
             project="earthquake denoising",
             # track hyperparameters and run metadata
             config={
-                "learning_rate": args.lr,
+                "learning_rate": cfg.model.lr,
                 "architecture": "DeepDenoiser Unet2D",
                 "dataset": "SED dataset",
-                "epochs": args.epochs,
+                "epochs": cfg.model.epochs,
             },
         )
+        wandb.run.name = "{}".format(os.getcwd().split('outputs/')[-1])
 
     model = Unet2D()
 
     model.compile(
         loss=keras.losses.BinaryCrossentropy(),
-        optimizer=keras.optimizers.Adam(learning_rate=args.lr),
+        optimizer=keras.optimizers.Adam(learning_rate=cfg.model.lr),
     )
 
     callbacks = [
         keras.callbacks.ModelCheckpoint(
-            filepath=args.path_model + "/model_at_epoch_{epoch}.keras"
+            filepath= output_dir / "model_at_epoch_{epoch}.keras"
         ),
         keras.callbacks.EarlyStopping(monitor="val_loss", patience=2),
     ]
 
-    if args.wandb:
+    if cfg.wandb:
         wandb_callbacks = [WandbMetricsLogger()]
         callbacks = callbacks + wandb_callbacks
 
     train_dl, val_dl = get_dataloaders(
-        args.signal_path, args.noise_path, args.batch_size
+        cfg.data.signal_path, cfg.data.noise_path, cfg.data.batch_size
     )
 
-    model.fit(train_dl, epochs=args.epochs, validation_data=val_dl, callbacks=callbacks)
+    model.fit(train_dl, epochs=cfg.model.epochs, validation_data=val_dl, callbacks=callbacks)
 
-    model.evaluate(val_dl, batch_size=32, verbose=2, steps=1)
+    # model.evaluate(val_dl, batch_size=32, verbose=2, steps=1)
 
     wandb.finish()
 

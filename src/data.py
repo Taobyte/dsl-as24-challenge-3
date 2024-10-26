@@ -3,8 +3,9 @@ import random
 
 import keras
 import torch as th
-import numpy as np
 from torch.utils.data import Dataset, DataLoader
+import numpy as np
+from numpy import ndarray
 
 from src.utils import Mode, Model
 
@@ -75,6 +76,37 @@ def get_signal_noise_assoc(signal_path: str, noise_path: str, mode: Mode, size_t
         assoc.append((signal_files[i], noise_files[n], snr_random, event_shift))
 
     return assoc
+
+def load_traces_and_shift(assoc: list, trace_length: int) -> tuple[ndarray, ndarray, ndarray]:
+
+    eq_traces = []
+    noise_traces = []
+    shifts = []
+
+    for eq_path, noise_path, _, event_shift in assoc:
+
+        eq = np.load(eq_path, allow_pickle=True)
+        noise = np.load(noise_path, allow_pickle=True)
+
+        Z_eq = eq["earthquake_waveform_Z"][event_shift : event_shift + trace_length]
+        N_eq = eq["earthquake_waveform_N"][event_shift : event_shift + trace_length]
+        E_eq = eq["earthquake_waveform_E"][event_shift : event_shift + trace_length]
+        eq_stacked = np.stack([Z_eq, N_eq, E_eq], axis=0)
+
+        Z_noise = noise["noise_waveform_Z"][:trace_length]
+        N_noise = noise["noise_waveform_N"][:trace_length]
+        E_noise = noise["noise_waveform_E"][:trace_length]
+        noise_stacked = np.stack([Z_noise, N_noise, E_noise], axis=0)
+
+        eq_traces.append(eq_stacked)
+        noise_traces.append(noise_stacked)
+        shifts.append(event_shift)
+
+    eq_traces = np.array(eq_traces)
+    noise_traces = np.array(noise_traces)
+    shifts = np.array(shifts)
+
+    return eq_traces, noise_traces, shifts
 
 
 class InputSignals(Dataset):

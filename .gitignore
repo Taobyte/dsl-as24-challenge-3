@@ -79,6 +79,7 @@ target/
 /data/
 /wandb/
 /models/
+/outputs/
 
 # Mac OS-specific storage files
 .DS_Store
