@@ -1,16 +1,17 @@
 import random
+import logging
+
+import jax
+import hydra
+import omegaconf
 import numpy as np
 import tensorflow as tf
 import torch as th
-import jax
-import os
-from train_validate import train_model, compute_metrics
-from tuner import tune_model
 
-import argparse
-import hydra
-from omegaconf import DictConfig, OmegaConf
-import logging
+from train import train_model
+from tuner import tune_model
+from train_validate import compute_metrics
+
 
 log = logging.getLogger(__name__)
 
@@ -20,9 +21,9 @@ os.environ["KERAS_BACKEND"] = "jax"
 """
 
 @hydra.main(version_base=None, config_path="conf", config_name="config")
-def main(cfg: DictConfig):
+def main(cfg: omegaconf.DictConfig):
 
-    print(OmegaConf.to_yaml(cfg))
+    print(omegaconf.OmegaConf.to_yaml(cfg))
 
     # Set see (default: 123)
     seed = cfg.model.seed
