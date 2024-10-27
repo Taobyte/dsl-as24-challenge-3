@@ -5,7 +5,10 @@ from obspy.signal.trigger import z_detect
 
 
 def cross_correlation(eq: ndarray, denoised_eq: ndarray,shift=0) -> float:
-    return np.max(correlate(eq / np.max(eq), denoised_eq / np.max(denoised_eq), shift=shift))
+    max_eq = np.max(eq)
+    max_denoised = np.max(denoised_eq)
+    corr = correlate(eq / max_eq, denoised_eq / max_denoised, shift=shift)
+    return np.max(corr)
 
 """
 def cross_correlation(eq: ndarray, denoised_eq: ndarray, event_shift:int) -> float:

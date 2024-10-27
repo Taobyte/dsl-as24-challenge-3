@@ -160,7 +160,10 @@ class InputSignals(Dataset):
         eq_stacked = eq_stacked * ratio  # rescale event to desired SNR
         noisy_eq = eq_stacked + noise_stacked # recombine
 
-        return noisy_eq
+        if self.mode == Mode.TRAIN:
+            return noisy_eq
+        elif self.mode == Mode.TEST:
+            return noisy_eq, eq_stacked, event_shift
 
 
 class EventMasks(Dataset):

@@ -4,9 +4,9 @@ defaults:
   - user: clemens
 
 tuner: False
-training: True
+training: False
 
-snrs: [0.1, 0.5, 1.0]
+snrs: [0.1, 0.3, 0.5, 0.7, 1.0, 1.2, 1.5, 2.0]
 size_testset: 10
 
 

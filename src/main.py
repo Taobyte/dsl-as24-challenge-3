@@ -10,7 +10,7 @@ import torch as th
 
 from train import train_model
 from tuner import tune_model
-from train_validate import compute_metrics
+from validate import compute_metrics
 
 
 log = logging.getLogger(__name__)
