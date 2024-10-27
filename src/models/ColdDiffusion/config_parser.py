@@ -12,7 +12,7 @@ def configure_args(T=300, channel_type=0, dataset_type="stead"):
                         help="Choose the dataset type. Options: [stead, instance]")
 
     parser.add_argument("--dataset_path",
-                        default="/cluster/scratch/ckeusch/dsl-as24-challenge-3/data",
+                        default="/cluster/scratch/ckeusch/dsl-as24-challenge-3/data/",
                         type=str,
                         help="Path to the dataset")
 
@@ -148,7 +148,7 @@ def configure_args(T=300, channel_type=0, dataset_type="stead"):
                         help="File name for saved models (default: ColdDiffusion)")
 
     parser.add_argument("--path_model",
-                        default="/media/work/danieletrappolini/CDiffSD/CDiffSD/Checkpoint/Channel_E/epoch_0_20_cosine_(40, 65)_ColdDiffusion",
+                        default="/cluster/scratch/ckeusch/dsl-as24-challenge-3/models/ColdDiffusionepoch_12_300_linear_(40, 65)_ColdDiffusion",
                         type=str,
                         help="Path to the model weights (default: full path)")
 

@@ -144,7 +144,7 @@ def validate_model(model, val_dl, val_dl_noise, args, device=device):
     sqrt_alphas_cumprod, sqrt_one_minus_alphas_cumprod = compute_beta_schedule(args)
     sum_val_loss = 0
     with torch.no_grad():
-        for step, (eq_in, noise_in) in tqdm(enumerate(zip(val_dl, val_dl_noise)), total=len(val_dl)):
+        for step, (eq_in, noise_in) in enumerate(zip(val_dl, val_dl_noise)):
             eq_in = eq_in[1][:, args.channel_type, :].unsqueeze(dim=1).to(device)
             reduce_noise = random.randint(*args.Range_RNF) * 0.01
             noise_real = (noise_in[1][:, args.channel_type, :].unsqueeze(dim=1) * reduce_noise).to(device)
@@ -241,23 +241,23 @@ def test_model(args, test_loader, noise_test_loader):
             Original.extend(eq_in.squeeze().cpu().numpy())
             Noised.extend(signal_noisy.squeeze().cpu().numpy())
 
-    np.save(f"./Restored/Restored_direct_0.npy", np.array(restored_direct))
-    np.save(f"./Restored/Restored_sampling_0.npy", np.array(restored_sampling))
-    np.save(f"./Restored/Original.npy", np.array(Original))
-    np.save(f"./Restored/Noised.npy", np.array(Noised))
-
+    np.save(f"{args.dataset_path}Restored_direct_0.npy", np.array(restored_direct))
+    np.save(f"{args.dataset_path}Restored_sampling_0.npy", np.array(restored_sampling))
+    np.save(f"{args.dataset_path}Original.npy", np.array(Original))
+    np.save(f"{args.dataset_path}Noised.npy", np.array(Noised))
+    print(np.array(restored_direct).shape)
 
 if __name__ == '__main__':
 
     args = cp.configure_args()
 
-    df = pd.read_pickle(args.dataset_path + "/signal/signal_train.pkl")
-    df_noise = pd.read_pickle(args.dataset_path + "/noise/noise_train.pkl")
+    df = pd.read_pickle(args.dataset_path + "/signal_validation.pkl")
+    df_noise = pd.read_pickle(args.dataset_path + "/noise_validation.pkl")
 
     # Change df columns to correct names
     columns = ['Z', 'N', 'E']
     df = df[columns]
-    df_noise = df_noise[columns]
+    df_noise = df_noise[columns][:len(df)]
 
     start = 4500
     signal_length = 6000
@@ -270,7 +270,7 @@ if __name__ == '__main__':
     df['s_arrival_sample'] = 0
     df_noise['p_arrival_sample'] = 6000 - start
     df_noise['s_arrival_sample'] = 0
-    df['trace_name'] = df['code']
+    df['trace_name'] = pd.Series(df.index)
     df_noise['trace_name'] = pd.Series(df_noise.index)
 
     df = df.rename(columns={'Z': 'Z_channel', 'N': 'N_channel', 'E': 'E_channel'}, inplace=False)
@@ -280,7 +280,9 @@ if __name__ == '__main__':
     tr_dl, val_dl, test_dl, index_train = create_dataloader(df, batch_size=args.batch_size, is_noise=False, train_frac=args.train_percentage, val_frac=args.val_percentage, test_frac=args.test_percentage)
     tr_dl_noise, val_dl_noise, test_dl_noise, index_noise = create_dataloader(df_noise, batch_size=args.batch_size, is_noise=True, train_frac=args.train_percentage, val_frac=args.val_percentage, test_frac=args.test_percentage)
     print("Finished processing dataloaders")
-
-    model = train_model(args, tr_dl, tr_dl_noise, val_dl, val_dl_noise)
-
+    if args.training:
+        model = train_model(args, tr_dl, tr_dl_noise, val_dl, val_dl_noise)
+    else:
+        print("Full dataset path:", args.dataset_path)
+        test_model(args, test_dl, test_dl_noise)
     print("came here")

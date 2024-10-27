@@ -74,7 +74,7 @@ def sample(model,img,t,batch_size = 4):
  
     while (t):
         xt = img
-        step = torch.full((batch_size,), t - 1, dtype=torch.long).cuda() # Prendo T
+        step = torch.full((batch_size,), t - 1, dtype=torch.long) # Prendo T
         x1_bar = model(img,step) # Model mean da inserire qui 
         x2_bar = get_x2_bar_from_xt(x1_bar, img, step) # vedi sotto
 
@@ -87,7 +87,7 @@ def sample(model,img,t,batch_size = 4):
 
         # Questa è la parte vitale dove riaggiung D(x,s-1)
         if t - 1 != 0:
-            step2 = torch.full((batch_size,), t - 2, dtype = torch.long).cuda()
+            step2 = torch.full((batch_size,), t - 2, dtype = torch.long)
             xt_sub1_bar = forward_diffusion_sample(x_start = xt_sub1_bar, x_end = x2_bar, t = step2)
 
         x = img - xt_bar + xt_sub1_bar
