@@ -1,0 +1,8 @@
+data:
+  signal_path: 'C:\Users\cleme\ETH\Master\DataLab\dsl-as24-challenge-3\data\signal\'
+  noise_path: 'C:\Users\cleme\ETH\Master\DataLab\dsl-as24-challenge-3\data\noise\'
+
+# testing
+model_path: 'C:\Users\cleme\ETH\Master\DataLab\dsl-as24-challenge-3\models\DeepDenoiser\model_at_epoch_4.keras'
+
+wandb: False

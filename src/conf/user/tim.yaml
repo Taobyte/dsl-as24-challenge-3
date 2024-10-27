@@ -1,0 +1,8 @@
+data:
+  signal_path: '/home/tim/Documents/Data-Science_MSc/DSLab/earthquake_data/event'
+  noise_path: '/home/tim/Documents/Data-Science_MSc/DSLab/earthquake_data/noise'
+
+# testing
+model_path: '/home/tim/Documents/Data-Science_MSc/DSLab/dsl-as24-challenge-3/models/DeepDenoiser/model_at_epoch_4.keras'
+
+wandb: True
