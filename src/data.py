@@ -7,7 +7,7 @@ from torch.utils.data import Dataset, DataLoader
 import numpy as np
 from numpy import ndarray
 
-from src.utils import Mode, Model
+from utils import Mode, Model
 
 
 def get_dataloaders(signal_path: str, noise_path: str, shuffle = False, model = Model.DeepDenoiser, batch_size=32) -> tuple[DataLoader, DataLoader]:
@@ -153,7 +153,7 @@ class InputSignals(Dataset):
 
         signal_std = np.std(eq_stacked[:,6000-event_shift:6500-event_shift], axis=1).reshape(-1,1)  
         noise_std = np.std(noise_stacked[:,6000-event_shift:6500-event_shift], axis=1).reshape(-1,1)
-        snr_original = signal_std / (noise_std)
+        snr_original = signal_std / (noise_std + 1e-10)
 
         # change the SNR
         noise_stacked = noise_stacked * snr_original  # rescale noise so that SNR=1
@@ -202,7 +202,7 @@ class EventMasks(Dataset):
 
         signal_std = np.std(eq_stacked[:,6000-event_shift:6500-event_shift], axis=1).reshape(-1,1)  
         noise_std = np.std(noise_stacked[:,6000-event_shift:6500-event_shift], axis=1).reshape(-1,1)
-        snr_original = signal_std / (noise_std)
+        snr_original = signal_std / (noise_std + 1e-10)
 
         # change the SNR
         noise_stacked = noise_stacked * snr_original  # rescale noise so that SNR=1
@@ -214,7 +214,7 @@ class EventMasks(Dataset):
         stft = keras.ops.stft(noise_stacked, self.frame_length, self.frame_step, self.fft_size)
         stft_noise = np.concatenate([stft[0],stft[1]], axis=0)
 
-        mask = np.abs(stft_eq) / (np.abs(stft_noise) + np.abs(stft_eq))
+        mask = np.abs(stft_eq) / (np.abs(stft_noise) + np.abs(stft_eq) + 1e-10)
         
         return mask
         
@@ -257,7 +257,7 @@ class CombinedDeepDenoiserDataset(Dataset):
 
         signal_std = np.std(eq_stacked[:,6000-event_shift:6500-event_shift], axis=1).reshape(-1,1)  
         noise_std = np.std(noise_stacked[:,6000-event_shift:6500-event_shift], axis=1).reshape(-1,1)
-        snr_original = signal_std / (noise_std)
+        snr_original = signal_std / (noise_std + 1e-10)
 
         # change the SNR
         noise_stacked = noise_stacked * snr_original  # rescale noise so that SNR=1
@@ -270,7 +270,7 @@ class CombinedDeepDenoiserDataset(Dataset):
         stft = keras.ops.stft(noise_stacked, self.frame_length, self.frame_step, self.fft_size)
         stft_noise = np.concatenate([stft[0],stft[1]], axis=0)
 
-        mask = np.abs(stft_eq) / (np.abs(stft_noise) + np.abs(stft_eq))
+        mask = np.abs(stft_eq) / (np.abs(stft_noise) + np.abs(stft_eq) + 1e-10)
         
         return noisy_eq, mask
     
@@ -318,7 +318,7 @@ class RandomDataset(Dataset):
 
         signal_std = np.std(eq_stacked[:,6000-event_shift:6500-event_shift], axis=1).reshape(-1,1)  
         noise_std = np.std(noise_stacked[:,6000-event_shift:6500-event_shift], axis=1).reshape(-1,1)
-        snr_original = signal_std / (noise_std + 1e-6)
+        snr_original = signal_std / (noise_std + 1e-10)
 
         # change the SNR
         noise_stacked = noise_stacked * snr_original  # rescale noise so that SNR=1
@@ -331,7 +331,7 @@ class RandomDataset(Dataset):
         stft = keras.ops.stft(noise_stacked, self.frame_length, self.frame_step, self.fft_size)
         stft_noise = np.concatenate([stft[0],stft[1]], axis=0)
 
-        mask = np.abs(stft_eq) / (np.abs(stft_noise) + np.abs(stft_eq) + 1e-6)
+        mask = np.abs(stft_eq) / (np.abs(stft_noise) + np.abs(stft_eq) + 1e-10)
         
         return noisy_eq, mask
 
