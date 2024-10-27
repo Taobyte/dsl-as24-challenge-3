@@ -1,12 +1,6 @@
-from torch.utils.data import Dataset, DataLoader
-from src.data import InputSignals, EventMasks, get_signal_noise_assoc, InputSignalsPyDataset
-from src.models.DeepDenoiser.deep_denoiser_model import Unet2D
+from torch.utils.data import DataLoader
+from src.data import InputSignals, EventMasks, get_signal_noise_assoc, RandomDataset
 from src.utils import Mode
-
-import numpy as np
-import torch as th
-import matplotlib.pyplot as plt
-
 
 
 def test_input_assoc_list(params):
@@ -31,5 +25,11 @@ def test_output_event_masks(params):
 
     assert event_masks[0].shape == (6,256,64)
 
+def test_random_dataset(params):
 
+    dataset = RandomDataset(params['signal_path'], params['noise_path'])
+    dl = DataLoader(dataset, batch_size=32)
+    noisy_eq, mask = next(iter(dl))
+
+    assert noisy_eq.shape == (32, 3, 6120) and mask.shape == (32, 6, 256, 64)
 

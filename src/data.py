@@ -273,3 +273,66 @@ class CombinedDeepDenoiserDataset(Dataset):
         mask = np.abs(stft_eq) / (np.abs(stft_noise) + np.abs(stft_eq))
         
         return noisy_eq, mask
+    
+
+
+class RandomDataset(Dataset):
+
+    def __init__(self, signal_path: str, noise_path: str):
+        """
+        Args:
+            signal_path: ... 
+            noise_path: ...
+        """
+
+        self.signal_files = glob.glob(f"{signal_path}/train/**/*.npz", recursive=True)
+        self.noise_files = glob.glob(f"{noise_path}/train/**/*.npz", recursive=True)
+
+        self.signal_length = 6120
+
+        # STFT parameters
+        self.frame_length = 100
+        self.frame_step = 24
+        self.fft_size = 126
+    
+    def __len__(self) -> int:
+        return len(self.signal_files)
+    
+    def __getitem__(self, idx) -> tuple[ndarray, ndarray]:
+        
+        eq = np.load(self.signal_files[idx], allow_pickle=True)
+        random_noise_idx = np.random.randint(len(self.noise_files))
+        noise = np.load(self.noise_files[random_noise_idx], allow_pickle=True)
+        snr_random = np.random.uniform(0.5,2.0)
+        event_shift = np.random.randint(1000,6000)
+        
+        Z_eq = eq["earthquake_waveform_Z"][event_shift : event_shift + self.signal_length]
+        N_eq = eq["earthquake_waveform_N"][event_shift : event_shift + self.signal_length]
+        E_eq = eq["earthquake_waveform_E"][event_shift : event_shift + self.signal_length]
+        eq_stacked = np.stack([Z_eq, N_eq, E_eq], axis=0)
+
+        Z_noise = noise["noise_waveform_Z"][:self.signal_length]
+        N_noise = noise["noise_waveform_N"][:self.signal_length]
+        E_noise = noise["noise_waveform_E"][:self.signal_length]
+        noise_stacked = np.stack([Z_noise, N_noise, E_noise], axis=0)
+
+        signal_std = np.std(eq_stacked[:,6000-event_shift:6500-event_shift], axis=1).reshape(-1,1)  
+        noise_std = np.std(noise_stacked[:,6000-event_shift:6500-event_shift], axis=1).reshape(-1,1)
+        snr_original = signal_std / (noise_std + 1e-6)
+
+        # change the SNR
+        noise_stacked = noise_stacked * snr_original  # rescale noise so that SNR=1
+        eq_stacked = eq_stacked * snr_random  # rescale event to desired SNR
+        noisy_eq = eq_stacked + noise_stacked # recombine
+
+        stft = keras.ops.stft(eq_stacked, self.frame_length, self.frame_step, self.fft_size)
+        stft_eq = np.concatenate([stft[0],stft[1]], axis=0)
+
+        stft = keras.ops.stft(noise_stacked, self.frame_length, self.frame_step, self.fft_size)
+        stft_noise = np.concatenate([stft[0],stft[1]], axis=0)
+
+        mask = np.abs(stft_eq) / (np.abs(stft_noise) + np.abs(stft_eq) + 1e-6)
+        
+        return noisy_eq, mask
+
+
