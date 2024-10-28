@@ -5,9 +5,10 @@ defaults:
 
 tuner: False
 training: False
+plot: True
 
 snrs: [0.1, 0.3, 0.5, 0.7, 1.0, 1.2, 1.5, 2.0]
-size_testset: 10
+size_testset: 100
 
 
 

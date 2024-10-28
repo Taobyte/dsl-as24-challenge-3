@@ -11,6 +11,7 @@ import torch as th
 from train import train_model
 from tuner import tune_model
 from validate import compute_metrics
+from plot import compare_two
 
 
 log = logging.getLogger(__name__)
@@ -42,7 +43,10 @@ def main(cfg: omegaconf.DictConfig):
         if cfg.training:
             model = train_model(cfg)
         else:
-            loss = compute_metrics(cfg)
+            df1, df2 = compute_metrics(cfg)
+            if cfg.plot:
+                compare_two(df1, df2, label1=cfg.model.model_name, label2="Butterworth")               
+
 
 if __name__ == '__main__':
     main()
