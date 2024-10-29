@@ -6,8 +6,6 @@ import keras
 import wandb
 import hydra
 import omegaconf
-import wandb.integration
-import wandb.integration.keras
 
 from models.DeepDenoiser.deep_denoiser_model_2 import UNet
 from data import get_dataloaders
