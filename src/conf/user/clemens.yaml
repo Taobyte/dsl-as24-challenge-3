@@ -1,6 +1,7 @@
 data:
-  signal_path: 'C:\Users\cleme\ETH\Master\DataLab\dsl-as24-challenge-3\data\signal\'
-  noise_path: 'C:\Users\cleme\ETH\Master\DataLab\dsl-as24-challenge-3\data\noise\'
+  signal_path: '/cluster/scratch/ckeusch/data/signal'
+  noise_path: '/cluster/scratch/ckeusch/data/noise'
+  csv_path: '/cluster/scratch/ckeusch/dsl-as24-challenge-3/data/'
 
 # testing
 model_path: 'C:\Users\cleme\ETH\Master\DataLab\dsl-as24-challenge-3\models\DeepDenoiser\model_at_epoch_4.keras'

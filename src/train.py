@@ -37,19 +37,26 @@ def fit_deep_denoiser(cfg: omegaconf.DictConfig) -> keras.Model:
         )
         wandb.run.name = "{}".format(os.getcwd().split('outputs/')[-1])
 
-    model = UNet()
+    model = UNet(cfg.model.n_layers, cfg.model.dropout, cfg.model.channel_base)
 
     model.compile(
         loss=keras.losses.BinaryCrossentropy(),
         optimizer=keras.optimizers.AdamW(learning_rate=cfg.model.lr),
-        # metrics=[keras.metrics.BinaryCrossentropy()]
+        metrics=[keras.metrics.BinaryCrossentropy()]
     )
 
     callbacks = [
         keras.callbacks.ModelCheckpoint(
-            filepath= output_dir / "model_at_epoch_{epoch}.keras"
+            filepath= output_dir / "checkpoints/model_at_epoch_{epoch}.keras"
         ),
         keras.callbacks.EarlyStopping(monitor="val_loss", patience=2),
+        keras.callbacks.TensorBoard(
+                        log_dir=output_dir / "logs",
+                        histogram_freq=1,
+                        write_graph=True,
+                        write_images=True,
+                        update_freq="epoch"
+                    )
     ]
 
     if cfg.user.wandb:
@@ -57,12 +64,10 @@ def fit_deep_denoiser(cfg: omegaconf.DictConfig) -> keras.Model:
         callbacks = callbacks.extend(wandb_callbacks)
 
     train_dl, val_dl = get_dataloaders(
-        cfg.user.data.signal_path, cfg.user.data.noise_path, cfg.model.batch_size
+        cfg.user.data.signal_path, cfg.user.data.noise_path, batch_size=cfg.model.batch_size
     )
 
     model.fit(train_dl, epochs=cfg.model.epochs, validation_data=val_dl, callbacks=callbacks)
-
-    # model.evaluate(val_dl, batch_size=32, verbose=2, steps=1)
 
     wandb.finish()
 
