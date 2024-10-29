@@ -80,8 +80,13 @@ target/
 # exclude data from source control by default
 /data/
 */wandb/
+/wandb/
 /models/
 */outputs/
+/outputs/
+
+# Slurm files
+slurm-*.out   
 
 # Mac OS-specific storage files
 .DS_Store

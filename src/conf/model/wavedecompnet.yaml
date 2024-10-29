@@ -1,0 +1,19 @@
+name: 'wavedecompnet'
+
+# model architecture
+channel_base: 8
+n_layers: 3
+dropout: 0.0
+
+snr_lower: 0.5
+snr_upper: 2.0
+
+signal_length: 2048
+
+# training 
+batch_size: 32
+lr: 0.002
+epochs: 5
+seed: 123
+
+
