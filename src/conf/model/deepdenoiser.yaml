@@ -2,7 +2,7 @@
 model_name: "DeepDenoiser"
 channel_base: 8
 n_layers: 5
-dropout: 0.0
+dropout: 0.3
 
 # stft parameters
 signal_length: 6120
@@ -11,14 +11,12 @@ frame_step: 24
 fft_size: 126
 
 # training 
-batch_size: 32
-lr: 1e-4
-epochs: 5
+batch_size: 64
+lr: 1e-3
+epochs: 3
 seed: 123
-device: 'cuda'
-save_every_x_epoch: 5
+device: 'cpu'
+save_every_x_epoch: 7
 
-# testing
-model_path: 'C:\Users\cleme\ETH\Master\DataLab\dsl-as24-challenge-3\models\DeepDenoiser\model_at_epoch_4.keras'
 
 

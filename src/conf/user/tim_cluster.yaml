@@ -1,0 +1,10 @@
+data:
+  signal_path: '/work/courses/dsl/team3/earthquake_data/event'
+  noise_path: '/work/courses/dsl/team3/earthquake_data/noise'
+
+model_path: '/work/courses/dsl/team3/models/DeepDenoiser/'
+
+# testing
+model_dir: '/work/courses/dsl/team3/models/DeepDenoiser/'
+
+wandb: True
