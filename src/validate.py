@@ -13,6 +13,7 @@ import torch as th
 from data import get_signal_noise_assoc, InputSignals
 from models.Butterworth.butterworth_filter import bandpass_obspy
 from metrics import cross_correlation, p_wave_onset_difference, max_amplitude_difference
+from models.DeepDenoiser.deep_denoiser_model_2 import UNet
 from utils import Mode
 
 
@@ -81,7 +82,13 @@ def compute_metrics(cfg: omegaconf.DictConfig) -> pd.DataFrame:
         "p_wave_std": [],
     }
 
-    model = keras.saving.load_model(cfg.user.model_path)
+    if cfg.user.outside_repo:
+        unet = UNet(cfg.model.n_layers, cfg.model.dropout, cfg.model.channel_base)
+        model = keras.saving.load_model(cfg.user.model_path, 
+                                        custom_objects={"Unet": unet})
+    else: 
+        model = keras.saving.load_model(cfg.user.model_path)
+        
     print(f"running predictions for snrs {cfg.snrs}")
     for snr in tqdm.tqdm(cfg.snrs, total=len(cfg.snrs)):
 

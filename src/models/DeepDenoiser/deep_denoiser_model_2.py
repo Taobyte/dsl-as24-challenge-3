@@ -18,7 +18,7 @@ class DownsamplingLayer(keras.layers.Layer):
 
         self.conv1 = keras.layers.Conv2D(
             channel_size,
-            kernel_size=(3,3),
+            kernel_size=(5,5),
             strides=(1,1),
             activation=None,
             padding="same",
@@ -58,6 +58,17 @@ class DownsamplingLayer(keras.layers.Layer):
 
         return down, x
     
+    def get_config(self):
+        config = super().get_config()
+        # Update the config with the custom layer's parameters
+        config.update(
+            {
+                "channel_size": self.channel_size,
+                "dropout": self.dropout,
+            }
+        )
+        return config
+    
 
 @keras.saving.register_keras_serializable()
 class UpsamplingLayer(keras.layers.Layer):
@@ -70,7 +81,7 @@ class UpsamplingLayer(keras.layers.Layer):
 
         self.Tconv1 = keras.layers.Conv2DTranspose(
             channel_size,
-            kernel_size=(3,3),
+            kernel_size=(5,5),
             activation=None,
             padding="same",
             use_bias=False,
@@ -110,6 +121,17 @@ class UpsamplingLayer(keras.layers.Layer):
 
         return x
     
+    def get_config(self):
+        config = super().get_config()
+        # Update the config with the custom layer's parameters
+        config.update(
+            {
+                "channel_size": self.channel_size,
+                "dropout": self.dropout,
+            }
+        )
+        return config
+    
 
 @keras.saving.register_keras_serializable()
 class UNet(keras.models.Model):
@@ -117,19 +139,22 @@ class UNet(keras.models.Model):
     def __init__(self, n_layers:int=3, dropout:float=0.0, channel_base:int=8, frame_length = 100, frame_step = 24, fft_size = 126, **kwargs):
         super().__init__()
 
+        self.n_layers = n_layers
+        self.dropout = dropout
+        self.channel_base = channel_base
         self.frame_length = frame_length
         self.frame_step = frame_step 
         self.fft_size = fft_size
         
         self.downsamplers = [
-            DownsamplingLayer(channel_base*(2**i), dropout) for i in range(n_layers)
+            DownsamplingLayer(channel_base*(2**i), self.dropout) for i in range(self.n_layers)
             ]
 
         self.upsamplers = [
-            UpsamplingLayer(channel_base*(2**(n_layers-1-i)), dropout) for i in range(n_layers)
+            UpsamplingLayer(self.channel_base*(2**(self.n_layers-1-i)), self.dropout) for i in range(self.n_layers)
             ]
         self.middle_conv = keras.layers.Conv2D(
-            channel_base * (2**n_layers),
+            self.channel_base * (2**self.n_layers),
             kernel_size=(3,3),
             strides=(1,1),
             activation=None,
@@ -168,3 +193,18 @@ class UNet(keras.models.Model):
         x = self.output_layer(x)
 
         return x
+    
+    def get_config(self):
+        config = super().get_config()
+        # Update the config with the custom layer's parameters
+        config.update(
+            {
+                "dropout": self.dropout,
+                "channel_base": self.channel_base,
+                "n_layers": self.n_layers,
+                "frame_length": self.frame_length, 
+                "frame_step": self.frame_step,
+                "fft_size": self.fft_size
+            }
+        )
+        return config

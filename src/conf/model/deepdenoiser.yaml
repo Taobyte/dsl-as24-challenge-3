@@ -2,7 +2,7 @@
 model_name: "DeepDenoiser"
 channel_base: 8
 n_layers: 5
-dropout: 0.3
+dropout: 0.2
 
 # stft parameters
 signal_length: 6120
@@ -11,14 +11,10 @@ frame_step: 24
 fft_size: 126
 
 # training 
-batch_size: 256
-lr: 0.0001
-epochs: 5
 batch_size: 64
-lr: 1e-3
+lr: 5e-3
 epochs: 3
 seed: 123
-device: 'cuda'
 device: 'cpu'
 save_every_x_epoch: 7
 

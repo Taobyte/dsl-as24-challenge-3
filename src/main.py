@@ -42,6 +42,8 @@ def main(cfg: omegaconf.DictConfig):
 
         if cfg.training:
             model = train_model(cfg)
+            model.save(cfg.user.model_dir+
+                       f"{cfg.model.model_name}_l{cfg.model.n_layers}_e{cfg.model.epochs}.keras")
         else:
             df1, df2 = compute_metrics(cfg)
             if cfg.plot:

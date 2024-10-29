@@ -4,6 +4,7 @@ import pathlib
 os.environ["KERAS_BACKEND"] = "jax"
 import keras
 import wandb
+import wandb.integration.keras
 import hydra
 import omegaconf
 
