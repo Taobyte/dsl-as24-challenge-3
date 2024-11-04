@@ -5,6 +5,47 @@ import keras
 import einops
 
 @keras.saving.register_keras_serializable()
+class SinusoidalEmbeddings(keras.layers.Layer):
+    """turns a time integer into a sinusoidal embedding vector
+    Args:
+        - out_dim: the dimension of the embedding vector 
+    """
+
+    def __init__(self, out_dim:int):
+        super().__init__(name=f"SinusoidalEmbeddings_dim{out_dim}")
+
+        self.dim = out_dim
+
+    def call(self, time):
+        half_dim = self.dim // 2
+        embedding = keras.ops.log(1000) / (half_dim-1)
+        embedding = keras.ops.exp(keras.ops.arange(half_dim) * -embedding)
+        embedding = time[:,None] * embedding[None,:] # multiplies each time onto same embedding vector
+        embedding = keras.ops.concatenate([keras.ops.sin(embedding), keras.ops.sin(embedding)], axis=-1)
+        return embedding
+    
+    def get_config(self):
+        config = super().get_config()
+        config.update({"dim": self.dim})
+        return config
+    
+@keras.saving.register_keras_serializable()
+class Downsampling1D(keras.layers.Layer):
+    def __init__(self, out_filters:int):
+        super().__init__(name=f"Downsampling1D_f{out_filters}")
+        self.out_filters = out_filters
+        self.down = keras.layers.Conv1D(out_filters, kernel_size=4, strides=2, padding="same",
+                                        data_format="channels_first", use_bias=False)
+        
+    def call(self, x):
+        return self.down(x)
+        
+    def get_config(self):
+        config = super().get_config()
+        config.update({"out_filters":self.out_filters})
+        return config
+
+@keras.saving.register_keras_serializable()
 class ResNetBlock(keras.layers.Layer):
     """ResNet Block composed of two Conv1Ds and a residual connection
     Args:
