@@ -1,4 +1,5 @@
 import os
+from functools import partial
 
 os.environ["KERAS_BACKEND"] = "jax"
 import keras
@@ -30,9 +31,60 @@ class SinusoidalEmbeddings(keras.layers.Layer):
         return config
     
 @keras.saving.register_keras_serializable()
-class Downsampling1D(keras.layers.Layer):
+class PreNorm(keras.layers.Layer):
+    def __init__(self, function):
+        super().__init__(name=f"PreNorm")
+        self.fct = function
+        self.norm = keras.layers.LayerNormalization(axis=1, rms_scaling=True)
+
+    def call(self, x):
+        x = self.norm(x)
+        return self.fct(x)
+    
+    def get_config(self):
+        config = super().get_config()
+        config.update({"fct":self.fct})
+        return config
+    
+@keras.saving.register_keras_serializable()
+class Residual(keras.layers.Layer):
+    def __init__(self, function):
+        super().__init__(name=f"Residual")
+        self.fct = function
+
+    def call(self, x, *args, **kwargs):
+        return self.fct(x, *args, **kwargs) + x
+    
+    def get_config(self):
+        config = super().get_config()
+        config.update({"fct":self.fct})
+        return config
+
+@keras.saving.register_keras_serializable()
+class Upsample1D(keras.layers.Layer):
     def __init__(self, out_filters:int):
-        super().__init__(name=f"Downsampling1D_f{out_filters}")
+        super().__init__(name=f"Upsample1D_f{out_filters}")
+        self.out_filters = out_filters
+        self.up = keras.layers.UpSampling1D(size=2)
+        self.conv = keras.layers.Conv1D(out_filters, kernel_size=4, strides=1, padding="same",
+                                        data_format="channels_first", use_bias=False)
+        
+    def call(self, x):
+        x = einops.rearrange(x, "b d t -> b t d") # traspose
+        x = self.up(x)
+        x = einops.rearrange(x, "b t d -> b d t") # transpose back
+        x = self.conv(x)
+        return x
+        
+    def get_config(self):
+        config = super().get_config()
+        config.update({"out_filters":self.out_filters})
+        return config
+    
+@keras.saving.register_keras_serializable()
+class Downsample1D(keras.layers.Layer):
+    def __init__(self, out_filters:int):
+        super().__init__(name=f"Downsample1D_f{out_filters}")
         self.out_filters = out_filters
         self.down = keras.layers.Conv1D(out_filters, kernel_size=4, strides=2, padding="same",
                                         data_format="channels_first", use_bias=False)
@@ -88,10 +140,11 @@ class ResNetBlock(keras.layers.Layer):
     def call(self, x, time_embedding=None):
 
         assert time_embedding.shape[-1] == self.time_emb_dim, "Custom Flag: time embeddings has unexpected dimension"
+        assert x.shape[1] == self.in_filters, "Custom Flag, got unexpected number of input filters"
         scale_shift = None
         if (time_embedding is not None) and (self.mlp is not None):
             time_embedding = self.mlp(time_embedding)
-            time_embedding = einops.rearrange(time_embedding, "b c -> b c 1")
+            time_embedding = einops.rearrange(time_embedding, "b 1 c -> b c 1")
             scale_shift = keras.ops.split(time_embedding, 2, axis=1) # returns tuple
 
         h = self.conv1(x)
@@ -195,34 +248,126 @@ class AttentionBlock(keras.layers.Layer):
 class DiffusionUnet1D(keras.models.Model):
 
     def __init__(
-            self, 
-            n_blocks, 
+            self,  
             dim, 
-            attn_dim_head=32,
-            attn_heads=4,
+            dim_multiples:tuple=(1,2,4,8),
+            in_dim:int=3,
+            out_dim:int=3,
+            attn_dim_head:int=32,
+            attn_heads:int=4,
+            resnet_norm_groups:int=8,
+
             ):
         
         super().__init__()
 
-        self.n_blocks = n_blocks
         self.dim = dim
+        self.dim_multiples = dim_multiples
+        self.in_dim = in_dim
+        self.out_dim = out_dim
         self.attn_dim_head = attn_dim_head
         self.attn_heads = attn_heads
+        self.resnet_norm_groups = resnet_norm_groups
+        self.time_dim = self.dim * 4
+        # new function classes to shorten code
+        block_class = partial(ResNetBlock, n_groups=self.resnet_norm_groups, time_emb_dim=self.time_dim)
+        keras_conv1d = partial(keras.layers.Conv1D, data_format="channels_first", padding="same")
+        # dimensions are expanded (e.g. dim=3 and dim_multiples=(1,2,3) --> dimensions=[1,6,9])
+        dimensions = [*map(lambda m: self.dim*m, self.dim_multiples)]
+        self.dim_tuples = list(zip(dimensions[:-1], dimensions[1:])) # tuples (in_dim,out_dim) (e.g. [(1,6),(6,9)])
+
+
+        time_sinu_embeds = SinusoidalEmbeddings(self.dim)
+        self.time_mlp = keras.Sequential([
+            time_sinu_embeds,
+            keras.layers.Dense(self.time_dim, activation=keras.activations.gelu),
+            keras.layers.Dense(self.time_dim, activation=None)
+        ])
+        
+        self.init_conv = keras_conv1d(self.dim, 7)
+        self.downs = []
+        self.ups = []
+
+
+        for i, (in_dim, out_dim) in enumerate(self.dim_tuples):
+            is_last = (i >= len(self.dim_tuples)-1)
+            self.downs.append([
+                block_class(in_dim, in_dim),
+                block_class(in_dim, in_dim),
+                Residual(PreNorm(AttentionBlock(True, in_dim, self.attn_heads, self.attn_dim_head))),
+                Downsample1D(out_dim) if not is_last else keras_conv1d(out_dim, 3)
+            ])
+
+        mid_dim = dimensions[-1]
+        self.mid_block1 = block_class(mid_dim, mid_dim)
+        self.mid_attn = AttentionBlock(False, mid_dim, self.attn_heads, self.attn_dim_head)
+        self.mid_block2 = block_class(mid_dim, mid_dim)
+
+
+        for i, (in_dim, out_dim) in enumerate(reversed(self.dim_tuples)):
+            is_last = (i >= len(self.dim_tuples)-1)
+            self.ups.append([
+                block_class(in_dim + out_dim, out_dim),
+                block_class(in_dim + out_dim, out_dim),
+                Residual(PreNorm(AttentionBlock(True, out_dim, self.attn_heads, self.attn_dim_head))),
+                Upsample1D(in_dim) if not is_last else keras_conv1d(in_dim, 3)
+            ])
+
+        self.final_resnet = block_class(2*self.dim, self.dim)
+        self.final_conv = keras_conv1d(out_dim, 3)
 
 
     def call(self, x, time):
-        return None
+        
+        x = self.init_conv(x)
+        r = x.copy()
+
+        t = self.time_mlp(time)
+
+        h = []
+
+        for block1, block2, attn, downsample in self.downs:
+            x = block1(x, t)
+            h.append(x)
+
+            x = block2(x, t)
+            x = attn(x)
+            h.append(x)
+
+            x = downsample(x)
+
+        x = self.mid_block1(x, t)
+        x = self.mid_attn(x)
+        x = self.mid_block2(x, t)
+
+        for block1, block2, attn, upsample in self.ups:
+            x = keras.ops.concatenate([x, h.pop()], axis=1)
+            x = block1(x, t)
+
+            x = keras.ops.concatenate([x,h.pop()], axis=1)
+            x = block2(x, t)
+            x = attn(x)
+
+            x = upsample(x)
+
+        x = keras.ops.concatenate([x, r], axis=1)
+
+        x = self.final_resnet(x, t)
+        x = self.final_conv(x)
+        return x
+
     
     def get_config(self):
         config = super().get_config()
-        # Update the config with the custom layer's parameters
         config.update(
             {
-                "n_blocks": self.n_blocks,
                 "dim": self.dim,
+                "dim_multiples": self.dim_multiples,
+                "in_dim": self.in_dim,
+                "out_dim": self.out_dim,
+                "resnet_norm_groups": self.resnet_norm_groups,
                 "attn_dim_head": self.attn_dim_head,
                 "attn_heads": self.attn_heads,
             }
         )
         return config
-        
