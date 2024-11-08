@@ -95,12 +95,12 @@ def visualize_predictions_deep_denoiser(model_path: str, signal_path: str, noise
 
         for i in tqdm(range(n_examples), total=n_examples):
 
-            axs[i,0].plot(time, input[i,channel, :]) # noisy earthquake
+            axs[i,0].plot(time, noisy_batch[i,channel, :]) # noisy earthquake
             axs[i,1].plot(time, ground_truth[i,channel, :]) # ground truth noise
             axs[i,2].plot(time, predictions[i,channel, :]) # predicted noise
 
             row_y_values = []
-            row_y_values.extend(input[i, channel, :].numpy())
+            row_y_values.extend(noisy_batch[i, channel, :].numpy())
             row_y_values.extend(ground_truth[i,channel, :].numpy())
             row_y_values.extend(predictions[i, channel, :].numpy())
             

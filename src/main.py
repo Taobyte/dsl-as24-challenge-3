@@ -10,7 +10,7 @@ import tensorflow as tf
 import torch as th
 
 from train import train_model
-from tuner import tune_model
+from tuner import tune_model, tune_model_optuna
 from validate import compute_metrics
 from plot import compare_two, visualize_predictions
 
@@ -37,7 +37,10 @@ def main(cfg: omegaconf.DictConfig):
 
     if cfg.tuner:
 
-        best_hypers = tune_model(cfg)
+        if cfg.use_optuna:
+            best_params = tune_model_optuna(cfg)
+        else:
+            best_hypers = tune_model(cfg)
 
     else:
 

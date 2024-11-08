@@ -8,8 +8,9 @@ import numpy as np
 import keras
 
 from src.metrics import AmpMetric
+from src.utils import Mode
 from src.models.CleanUNet.clean_unet_model import CleanUNet, CleanUNetLoss
-from src.models.CleanUNet.dataset import CleanUNetDataset
+from src.models.CleanUNet.dataset import CleanUNetDataset, CleanUNetDatasetCSV
 
 
 def fit_clean_unet(cfg: omegaconf.DictConfig) -> keras.Model:
@@ -82,27 +83,44 @@ def fit_clean_unet(cfg: omegaconf.DictConfig) -> keras.Model:
             update_freq="epoch",
         ),
     ]
-
-    train_dataset = CleanUNetDataset(
-        cfg.user.data.signal_path + "/train/",
-        cfg.user.data.noise_path + "/train/",
-        cfg.model.signal_length
-    )
-    val_dataset = CleanUNetDataset(
-        cfg.user.data.signal_path + "/validation/",
-        cfg.user.data.noise_path + "/validation/",
-        cfg.model.signal_length,
-        cfg.model.snr_lower,
-        cfg.model.snr_upper,
-        cfg.model.event_shift_start
-    )
-
+    if not cfg.model.use_csv:
+        train_dataset = CleanUNetDataset(
+            cfg.user.data.signal_path + "/train/",
+            cfg.user.data.noise_path + "/train/",
+            cfg.model.signal_length
+        )
+        val_dataset = CleanUNetDataset(
+            cfg.user.data.signal_path + "/validation/",
+            cfg.user.data.noise_path + "/validation/",
+            cfg.model.signal_length,
+            cfg.model.snr_lower,
+            cfg.model.snr_upper,
+            cfg.model.event_shift_start
+        )
+    else:
+        train_dataset = CleanUNetDatasetCSV(
+            cfg.user.data.csv_path,
+            cfg.model.signal_length,
+            cfg.model.snr_lower,
+            cfg.model.snr_upper,
+            cfg.model.event_shift_start,
+            Mode.TRAIN
+        )
+        val_dataset = CleanUNetDatasetCSV(
+            cfg.user.data.csv_path,
+            cfg.model.signal_length,
+            cfg.model.snr_lower,
+            cfg.model.snr_upper,
+            cfg.model.event_shift_start,
+            Mode.VALIDATION
+        )
+        
     train_dl = torch.utils.data.DataLoader(
         train_dataset, batch_size=cfg.model.batch_size
     )
     val_dl = torch.utils.data.DataLoader(val_dataset, batch_size=cfg.model.batch_size)
 
-    jax.profiler.start_trace(output_dir / "profiler")
+    jax.profiler.start_trace(output_dir)
 
     model.fit(
         train_dl, epochs=cfg.model.epochs, validation_data=val_dl, callbacks=callbacks

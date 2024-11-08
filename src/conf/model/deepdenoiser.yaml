@@ -3,8 +3,8 @@ use_csv: True
 
 # model architecture
 channel_base: 8
-n_layers: 6
-dropout: 0.2
+n_layers: 3
+dropout: 0.0
 
 # data
 snr_lower: 0.1
@@ -17,10 +17,12 @@ frame_step: 24
 fft_size: 126
 
 # training 
-batch_size: 256
+batch_size: 64
 lr: 0.001
+use_lr_scheduler: False
 epochs: 10
 seed: 123
+
 
 
 

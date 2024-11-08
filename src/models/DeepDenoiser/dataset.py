@@ -281,7 +281,9 @@ class CombinedDeepDenoiserDataset(Dataset):
 class CSVDataset(Dataset):
 
     def __init__(self, path: str, signal_length: int, snr_lower:float, snr_upper:float, mode: Mode):
-
+        
+        print("start loading pickle files")
+        
         if mode == Mode.TRAIN:
             self.signal_df = pd.read_pickle(path + '/signal_train.pkl')
             self.noise_df = pd.read_pickle(path + '/noise_train.pkl')
@@ -290,6 +292,8 @@ class CSVDataset(Dataset):
             self.noise_df = pd.read_pickle(path + '/noise_validation.pkl')
         else:
             assert False, f'mode {mode} not implemented yet'
+        
+        print("finished loading pickle files")
 
         self.signal_length = signal_length
         self.snr_lower = snr_lower

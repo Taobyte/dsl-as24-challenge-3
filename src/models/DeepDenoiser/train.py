@@ -35,12 +35,31 @@ def fit_deep_denoiser(cfg: omegaconf.DictConfig) -> keras.Model:
         )
         wandb.run.name = "{}".format(os.getcwd().split('outputs/')[-1])
 
+    # instantiate model
     model = UNet(cfg.model.n_layers, cfg.model.dropout, cfg.model.channel_base)
+
+    # create dataloaders
+    if not cfg.model.use_csv:
+        train_dl, val_dl = get_dataloaders(
+            cfg.user.data.signal_path, cfg.user.data.noise_path, batch_size=cfg.model.batch_size
+        )
+    else:
+        train_dl = torch.utils.data.DataLoader(CSVDataset(cfg.user.data.csv_path, cfg.model.signal_length, cfg.model.snr_lower, cfg.model.snr_upper, Mode.TRAIN), batch_size=cfg.model.batch_size)
+        val_dl = torch.utils.data.DataLoader(CSVDataset(cfg.user.data.csv_path, cfg.model.signal_length, cfg.model.snr_lower, cfg.model.snr_upper, Mode.VALIDATION), batch_size=cfg.model.batch_size)
+    
+    # define learning rate scheduler and compile model
+    if cfg.model.use_lr_scheduler:
+        lr_schedule = keras.optimizers.schedules.ExponentialDecay(
+            cfg.model.lr,
+            decay_steps=len(train_dl),
+            decay_rate=0.1,
+            staircase=True)
+    else:
+        lr_schedule = cfg.model.lr
 
     model.compile(
         loss=keras.losses.BinaryCrossentropy(),
-        optimizer=keras.optimizers.AdamW(learning_rate=cfg.model.lr),
-        metrics=[keras.metrics.BinaryCrossentropy()]
+        optimizer=keras.optimizers.AdamW(learning_rate=lr_schedule),
     )
 
     callbacks = [
@@ -60,14 +79,6 @@ def fit_deep_denoiser(cfg: omegaconf.DictConfig) -> keras.Model:
     if cfg.user.wandb:
         wandb_callbacks = [wandb.integration.keras.WandbMetricsLogger(log_freq="batch")]
         callbacks = callbacks.extend(wandb_callbacks)
-    
-    if not cfg.model.use_csv:
-        train_dl, val_dl = get_dataloaders(
-            cfg.user.data.signal_path, cfg.user.data.noise_path, batch_size=cfg.model.batch_size
-        )
-    else:
-        train_dl = torch.utils.data.DataLoader(CSVDataset(cfg.user.data.csv_path, cfg.model.signal_length, cfg.model.snr_lower, cfg.model.snr_upper, Mode.TRAIN), batch_size=cfg.model.batch_size)
-        val_dl = torch.utils.data.DataLoader(CSVDataset(cfg.user.data.csv_path, cfg.model.signal_length, cfg.model.snr_lower, cfg.model.snr_upper, Mode.VALIDATION), batch_size=cfg.model.batch_size)
     
     # build model
     sample_shape = np.zeros(
