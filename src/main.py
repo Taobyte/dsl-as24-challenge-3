@@ -1,5 +1,6 @@
 import random
 import logging
+import pathlib
 
 import jax
 import hydra
@@ -11,20 +12,16 @@ import torch as th
 from train import train_model
 from tuner import tune_model
 from validate import compute_metrics
-from plot import compare_two
+from plot import compare_two, visualize_predictions
 
 
 log = logging.getLogger(__name__)
-
-"""
-os.environ["TF_ENABLE_ONEDNN_OPTS"] = "0"
-os.environ["KERAS_BACKEND"] = "jax"
-"""
 
 @hydra.main(version_base=None, config_path="conf", config_name="config")
 def main(cfg: omegaconf.DictConfig):
 
     print(omegaconf.OmegaConf.to_yaml(cfg))
+    log.info(omegaconf.OmegaConf.to_yaml(cfg))
 
     # Set see (default: 123)
     seed = cfg.model.seed
@@ -32,7 +29,11 @@ def main(cfg: omegaconf.DictConfig):
     np.random.seed(seed)
     tf.random.set_seed(seed)
     th.manual_seed(seed)
-    jax_key = jax.random.PRNGKey(seed)
+    # jax_key = jax.random.PRNGKey(seed)
+
+    output_dir = pathlib.Path(
+        hydra.core.hydra_config.HydraConfig.get().runtime.output_dir
+    )
 
     if cfg.tuner:
 
@@ -42,13 +43,29 @@ def main(cfg: omegaconf.DictConfig):
 
         if cfg.training:
             model = train_model(cfg)
-            model.save(cfg.user.model_dir+
-                       f"{cfg.model.model_name}_l{cfg.model.n_layers}_e{cfg.model.epochs}.keras")
-        else:
-            df1, df2 = compute_metrics(cfg)
-            if cfg.plot:
-                compare_two(df1, df2, label1=cfg.model.model_name, label2="Butterworth")               
+            model.save(
+                output_dir
+                / f"{cfg.model.model_name}_lr_{cfg.model.lr}_e{cfg.model.epochs}.keras"
+            )
+        elif cfg.test:
+            model_df, butterworth_df = compute_metrics(cfg)
+            if cfg.plot.metrics:
+                compare_two(
+                output_dir / "metrics_model.csv",
+                output_dir / "metrics_butterworth.csv",
+                label1=cfg.model.model_name,
+                label2="Butterworth",
+            )
+        elif cfg.plot.metrics:
+            compare_two(
+                cfg.user.metrics_model_path,
+                cfg.user.metrics_butterworth_path,
+                label1=cfg.model.model_name,
+                label2="Butterworth",
+            )
+        elif cfg.plot.visualization:
+            visualize_predictions(cfg)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

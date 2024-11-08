@@ -21,9 +21,9 @@ def cross_correlation(eq: ndarray, denoised_eq: ndarray, event_shift:int) -> flo
 """
 
 def max_amplitude_difference(eq: ndarray, denoised_eq: ndarray) -> float:
-    max_eq = np.max(eq) + 1e-12
-    max_denoised = np.max(denoised_eq)
-    return np.abs(max_denoised / max_eq)
+    max_eq = keras.ops.max(eq) + 1e-12
+    max_denoised = keras.ops.max(denoised_eq)
+    return keras.ops.abs(max_denoised / max_eq)
 
 
 def find_onset(denoised_eq,threshold=0.05,nsta=20):
@@ -68,9 +68,13 @@ class AmpMetric(keras.metrics.Metric):
             name='max_amplitude_ratio'
         )
 
-    def update_state(self, y_true: ndarray, y_pred: ndarray) -> None:
+    def update_state(self, y_true: ndarray, y_pred: ndarray, sample_weight=None) -> None:
 
+        print(self.amp_ratio)
         amp_ratio = max_amplitude_difference(y_true, y_pred)
+        print(amp_ratio) 
+        print(y_true.shape)
+        print(y_pred.shape)
         self.amp_ratio.assign(amp_ratio)
 
     def result(self) -> float:

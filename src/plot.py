@@ -1,11 +1,37 @@
-import os
+import pathlib
+import hydra
+import omegaconf
 
 import pandas as pd
 import matplotlib.pyplot as plt
 
+from src.models.DeepDenoiser.validate import visualize_predictions_deep_denoiser
+from src.models.WaveDecompNet.validate import visualize_predictions_wave_decomp_net
+from src.models.ColdDiffusion.validate import visualize_predictions_cold_diffusion
+from src.models.CleanUNet.validate import visualize_predictions_clean_unet
 
 
-def compare_two(df1: pd.DataFrame, df2: pd.DataFrame, label1: str, label2: str):
+def visualize_predictions(cfg: omegaconf.DictConfig):
+    
+    if cfg.model.model_name == "DeepDenoiser":
+        visualize_predictions_deep_denoiser(cfg.user.model_path, cfg.user.data.signal_path, cfg.user.data.noise_path, cfg.model.signal_length, cfg.plot.n_examples, cfg.snrs)
+    elif cfg.model.model_name == "WaveDecompNet":
+        visualize_predictions_wave_decomp_net(cfg.user.model_path, cfg.user.data.signal_path, cfg.user.data.noise_path, cfg.model.signal_length, cfg.plot.n_examples, cfg.snrs)
+    elif cfg.model.model_name == "ColdDiffusion":
+        visualize_predictions_cold_diffusion(cfg.user.model_path, cfg.user.data.signal_path, cfg.user.data.noise_path, cfg.model.signal_length, cfg.plot.n_examples, cfg.snrs)
+    elif cfg.model.model_name == "CleanUNet":
+        visualize_predictions_clean_unet(cfg.user.model_path, cfg.user.data.signal_path, cfg.user.data.noise_path, cfg.model.signal_length, cfg.plot.n_examples, cfg.snrs)
+    else:
+        raise ValueError(f"{cfg.model.model_name} not visualization function or not implemented")
+
+
+def compare_two(df1_path: str, df2_path: str, label1: str, label2: str):
+
+    output_dir = pathlib.Path(hydra.core.hydra_config.HydraConfig.get().runtime.output_dir)
+
+    df1 = pd.read_csv(df1_path)
+    df2 = pd.read_csv(df2_path)
+
     # Create a figure and axes for 3 subplots
     fig, axs = plt.subplots(nrows=1, ncols=3, figsize=(18, 6))
 
@@ -40,3 +66,11 @@ def compare_two(df1: pd.DataFrame, df2: pd.DataFrame, label1: str, label2: str):
     # Adjust layout to prevent overlap
     plt.tight_layout(rect=[0, 0, 1, 0.95])
     plt.show()
+
+    plt.savefig(output_dir / 'metrics.jpg')
+
+
+
+
+
+    

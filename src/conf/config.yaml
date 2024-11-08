@@ -4,8 +4,12 @@ defaults:
   - user: clemens
 
 tuner: False
-training: False
-plot: True
+training: True
+test: False
+plot:
+  metrics: False
+  visualization: False
+  n_examples: 5
 
 snrs: [0.1, 0.3, 0.5, 0.7, 1.0, 1.2, 1.5, 1.8, 2.0, 2.5, 3.5]
 size_testset: 500
