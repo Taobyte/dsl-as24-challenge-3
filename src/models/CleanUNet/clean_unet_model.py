@@ -21,10 +21,10 @@ class CleanUNetInitializer(keras.initializers.Initializer):
 class CleanUNetLoss(keras.losses.Loss):
     def __init__(
         self,
-        signal_length=6120,
-        frame_length=100,
-        frame_step=24,
-        fft_size=126,
+        signal_length=2048,
+        frame_lengths=[64, 128, 32],
+        frame_steps=[16, 32, 8],
+        fft_sizes=[128, 256, 64],
         name="custom_clean_unet_loss",
         reduction="sum_over_batch_size",
         **kwargs
@@ -32,9 +32,9 @@ class CleanUNetLoss(keras.losses.Loss):
         super().__init__(name=name, reduction=reduction, **kwargs)
 
         self.signal_length = signal_length
-        self.frame_length = frame_length
-        self.frame_step = frame_step
-        self.fft_size = fft_size
+        self.frame_lengths = frame_lengths
+        self.frame_steps = frame_steps
+        self.fft_sizes = fft_sizes
 
         self.mae = keras.losses.MeanAbsoluteError()
 
@@ -44,26 +44,30 @@ class CleanUNetLoss(keras.losses.Loss):
         y_true = einops.rearrange(y_true, "b t c -> b c t")
         y_pred = einops.rearrange(y_pred, "b t c -> b c t")
 
-        def compute_stft_magnitude(y):
+        stft_loss = 0
+
+        def compute_stft_magnitude(y, frame_length, frame_step, fft_size):
             real, imag = keras.ops.stft(
-                y, self.frame_length, self.frame_step, self.fft_size
+                y, frame_length, frame_step, fft_size
             )
             return keras.ops.sqrt(
                 keras.ops.clip(real**2 + imag**2, x_min=1e-7, x_max=float("inf"))
             )
-
-        y_true_stft = compute_stft_magnitude(y_true)  # B C W H e.g (32, 3, 256, 64)
-        y_true_stft = einops.rearrange(y_true_stft, "b c w h -> (b c) w h") # (96, 256, 64)
-        y_pred_stft = compute_stft_magnitude(y_pred)  # B C W H
-        y_pred_stft = einops.rearrange(y_pred_stft, "b c w h -> (b c) w h") 
-
-        frobenius_loss = keras.ops.mean(
-            keras.ops.norm(y_true_stft - y_pred_stft, ord="fro", axis=(1, 2))
-            / (keras.ops.norm(y_true_stft, ord="fro", axis=(1, 2)) + 1e-8)
-        )
-        log_loss = self.mae(keras.ops.log(y_true_stft) + 1e-8, keras.ops.log(y_pred_stft) + 1e-8)
         
-        stft_loss = frobenius_loss + (1.0 / self.signal_length) * log_loss
+        for frame_length, frame_step, fft_size in zip(self.frame_lengths, self.frame_steps, self.fft_sizes):
+            
+            y_true_stft = compute_stft_magnitude(y_true, frame_length, frame_step, fft_size)  # B C W H e.g (32, 3, 256, 64)
+            y_true_stft = einops.rearrange(y_true_stft, "b c w h -> (b c) w h") # (96, 256, 64)
+            y_pred_stft = compute_stft_magnitude(y_pred, frame_length, frame_step, fft_size)  # B C W H
+            y_pred_stft = einops.rearrange(y_pred_stft, "b c w h -> (b c) w h") 
+
+            frobenius_loss = keras.ops.mean(
+                keras.ops.norm(y_true_stft - y_pred_stft, ord="fro", axis=(1, 2))
+                / (keras.ops.norm(y_true_stft, ord="fro", axis=(1, 2)) + 1e-8)
+            )
+
+            log_loss = self.mae(keras.ops.log(y_true_stft) + 1e-8, keras.ops.log(y_pred_stft) + 1e-8)
+            stft_loss += frobenius_loss + (1.0 / self.signal_length) * log_loss
 
         return 0.5 * stft_loss + self.mae(y_true, y_pred)
 
@@ -73,9 +77,9 @@ class CleanUNetLoss(keras.losses.Loss):
         config.update(
             {
                 "signal_length": self.signal_length,
-                "frame_length": self.frame_length,
-                "frame_step": self.frame_step,
-                "fft_size": self.fft_size
+                "frame_lengths": self.frame_lengths,
+                "frame_steps": self.frame_steps,
+                "fft_sizes": self.fft_sizes
             }
         )
 

@@ -172,7 +172,8 @@ class UNet(keras.models.Model):
         # first the STFT
         x = keras.ops.stft(x, self.frame_length, self.frame_step, self.fft_size)
         x = keras.layers.concatenate([x[0],x[1]], axis=1)
-        x = self.batchnorm1(x)
+        
+        # x = self.batchnorm1(x)
 
         residuals = []
         for down in self.downsamplers:

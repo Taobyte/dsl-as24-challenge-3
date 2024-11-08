@@ -339,12 +339,10 @@ class Unet1D(keras.Model):
         self.final_res_block = ResnetBlock(2 * dim, dim, time_emb_dim=time_dim)
         self.final_conv_block = keras.layers.Conv1D(self.out_dim, 1)
 
-    def build(self, input_shape):
-        B, T, C = input_shape 
-        self.B = B
-
     # time should be included as a parameter
     def call(self, x):
+        
+        B, T, C = x.shape
 
         x = self.initial_conv(x)
         r = keras.ops.copy(x)
@@ -352,7 +350,7 @@ class Unet1D(keras.Model):
         # hack to train model without diffusion
         # time = keras.ops.convert_to_tensor(np.zeros(B))
         # t = self.time_mlp(time)
-        t = keras.ops.convert_to_tensor(np.zeros((self.B, self.time_dim)))
+        t = keras.ops.convert_to_tensor(np.zeros((B, self.time_dim)))
 
         h = []
 

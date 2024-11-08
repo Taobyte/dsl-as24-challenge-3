@@ -41,7 +41,7 @@ def fit_clean_unet(cfg: omegaconf.DictConfig) -> keras.Model:
     metrics = []
 
     if cfg.model.loss == "stft":
-        loss = CleanUNetLoss()
+        loss = CleanUNetLoss(cfg.model.signal_length, cfg.model.frame_lengths, cfg.model.frame_steps, cfg.model.fft_sizes)
     elif cfg.model.loss == "mae":
         loss = keras.losses.MeanAbsoluteError()
     else:
@@ -49,7 +49,7 @@ def fit_clean_unet(cfg: omegaconf.DictConfig) -> keras.Model:
 
     model.compile(
         loss=loss,
-        optimizer=keras.optimizers.AdamW(learning_rate=cfg.model.lr),
+        optimizer=keras.optimizers.AdamW(learning_rate=cfg.model.lr, clipnorm=cfg.model.clipnorm),
         metrics=metrics
     )
 
@@ -57,16 +57,6 @@ def fit_clean_unet(cfg: omegaconf.DictConfig) -> keras.Model:
         (cfg.model.batch_size, cfg.model.signal_length, cfg.model.channels_input)
     )
     model(sample_shape)
-
-    # Total parameters
-    total_params = model.count_params()
-
-    # Assuming 32-bit floats (4 bytes per parameter)
-    memory_size_in_bytes = total_params * 4
-
-    # Convert to MB
-    memory_size_in_MB = memory_size_in_bytes / (1024 ** 2)
-    print(f"Model size: {memory_size_in_MB:.2f} MB")
 
     model.summary()
 
@@ -83,6 +73,7 @@ def fit_clean_unet(cfg: omegaconf.DictConfig) -> keras.Model:
             update_freq="epoch",
         ),
     ]
+    
     if not cfg.model.use_csv:
         train_dataset = CleanUNetDataset(
             cfg.user.data.signal_path + "/train/",

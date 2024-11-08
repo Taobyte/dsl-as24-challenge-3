@@ -1,5 +1,6 @@
-# architecture
 model_name: "ColdDiffusion"
+use_csv: True
+# architecture
 dim: 8
 dim_mults: [1, 2, 4, 8]
 channels: 3
@@ -8,6 +9,7 @@ channels: 3
 signal_length: 2048
 snr_lower: 0.1
 snr_upper: 2.0
+event_shift_start: 5000
 
 # training 
 batch_size: 16

@@ -1,19 +1,25 @@
 model_name: "CleanUNet"
+use_csv: True
 
 # data
 snr_lower: 0.1
 snr_upper: 2.0
 event_shift_start: 5000
-signal_length: 2048
 
 # training
 batch_size: 64
 lr: 0.0001
 epochs: 10
 seed: 123
+clipnorm: 1.0
 
 # loss can be either 'stft' or 'mae'
-loss: 'mae'
+loss: 'stft'
+
+signal_length: 2048
+frame_lengths: [64, 128, 32]
+frame_steps: [16, 32, 8]
+fft_sizes: [128, 256, 64]
 
 # architecture
 channels_input: 3 

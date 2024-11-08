@@ -142,6 +142,11 @@ class InputSignals(Dataset):
         
         noise_stacked = np.stack([Z_noise, N_noise, E_noise], axis=0)
 
+        max_val = max(np.max(np.abs(noise_stacked)), np.max(np.abs(eq_stacked))) + 1e-10
+        eq_stacked /= max_val
+        noise_stacked /= max_val
+
+
         if self.mode == Mode.TRAIN:
             ratio = snr_random
         elif self.mode == Mode.TEST:
@@ -201,6 +206,10 @@ class EventMasks(Dataset):
         E_noise = noise["noise_waveform_E"][:self.signal_length]
 
         noise_stacked = np.stack([Z_noise, N_noise, E_noise], axis=0)
+
+        max_val = max(np.max(np.abs(noise_stacked)), np.max(np.abs(eq_stacked))) + 1e-10
+        eq_stacked /= max_val
+        noise_stacked /= max_val
 
         signal_std = np.std(eq_stacked[:,6000-event_shift:6500-event_shift], axis=1).reshape(-1,1)  
         noise_std = np.std(noise_stacked[:,6000-event_shift:6500-event_shift], axis=1).reshape(-1,1)
@@ -325,6 +334,10 @@ class CSVDataset(Dataset):
         N_noise = noise["N"][:self.signal_length]
         E_noise = noise["E"][:self.signal_length]
         noise_stacked = np.stack([Z_noise, N_noise, E_noise], axis=0)
+
+        max_val = max(np.max(np.abs(noise_stacked)), np.max(np.abs(eq_stacked))) + 1e-10
+        eq_stacked /= max_val
+        noise_stacked /= max_val
 
         signal_std = np.std(eq_stacked[:,6000-event_shift:6500-event_shift], axis=1).reshape(-1,1)  
         noise_std = np.std(noise_stacked[:,6000-event_shift:6500-event_shift], axis=1).reshape(-1,1)

@@ -6,6 +6,8 @@ import torch
 import numpy as np
 import keras
 
+from src.utils import Mode
+from src.models.CleanUNet.dataset import CleanUNetDatasetCSV
 from src.models.ColdDiffusion.cold_diffusion_model_clemens import Unet1D
 from src.models.ColdDiffusion.dataset import ColdDiffusionDataset
 from src.models.CleanUNet.clean_unet_model import CleanUNetLoss
@@ -62,32 +64,41 @@ def fit_cold_diffusion(cfg: omegaconf.DictConfig) -> keras.Model:
             update_freq="epoch",
         ),
     ]
-
-    train_dataset = ColdDiffusionDataset(
-        cfg.user.data.signal_path + "/train/",
-        cfg.user.data.noise_path + "/train/",
-        cfg.model.signal_length,
-    )
-    val_dataset = ColdDiffusionDataset(
-        cfg.user.data.signal_path + "/validation/",
-        cfg.user.data.noise_path + "/validation/",
-        cfg.model.signal_length,
-    )
+    if not cfg.model.use_csv:
+        train_dataset = ColdDiffusionDataset(
+            cfg.user.data.signal_path + "/train/",
+            cfg.user.data.noise_path + "/train/",
+            cfg.model.signal_length,
+        )
+        val_dataset = ColdDiffusionDataset(
+            cfg.user.data.signal_path + "/validation/",
+            cfg.user.data.noise_path + "/validation/",
+            cfg.model.signal_length,
+        )
+    else:
+        train_dataset = CleanUNetDatasetCSV(
+            cfg.user.data.csv_path,
+            cfg.model.signal_length,
+            cfg.model.snr_lower,
+            cfg.model.snr_upper,
+            cfg.model.event_shift_start,
+            Mode.TRAIN
+        )
+        val_dataset = CleanUNetDatasetCSV(
+            cfg.user.data.csv_path,
+            cfg.model.signal_length,
+            cfg.model.snr_lower,
+            cfg.model.snr_upper,
+            cfg.model.event_shift_start,
+            Mode.VALIDATION
+        )
 
     train_dl = torch.utils.data.DataLoader(
         train_dataset, batch_size=cfg.model.batch_size
     )
     val_dl = torch.utils.data.DataLoader(val_dataset, batch_size=cfg.model.batch_size)
 
-    # plot model architecture
     model.summary() 
-    keras.utils.plot_model(
-        model,
-        to_file= output_dir / "model_plot.png",
-        show_shapes=True,
-        show_dtype=True,
-        show_layer_names=True
-    )
 
     model.fit(
         train_dl, epochs=cfg.model.epochs, validation_data=val_dl, callbacks=callbacks

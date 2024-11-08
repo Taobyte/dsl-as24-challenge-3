@@ -45,8 +45,16 @@ def tune_model_deep_denoiser(cfg: DictConfig):
     # train_dl, val_dl = get_dataloaders(cfg.data.signal_path, cfg.data.noise_path)
     train_dl = torch.utils.data.DataLoader(CSVDataset(cfg.user.data.csv_path, cfg.model.signal_length, cfg.model.snr_lower, cfg.model.snr_upper, Mode.TRAIN), batch_size=cfg.model.batch_size)
     val_dl = torch.utils.data.DataLoader(CSVDataset(cfg.user.data.csv_path, cfg.model.signal_length, cfg.model.snr_lower, cfg.model.snr_upper, Mode.VALIDATION), batch_size=cfg.model.batch_size)
-    
-    tuner.search(train_dl, epochs=5, validation_data=val_dl)
+
+    # define callbacks 
+    callbacks = [
+        keras.callbacks.EarlyStopping(monitor="val_loss", patience=2),
+        keras.callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.2,
+                              patience=2, min_lr=0.00001),
+        keras.callbacks.TerminateOnNaN()
+    ]
+
+    tuner.search(train_dl, epochs=5, validation_data=val_dl, callbacks=callbacks)
     best_hypers = tuner.get_best_hyperparameters()
 
     tuner.results_summary()
