@@ -1,10 +1,12 @@
 import omegaconf 
 import hydra
 import pathlib
+from typing import Union
 
 import torch 
 import keras
 import numpy as np
+import jax.numpy as jnp
 import matplotlib.pyplot as plt
 from tqdm import tqdm
 
@@ -69,15 +71,17 @@ def get_metrics_clean_unet(
 
 
 
-def visualize_predictions_clean_unet(model_path: str, signal_path: str, noise_path:str, signal_length: int, n_examples: int, snrs:list[int], channel:int = 0) -> None:
+def visualize_predictions_clean_unet(model: Union[str, keras.Model], signal_path: str, noise_path:str, signal_length: int, n_examples: int, snrs:list[int], channel:int = 0) -> None:
     
     print("Visualizing predictions")
     output_dir = pathlib.Path(hydra.core.hydra_config.HydraConfig.get().runtime.output_dir)
 
+    if isinstance(model, str):
+        model = keras.saving.load_model(model)
+
     for snr in tqdm(snrs, total=len(snrs)):
 
         test_dl = torch.utils.data.DataLoader(CleanUNetDataset(signal_path + "/validation", noise_path + "/validation", signal_length, snr, snr), batch_size=n_examples)
-        model = keras.saving.load_model(model_path)
         input, ground_truth = next(iter(test_dl))
         predictions = model(input)
 

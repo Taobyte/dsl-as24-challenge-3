@@ -4,10 +4,10 @@ data:
   csv_path: '/cluster/scratch/ckeusch/dsl-as24-challenge-3/data/'
 
 # testing
-model_path: /cluster/scratch/ckeusch/dsl-as24-challenge-3/outputs/2024-11-08/15-27-39/DeepDenoiser_lr_0.001_e10.keras # DeepDenoiser
+# model_path: /cluster/scratch/ckeusch/dsl-as24-challenge-3/outputs/2024-11-08/15-27-39/DeepDenoiser_lr_0.001_e10.keras # DeepDenoiser
 # model_path: /cluster/scratch/ckeusch/dsl-as24-challenge-3/outputs/2024-11-08/09-05-09/WaveDecompNet_lr_0.001_e5.keras # WaveDecompNet
 # model_path: /cluster/scratch/ckeusch/dsl-as24-challenge-3/outputs/2024-11-08/14-42-33/checkpoints/model_at_epoch_5.keras # ColdDiffusion
-# model_path: '/cluster/scratch/ckeusch/dsl-as24-challenge-3/outputs/2024-11-05/19-38-48/checkpoints/model_at_epoch_1.keras' # CleanUNet
+model_path: /cluster/scratch/ckeusch/dsl-as24-challenge-3/outputs/2024-11-09/10-11-00/checkpoints/model_at_epoch_9.keras
 # model_path: '/cluster/scratch/ckeusch/dsl-as24-challenge-3/outputs/2024-11-06/15-22-50/checkpoints/model_at_epoch_7.keras' # ColdDiffusion stft loss
 
 # plotting

@@ -11,13 +11,14 @@ from numpy import ndarray
 import pandas as pd
 import torch as th
 
+from src.utils import Mode
 from models.Butterworth.butterworth_filter import bandpass_obspy
 from models.DeepDenoiser.validate import get_metrics_deepdenoiser
+from models.DeepDenoiser.dataset import get_signal_noise_assoc, InputSignals
 from models.WaveDecompNet.validate import get_metrics_wave_decomp_net
 from models.CleanUNet.validate import get_metrics_clean_unet
 from models.ColdDiffusion.validate import get_metrics_cold_diffusion
 from metrics import cross_correlation, p_wave_onset_difference, max_amplitude_difference
-from src.utils import Mode
 
 def get_metrics(model: keras.Model, assoc: list, snr:int, cfg: omegaconf.DictConfig) -> tuple[ndarray, ndarray, ndarray]:
 

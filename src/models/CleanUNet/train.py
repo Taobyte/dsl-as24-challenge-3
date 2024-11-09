@@ -11,6 +11,7 @@ from src.metrics import AmpMetric
 from src.utils import Mode
 from src.models.CleanUNet.clean_unet_model import CleanUNet, CleanUNetLoss
 from src.models.CleanUNet.dataset import CleanUNetDataset, CleanUNetDatasetCSV
+from src.models.CleanUNet.validate import visualize_predictions_clean_unet
 
 
 def fit_clean_unet(cfg: omegaconf.DictConfig) -> keras.Model:
@@ -40,16 +41,29 @@ def fit_clean_unet(cfg: omegaconf.DictConfig) -> keras.Model:
     # metrics = [AmpMetric()]
     metrics = []
 
+    print(f"type of omegaconf list {cfg.model.frame_lengths} is {type(cfg.model.frame_lengths)}")
+    print(type(list(cfg.model.frame_lengths)))
+
     if cfg.model.loss == "stft":
-        loss = CleanUNetLoss(cfg.model.signal_length, cfg.model.frame_lengths, cfg.model.frame_steps, cfg.model.fft_sizes)
+        loss = CleanUNetLoss(cfg.model.signal_length, list(cfg.model.frame_lengths), list(cfg.model.frame_steps), list(cfg.model.fft_sizes))
     elif cfg.model.loss == "mae":
         loss = keras.losses.MeanAbsoluteError()
     else:
         print(f"loss function : {cfg.model.loss} not supported")
 
+    lr_schedule = keras.optimizers.schedules.CosineDecay(
+                    cfg.model.lr,
+                    cfg.model.decay_steps,
+                    alpha=0.0,
+                    name="CosineDecay",
+                    warmup_target=cfg.model.warmup_target,
+                    warmup_steps=cfg.model.warmup_steps,
+                )
+
+
     model.compile(
         loss=loss,
-        optimizer=keras.optimizers.AdamW(learning_rate=cfg.model.lr, clipnorm=cfg.model.clipnorm),
+        optimizer=keras.optimizers.AdamW(learning_rate=lr_schedule, clipnorm=cfg.model.clipnorm),
         metrics=metrics
     )
 
@@ -64,7 +78,7 @@ def fit_clean_unet(cfg: omegaconf.DictConfig) -> keras.Model:
         keras.callbacks.ModelCheckpoint(
             filepath=output_dir / "checkpoints/model_at_epoch_{epoch}.keras"
         ),
-        keras.callbacks.EarlyStopping(monitor="val_loss", patience=2),
+        keras.callbacks.EarlyStopping(monitor="val_loss", patience=cfg.model.patience),
         keras.callbacks.TensorBoard(
             log_dir=output_dir / "logs",
             histogram_freq=1,
@@ -72,6 +86,7 @@ def fit_clean_unet(cfg: omegaconf.DictConfig) -> keras.Model:
             write_images=True,
             update_freq="epoch",
         ),
+        keras.callbacks.TerminateOnNaN()
     ]
     
     if not cfg.model.use_csv:
@@ -111,12 +126,15 @@ def fit_clean_unet(cfg: omegaconf.DictConfig) -> keras.Model:
     )
     val_dl = torch.utils.data.DataLoader(val_dataset, batch_size=cfg.model.batch_size)
 
-    jax.profiler.start_trace(output_dir)
+    # jax.profiler.start_trace(output_dir)
 
     model.fit(
         train_dl, epochs=cfg.model.epochs, validation_data=val_dl, callbacks=callbacks
     )
 
-    jax.profiler.stop_trace()
+    # jax.profiler.stop_trace()
+
+    if cfg.plot.visualization:
+        visualize_predictions_clean_unet(model, cfg.user.data.signal_path, cfg.user.data.noise_path, cfg.model.signal_length, cfg.plot.n_examples, cfg.snrs)
 
     return model

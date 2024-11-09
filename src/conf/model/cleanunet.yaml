@@ -7,14 +7,18 @@ snr_upper: 2.0
 event_shift_start: 5000
 
 # training
-batch_size: 64
+batch_size: 256
 lr: 0.0001
-epochs: 10
+epochs: 30
+decay_steps: 2340
+warmup_target: 0.01
+warmup_steps: 200
+patience: 10
 seed: 123
 clipnorm: 1.0
 
 # loss can be either 'stft' or 'mae'
-loss: 'stft'
+loss: 'mae'
 
 signal_length: 2048
 frame_lengths: [64, 128, 32]
@@ -29,12 +33,12 @@ dropout: 0.0
 # encoder/decoder settings           
 channels_H: 8
 max_H: 768
-encoder_n_layers: 4
+encoder_n_layers: 6
 kernel_size: 3
 stride: 2
 
 # transformer settings
-tsfm_n_layers: 1
+tsfm_n_layers: 3
 tsfm_n_head: 4
 tsfm_d_model: 128
 tsfm_d_inner: 256

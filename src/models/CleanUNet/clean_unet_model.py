@@ -5,16 +5,31 @@ import einops
 @keras.saving.register_keras_serializable()
 class CleanUNetInitializer(keras.initializers.Initializer):
 
-    def __init__(self, mean, stddev):
-      self.mean = mean
-      self.stddev = stddev
+    def __init__(self, seed:int):
+        super().__init__()
+        self.seed = seed
+        self.he_uniform = keras.initializers.HeUniform(seed=seed)
 
     def __call__(self, shape, dtype=None):
-      return keras.random.normal(
-          shape, mean=self.mean, stddev=self.stddev, dtype=dtype)
 
-    def get_config(self):  # To support serialization
-      return {'mean': self.mean, 'stddev': self.stddev}
+        weights = self.he_uniform(shape)
+        alpha = keras.ops.std(weights)
+
+        output = weights / keras.ops.sqrt(alpha)
+
+        return output
+
+    def get_config(self):
+        config = super().get_config()
+        # Update the config with the custom layer's parameters
+        config.update(
+            {
+                "seed": self.seed
+            }
+        )
+
+        return config
+
 
 
 @keras.saving.register_keras_serializable()
@@ -32,11 +47,14 @@ class CleanUNetLoss(keras.losses.Loss):
         super().__init__(name=name, reduction=reduction, **kwargs)
 
         self.signal_length = signal_length
-        self.frame_lengths = frame_lengths
-        self.frame_steps = frame_steps
-        self.fft_sizes = fft_sizes
+        self.frame_lengths = list(frame_lengths)
+        self.frame_steps = list(frame_steps)
+        self.fft_sizes = list(fft_sizes)
 
         self.mae = keras.losses.MeanAbsoluteError()
+        self.mse = keras.losses.MeanSquaredError()
+        self.msle = keras.losses.MeanSquaredLogarithmicError()
+        self.mape = keras.losses.MeanAbsolutePercentageError()
 
     def call(self, y_true, y_pred):
 
@@ -51,7 +69,7 @@ class CleanUNetLoss(keras.losses.Loss):
                 y, frame_length, frame_step, fft_size
             )
             return keras.ops.sqrt(
-                keras.ops.clip(real**2 + imag**2, x_min=1e-7, x_max=float("inf"))
+                keras.ops.clip(real**2 + imag**2, x_min=1e-7, x_max=1e9)
             )
         
         for frame_length, frame_step, fft_size in zip(self.frame_lengths, self.frame_steps, self.fft_sizes):
@@ -61,13 +79,19 @@ class CleanUNetLoss(keras.losses.Loss):
             y_pred_stft = compute_stft_magnitude(y_pred, frame_length, frame_step, fft_size)  # B C W H
             y_pred_stft = einops.rearrange(y_pred_stft, "b c w h -> (b c) w h") 
 
+            """
             frobenius_loss = keras.ops.mean(
                 keras.ops.norm(y_true_stft - y_pred_stft, ord="fro", axis=(1, 2))
                 / (keras.ops.norm(y_true_stft, ord="fro", axis=(1, 2)) + 1e-8)
             )
 
-            log_loss = self.mae(keras.ops.log(y_true_stft) + 1e-8, keras.ops.log(y_pred_stft) + 1e-8)
+            y_true_stft_clipped = keras.ops.clip(y_true_stft, 1e-6, 1e9)
+            y_pred_stft_clipped = keras.ops.clip(y_pred_stft, 1e-6, 1e9)
+
+            log_loss = self.mae(keras.ops.log(y_true_stft_clipped), keras.ops.log(y_pred_stft_clipped))
             stft_loss += frobenius_loss + (1.0 / self.signal_length) * log_loss
+            """
+            stft_loss += self.mape(y_true_stft, y_pred_stft)
 
         return 0.5 * stft_loss + self.mae(y_true, y_pred)
 
@@ -160,6 +184,7 @@ class PositionalEncoding(keras.layers.Layer):
         return config
 
 
+
 class EncoderLayer(keras.layers.Layer):
 
     def __init__(self, d_model, d_inner, n_head, d_k, d_v, dropout=0.0):
@@ -211,7 +236,68 @@ class EncoderLayer(keras.layers.Layer):
             }
         )
         return config
+        
 
+class EncoderLayerFromKeras(keras.layers.Layer):
+
+    def __init__(self, d_model, d_inner, n_head, d_k, d_v, dropout=0.0):
+        super(EncoderLayerFromKeras, self).__init__()
+
+        self.d_model = d_model
+        self.d_inner = d_inner
+        self.n_head = n_head
+        self.d_k = d_k
+        self.d_v = d_v
+        self.dropout = dropout
+
+        initializer = CleanUNetInitializer()
+
+        # self attention mechanism
+        self.attention = keras.layers.MultiHeadAttention(
+            n_head, key_dim=d_k, dropout=dropout
+        )
+        self.dropout1 = keras.layers.Dropout(dropout)
+        self.layer_norm1 = keras.layers.LayerNormalization(epsilon=1e-6)
+
+        # feed forward network
+        self.conv1 = keras.layers.Conv1D(filters=d_inner, kernel_size=1, activation="relu", kernel_initializer=initializer)
+        self.dropout2 = keras.layers.Dropout(dropout)
+        self.conv2 = keras.layers.Conv1D(filters=d_model,kernel_size=1, kernel_initializer=initializer)
+        self.layer_norm2 = keras.layers.LayerNormalization(epsilon=1e-6)
+
+    def call(self, x):
+
+        residual1 = x
+
+        x, attn = self.attention(x,x, return_attention_scores=True)
+        x = self.dropout1(x)
+        x = self.layer_norm1(x)
+
+        residual2 = x + residual1
+
+        x = self.conv1(residual2)
+        x = self.dropout2(x)
+        x = self.conv2(x)
+        x = self.layer_norm2(x)
+
+        output = x + residual2
+
+        return output, attn
+
+    def get_config(self):
+        config = super().get_config()
+        # Update the config with the custom layer's parameters
+        config.update(
+            {
+                "d_model": self.d_model,
+                "d_inner": self.d_inner,
+                "n_head": self.n_head,
+                "d_k": self.d_k,
+                "d_v": self.d_v,
+                "dropout": self.dropout,
+            }
+        )
+        return config
 
 class TransformerEncoder(keras.layers.Layer):
 
@@ -249,7 +335,7 @@ class TransformerEncoder(keras.layers.Layer):
 
         self.dropout = keras.layers.Dropout(dropout)
         self.layer_stack = [
-            EncoderLayer(d_model, d_inner, n_head, d_k, d_v, dropout=dropout)
+            EncoderLayerFromKeras(d_model, d_inner, n_head, d_k, d_v, dropout=dropout)
             for _ in range(n_layers)
         ]
         self.layer_norm = keras.layers.LayerNormalization(epsilon=1e-6)
@@ -291,6 +377,8 @@ class TransformerEncoder(keras.layers.Layer):
             }
         )
         return config
+
+
 
 
 class GLU(keras.layers.Layer):
@@ -369,6 +457,8 @@ class CleanUNet(keras.Model):
         self.encoder = []
         self.decoder = []
 
+        initializer = CleanUNetInitializer()
+
         """
         def conv_output_shape(input_shape, stride):
             return int(keras.ops.floor((input_shape - 1) / stride + 1).numpy())
@@ -393,8 +483,9 @@ class CleanUNet(keras.Model):
                             stride,
                             activation="relu",
                             padding="same",
+                            kernel_initializer=initializer
                         ),
-                        keras.layers.Conv1D(channels_H * 2, 1),
+                        keras.layers.Conv1D(channels_H * 2, 1, kernel_initializer=initializer),
                         GLU(axis=2),
                     ]
                 )
@@ -406,10 +497,10 @@ class CleanUNet(keras.Model):
                 self.decoder.append(
                     keras.Sequential(
                         [
-                            keras.layers.Conv1D(channels_H * 2, 1),
+                            keras.layers.Conv1D(channels_H * 2, 1, kernel_initializer=initializer),
                             GLU(axis=2),
                             keras.layers.Conv1DTranspose(
-                                channels_output, kernel_size, stride, padding="same"
+                                channels_output, kernel_size, stride, padding="same", kernel_initializer=initializer
                             ),
                         ]
                     )
@@ -419,7 +510,7 @@ class CleanUNet(keras.Model):
                     0,
                     keras.Sequential(
                         [
-                            keras.layers.Conv1D(channels_H * 2, 1),
+                            keras.layers.Conv1D(channels_H * 2, 1, kernel_initializer=initializer),
                             GLU(axis=2),
                             keras.layers.Conv1DTranspose(
                                 channels_output,
@@ -427,6 +518,7 @@ class CleanUNet(keras.Model):
                                 stride,
                                 activation="relu",
                                 padding="same",
+                                kernel_initializer=initializer
                             ),
                         ]
                     ),
@@ -439,7 +531,7 @@ class CleanUNet(keras.Model):
 
         # Transformer Bottleneck
 
-        self.tsfm_conv1 = keras.layers.Conv1D(tsfm_d_model, kernel_size=1)
+        self.tsfm_conv1 = keras.layers.Conv1D(tsfm_d_model, kernel_size=1, kernel_initializer=initializer)
         self.tsfm_encoder = TransformerEncoder(
             d_word_vec=tsfm_d_model,
             n_layers=tsfm_n_layers,
@@ -449,10 +541,10 @@ class CleanUNet(keras.Model):
             d_model=tsfm_d_model,
             d_inner=tsfm_d_inner,
             dropout=0.0,
-            n_position=0,
+            n_position=channels_H,
             scale_emb=False,
         )
-        self.tsfm_conv2 = keras.layers.Conv1D(channels_output, kernel_size=1)
+        self.tsfm_conv2 = keras.layers.Conv1D(channels_output, kernel_size=1, kernel_initializer=initializer)
 
     def call(self, x):
         _, T, _ = x.shape

@@ -1,15 +1,15 @@
 defaults: 
   - _self_
-  - model: deepdenoiser
+  - model: cleanunet
   - user: clemens
 
 tuner: False
 use_optuna: False
 n_trials: 50
-training: False
-test: True
+training: True
+test: False
 plot:
-  metrics: True
+  metrics: False
   visualization: False
   n_examples: 5
 
