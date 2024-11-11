@@ -251,7 +251,7 @@ class Unet1D(keras.Model):
         self.resnet_block_groups = resnet_block_groups
 
         self.initial_conv = keras.layers.Conv1D(
-            filters=init_dim, kernel_size=7, padding="same"
+            filters=init_dim, kernel_size=3, padding="same"
         )
 
         dims = [init_dim, *map(lambda m: dim * m, dim_mults)]

@@ -56,6 +56,7 @@ class CleanUNetLoss(keras.losses.Loss):
         self.mse = keras.losses.MeanSquaredError()
         self.msle = keras.losses.MeanSquaredLogarithmicError()
         self.mape = keras.losses.MeanAbsolutePercentageError()
+        self.bce = keras.losses.BinaryCrossentropy()
 
     def call(self, y_true, y_pred):
 
@@ -73,14 +74,15 @@ class CleanUNetLoss(keras.losses.Loss):
                 keras.ops.clip(real**2 + imag**2, x_min=1e-7, x_max=1e9)
             )
         
+        
         for frame_length, frame_step, fft_size in zip(self.frame_lengths, self.frame_steps, self.fft_sizes):
+            
             
             y_true_stft = compute_stft_magnitude(y_true, frame_length, frame_step, fft_size)  # B C W H e.g (32, 3, 256, 64)
             y_true_stft = einops.rearrange(y_true_stft, "b c w h -> (b c) w h") # (96, 256, 64)
             y_pred_stft = compute_stft_magnitude(y_pred, frame_length, frame_step, fft_size)  # B C W H
             y_pred_stft = einops.rearrange(y_pred_stft, "b c w h -> (b c) w h") 
 
-            """
             frobenius_loss = keras.ops.mean(
                 keras.ops.norm(y_true_stft - y_pred_stft, ord="fro", axis=(1, 2))
                 / (keras.ops.norm(y_true_stft, ord="fro", axis=(1, 2)) + 1e-8)
@@ -91,9 +93,9 @@ class CleanUNetLoss(keras.losses.Loss):
 
             log_loss = self.mae(keras.ops.log(y_true_stft_clipped), keras.ops.log(y_pred_stft_clipped))
             stft_loss += frobenius_loss + (1.0 / self.signal_length) * log_loss
-            """
+            
             stft_loss += self.mape(y_true_stft, y_pred_stft)
-
+        
         return 0.5 * stft_loss + self.mae(y_true, y_pred)
 
     def get_config(self):

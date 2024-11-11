@@ -1,6 +1,7 @@
 import omegaconf 
 import hydra
 import pathlib
+import os
 from typing import Union
 
 import torch 
@@ -71,10 +72,12 @@ def get_metrics_clean_unet(
 
 
 
-def visualize_predictions_clean_unet(model: Union[str, keras.Model], signal_path: str, noise_path:str, signal_length: int, n_examples: int, snrs:list[int], channel:int = 0) -> None:
+def visualize_predictions_clean_unet(model: Union[str, keras.Model], signal_path: str, noise_path:str, signal_length: int, n_examples: int, snrs:list[int], channel:int = 0, epoch="") -> None:
     
     print("Visualizing predictions")
     output_dir = pathlib.Path(hydra.core.hydra_config.HydraConfig.get().runtime.output_dir)
+    epoch_dir = os.path.join(output_dir, str(epoch))
+    os.makedirs(epoch_dir, exist_ok=True)
 
     if isinstance(model, str):
         model = keras.saving.load_model(model)
@@ -94,6 +97,7 @@ def visualize_predictions_clean_unet(model: Union[str, keras.Model], signal_path
             axs[i,1].plot(time, ground_truth[i,:,channel]) # ground truth noise
             axs[i,2].plot(time, predictions[i,:,channel]) # predicted noise
 
+            """
             row_y_values = []
             row_y_values.extend(input[i, :, channel].numpy())
             row_y_values.extend(ground_truth[i, :, channel].numpy())
@@ -102,9 +106,9 @@ def visualize_predictions_clean_unet(model: Union[str, keras.Model], signal_path
             # Get the y-axis limits for this row
             y_min = np.min(row_y_values)
             y_max = np.max(row_y_values)
-
+            """
             for j in range(3):
-                axs[i, j].set_ylim(y_min, y_max)
+                axs[i, j].set_ylim(-2, 2)
         
         column_titles = ["Noisy Earthquake", "Ground Truth Signal", "Prediction"]
         for col, title in enumerate(column_titles):
@@ -112,4 +116,4 @@ def visualize_predictions_clean_unet(model: Union[str, keras.Model], signal_path
         
         plt.tight_layout()
         plt.subplots_adjust(top=0.9)
-        plt.savefig(output_dir / f'visualization_snr_{snr}.png')
+        plt.savefig(epoch_dir + f'/visualization_snr_{snr}.png')

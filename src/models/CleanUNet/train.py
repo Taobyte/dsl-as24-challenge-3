@@ -9,7 +9,9 @@ import keras
 
 from src.metrics import AmpMetric
 from src.utils import Mode
-from src.models.CleanUNet.clean_unet_model import CleanUNet, CleanUNetLoss
+from src.callbacks import VisualizeCallback
+from src.models.CleanUNet.clean_unet_model import CleanUNet
+from src.models.CleanUNet.utils import CleanUNetLoss
 from src.models.CleanUNet.dataset import CleanUNetDataset, CleanUNetDatasetCSV
 from src.models.CleanUNet.validate import visualize_predictions_clean_unet
 
@@ -49,18 +51,22 @@ def fit_clean_unet(cfg: omegaconf.DictConfig) -> keras.Model:
         loss = CleanUNetLoss(cfg.model.signal_length, list(cfg.model.frame_lengths), list(cfg.model.frame_steps), list(cfg.model.fft_sizes))
     elif cfg.model.loss == "mae":
         loss = keras.losses.MeanAbsoluteError()
+    elif cfg.model.loss == "mse":
+        loss = keras.losses.MeanSquaredError()
     else:
         print(f"loss function : {cfg.model.loss} not supported")
-
-    lr_schedule = keras.optimizers.schedules.CosineDecay(
-                    cfg.model.lr,
-                    cfg.model.decay_steps,
-                    alpha=0.0,
-                    name="CosineDecay",
-                    warmup_target=cfg.model.warmup_target,
-                    warmup_steps=cfg.model.warmup_steps,
-                )
-
+    
+    if cfg.model.lr_schedule:
+        lr_schedule = keras.optimizers.schedules.CosineDecay(
+                        cfg.model.lr,
+                        cfg.model.decay_steps,
+                        alpha=0.0,
+                        name="CosineDecay",
+                        warmup_target=cfg.model.warmup_target,
+                        warmup_steps=cfg.model.warmup_steps,
+                    )
+    else:
+        lr_schedule = cfg.model.lr
 
     model.compile(
         loss=loss,
@@ -79,7 +85,6 @@ def fit_clean_unet(cfg: omegaconf.DictConfig) -> keras.Model:
         keras.callbacks.ModelCheckpoint(
             filepath=output_dir / "checkpoints/model_at_epoch_{epoch}.keras"
         ),
-        keras.callbacks.EarlyStopping(monitor="val_loss", patience=cfg.model.patience),
         keras.callbacks.TensorBoard(
             log_dir=output_dir / "logs",
             histogram_freq=1,
@@ -89,6 +94,12 @@ def fit_clean_unet(cfg: omegaconf.DictConfig) -> keras.Model:
         ),
         keras.callbacks.TerminateOnNaN()
     ]
+
+    if cfg.plot.visualization:
+        callbacks.append(VisualizeCallback(cfg))
+
+    if cfg.model.patience:
+         callbacks.append(keras.callbacks.EarlyStopping(monitor="val_loss", patience=cfg.model.patience))
     
     if not cfg.model.use_csv:
         train_dataset = CleanUNetDataset(

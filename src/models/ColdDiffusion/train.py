@@ -10,7 +10,7 @@ from src.utils import Mode
 from src.models.CleanUNet.dataset import CleanUNetDatasetCSV
 from src.models.ColdDiffusion.cold_diffusion_model_clemens import Unet1D
 from src.models.ColdDiffusion.dataset import ColdDiffusionDataset
-from src.models.CleanUNet.clean_unet_model import CleanUNetLoss
+from src.models.CleanUNet.utils import CleanUNetLoss
 
 def fit_cold_diffusion(cfg: omegaconf.DictConfig) -> keras.Model:
 
