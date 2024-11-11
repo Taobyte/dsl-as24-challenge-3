@@ -429,8 +429,6 @@ class GLUUp(keras.layers.Layer):
     def __init__(self,channels_H, channels_output, kernel_size, stride, initializer, use_relu=False):
         super().__init__()
 
-        self.use_relu = use_relu
-
         self.layer = keras.Sequential(
                         [
                             keras.layers.Conv1D(channels_H * 2, 1, kernel_initializer=initializer),
@@ -439,7 +437,7 @@ class GLUUp(keras.layers.Layer):
                                 channels_output,
                                 kernel_size,
                                 stride,
-                                activation=None,
+                                activation="relu" if use_relu else None,
                                 padding="same",
                                 kernel_initializer=initializer
                             )
@@ -448,8 +446,6 @@ class GLUUp(keras.layers.Layer):
     
     def call(self,x):
         x = self.layer(x)
-        if self.use_relu:
-            x = keras.activations.relu(x)
         return x
 
     
@@ -465,7 +461,7 @@ class ChannelAttentionBlock(keras.layers.Layer):
     def call(self, x):
         # input shape x.shape == (B, T, C)
         max_pool = keras.ops.max(x, axis=1, keepdims=True)
-        avg_pool = keras.ops.avg(x, axis=1, keepdims=True)
+        avg_pool = keras.ops.mean(x, axis=1, keepdims=True)
 
         max_pool_mlp = self.mlp(max_pool)
         avg_pool_mlp = self.mlp(avg_pool)
@@ -480,14 +476,15 @@ class TemporalAttentionBlock(keras.layers.Layer):
         super().__init__()
 
         self.batch_norm = keras.layers.BatchNormalization()
-        self.conv_1d = keras.layers.Conv1D(kernel_size, 1)
+        self.conv_1d = keras.layers.Conv1D(1, kernel_size, 1, padding="same")
     
     def call(self, x):
         # input shape x.shape == (B, T, C)
         max_pool = keras.ops.max(x, axis=2, keepdims=True) # (B, T, 1)
-        avg_pool = keras.ops.avg(x, axis=2, keepdims=True) # (B, T, 1)
+        avg_pool = keras.ops.mean(x, axis=2, keepdims=True) # (B, T, 1)
+
         concat = keras.ops.concatenate([max_pool, avg_pool], axis=2) # (B, T, 2)
-        
+
         conv_1d_res = self.conv_1d(concat) # (B, T, 1)
         conv_1d_res = self.batch_norm(conv_1d_res)
 
@@ -518,7 +515,7 @@ class RAGLUDown(keras.layers.Layer):
         a = self.channel_attention(a)
         a = self.temporal_attention(a)
         a = a + residual
-        
+
         return a * keras.activations.sigmoid(b)
 
     def get_config(self):
@@ -532,13 +529,33 @@ class RAGLUDown(keras.layers.Layer):
 
 class RAGLUUp(keras.layers.Layer):
 
-    def __init__(self, axis: int):
+    def __init__(self,channels_H, channels_output, kernel_size, stride, initializer, use_relu=False):
         super().__init__()
-        self.axis = axis
-    
+
+        self.conv= keras.layers.Conv1D(channels_H * 2, 1, kernel_initializer=initializer)
+        self.conv_trans = keras.layers.Conv1DTranspose(
+                                channels_output,
+                                kernel_size,
+                                stride,
+                                activation="relu" if use_relu else None,
+                                padding="same",
+                                kernel_initializer=initializer
+                            )
+        
+        self.channel_attention = ChannelAttentionBlock(channels_H)
+        self.temporal_attention = TemporalAttentionBlock(kernel_size)
+
     def call(self, x):
-        a, b = keras.ops.split(x, 2, axis=self.axis)
-        return a * keras.activations.sigmoid(b)
+
+        residual = x 
+        x = self.conv(x)
+        a, b = keras.ops.split(x, 2, axis=2)
+        a = self.channel_attention(a)
+        a = self.temporal_attention(a)
+        a = a + residual
+
+        output = a * keras.activations.sigmoid(b)
+        return self.conv_trans(output)
 
     def get_config(self):
         config = super().get_config()

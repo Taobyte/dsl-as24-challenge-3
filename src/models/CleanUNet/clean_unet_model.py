@@ -3,7 +3,7 @@ import keras
 import numpy as np
 import einops
 
-from utils import CleanUNetInitializer, TransformerEncoder, GLUDown, GLUUp
+from src.models.CleanUNet.utils import CleanUNetInitializer, TransformerEncoder, GLUDown, GLUUp, RAGLUUp, RAGLUDown
 
 class CleanUNet(keras.Model):
     """CleanUNet architecture."""
@@ -51,18 +51,28 @@ class CleanUNet(keras.Model):
 
         initializer = CleanUNetInitializer(123)
 
+        assert encoder_n_layers % 2 == 0
+        mid = encoder_n_layers // 2
+
         for i in range(encoder_n_layers):
-            self.encoder.append(GLUDown(channels_H, kernel_size, stride, initializer))
+
+            if i < mid:
+                self.encoder.append(GLUDown(channels_H, kernel_size, stride, initializer))
+            else:
+                self.encoder.append(RAGLUDown(channels_H, kernel_size, stride, initializer))
+            
             channels_input = channels_H
 
             if i == 0:
                 # no relu at end
                 self.decoder.append(GLUUp(channels_H, channels_output, kernel_size, stride, initializer, False))
             else:
-                self.decoder.insert(0, GLUUp(channels_H, channels_output, kernel_size, stride, initializer, True))
+                if i < mid:
+                    self.decoder.insert(0, GLUUp(channels_H, channels_output, kernel_size, stride, initializer, True))
+                else:
+                    self.decoder.insert(0, RAGLUUp(channels_H, channels_output, kernel_size, stride, initializer, True))
+            
             channels_output = channels_H
-
-            # double H but keep below max_H
             channels_H *= 2
             channels_H = min(channels_H, max_H)
 

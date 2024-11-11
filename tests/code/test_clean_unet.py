@@ -1,6 +1,7 @@
 import numpy as np
 
-from src.models.CleanUNet.clean_unet_model import FeedForward, PositionalEncoding, EncoderLayer, TransformerEncoder, CleanUNet, CleanUNetLoss
+from src.models.CleanUNet.utils import FeedForward, PositionalEncoding, EncoderLayer, TransformerEncoder, CleanUNetLoss, ChannelAttentionBlock, TemporalAttentionBlock, RAGLUDown, RAGLUUp, CleanUNetInitializer
+from src.models.CleanUNet.clean_unet_model import CleanUNet
 
 def test_feed_forward():
 
@@ -30,12 +31,12 @@ def test_transformer_encoder():
     output = transformer(input)
     assert output.shape == (32, 64, 512)
 
-def test_clean_unet():
+def test_clean_unet_lstm():
 
-    input = np.zeros((32,6120,3))
-    unet = CleanUNet(3,3)
+    input = np.zeros((32,2048,3))
+    unet = CleanUNet(3,3, bottleneck="lstm")
     output = unet(input)
-    assert output.shape == (32,6120,3)
+    assert output.shape == (32,2048,3)
 
 def test_clean_unet_loss():
     
@@ -50,3 +51,44 @@ def test_clean_unet_loss():
 
     assert output >= 0.0
 
+def test_channel_attention():
+    n_channels = 64
+    input_shape = (32, 128, n_channels)
+    input = np.zeros(input_shape)
+    layer = ChannelAttentionBlock(n_channels)
+    output = layer(input)
+
+    assert output.shape == input_shape
+
+def test_temporal_attention():
+    n_channels = 64
+    input_shape = (32, 128, n_channels)
+    input = np.zeros(input_shape)
+    layer = TemporalAttentionBlock(3)
+    output = layer(input)
+
+    assert output.shape == input_shape
+
+def test_raglu_down():
+
+    n_channels = 64
+    T = 128
+    input_shape = (32, T, n_channels)
+    input = np.zeros(input_shape)
+
+    layer = RAGLUDown(n_channels, 3, 2, CleanUNetInitializer(123))
+    output = layer(input)
+
+    assert output.shape == (32, T // 2, n_channels)
+
+def test_raglu_up():
+
+    n_channels = 64
+    T = 128
+    input_shape = (32, T, n_channels)
+    input = np.zeros(input_shape)
+
+    layer = RAGLUUp(n_channels, n_channels//2, 3, 2, CleanUNetInitializer(123))
+    output = layer(input)
+
+    assert output.shape == (32, int(T * 2), n_channels // 2)
