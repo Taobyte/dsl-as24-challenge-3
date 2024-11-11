@@ -1,288 +1,107 @@
+import pathlib
+import hydra
+import omegaconf 
+
 import torch
-from tqdm.auto import tqdm
-import wandb
-import torch.nn.functional as F
-import pdb
-from scheduler import *
-from torch.optim import Adam
-from ColdDiffusion_model_pytorch import Unet1D
-import torch.optim.lr_scheduler as lr_scheduler
-import testing as testing
+import numpy as np
+import keras
 
-from dataset import create_dataloader
+from src.utils import Mode
+from src.models.CleanUNet.dataset import CleanUNetDatasetCSV
+from src.models.ColdDiffusion.cold_diffusion_model_clemens import Unet1D
+from src.models.ColdDiffusion.dataset import ColdDiffusionDataset
+from src.models.CleanUNet.utils import CleanUNetLoss
 
-import config_parser as cp
+def fit_cold_diffusion(cfg: omegaconf.DictConfig) -> keras.Model:
 
-### Model Parameters 
-def create_model_and_optimizer(args):
-    '''
-    Creates the Unet1D model and the Adam optimizer using the given arguments.
-    
-    Args:
-        args (argparse.Namespace): The arguments containing model and optimizer parameters.
-        
-    Returns:
-        model (Unet1D): The instantiated model.
-        optimizer (Adam): The instantiated optimizer.
-    '''
-    model = Unet1D(
-        dim = 8,
-        dim_mults = (1, 2, 4, 8),
-        channels = args.number_channels
+    output_dir = pathlib.Path(
+        hydra.core.hydra_config.HydraConfig.get().runtime.output_dir
     )
-    optimizer = Adam(model.parameters(), lr= args.lr)
-    return model, optimizer
 
-def load_model_and_weights(path_model):
-    '''
-    Loads the Unet1D model and its weights from the specified path.
-    
-    Args:
-        path_model (str): The path to the model weights.
-        
-    Returns:
-        model (Unet1D): The model with loaded weights.
-    '''
-    model = Unet1D(dim=8, dim_mults=(1, 2, 4, 8), channels=1)
-    model.load_state_dict(torch.load(path_model, map_location=device))
+    model = Unet1D(
+        cfg.model.dim,
+        init_dim=cfg.model.dim,
+        dim_mults=tuple(cfg.model.dim_mults),
+        channels=cfg.model.channels,
+    )
+
+    # build model
+    sample_shape = np.zeros(
+        (cfg.model.batch_size, cfg.model.signal_length, cfg.model.channels)
+    )
+    model(sample_shape)
+
+    if cfg.model.loss == 'stft':
+        loss = CleanUNetLoss(signal_length=cfg.model.signal_length)
+    elif cfg.model.loss == 'mae':
+        loss = keras.losses.MeanAbsoluteError()
+    elif cfg.model.loss == 'mse':
+        loss = keras.losses.MeanSquaredError()
+    else:
+        print(f"loss {cfg.model.loss} is not supported")
+
+    model.compile(
+        loss=loss,
+        optimizer=keras.optimizers.AdamW(learning_rate=cfg.model.lr),
+    )
+
+    # build model
+    sample_shape = np.zeros(
+        (cfg.model.batch_size, cfg.model.signal_length, cfg.model.channels)
+    )
+    model(sample_shape)
+
+    callbacks = [
+        keras.callbacks.ModelCheckpoint(
+            filepath=output_dir / "checkpoints/model_at_epoch_{epoch}.keras"
+        ),
+        keras.callbacks.EarlyStopping(monitor="val_loss", patience=2),
+        keras.callbacks.TensorBoard(
+            log_dir=output_dir / "logs",
+            histogram_freq=1,
+            write_graph=True,
+            write_images=True,
+            update_freq="epoch",
+        ),
+    ]
+    if not cfg.model.use_csv:
+        train_dataset = ColdDiffusionDataset(
+            cfg.user.data.signal_path + "/train/",
+            cfg.user.data.noise_path + "/train/",
+            cfg.model.signal_length,
+        )
+        val_dataset = ColdDiffusionDataset(
+            cfg.user.data.signal_path + "/validation/",
+            cfg.user.data.noise_path + "/validation/",
+            cfg.model.signal_length,
+        )
+    else:
+        train_dataset = CleanUNetDatasetCSV(
+            cfg.user.data.csv_path,
+            cfg.model.signal_length,
+            cfg.model.snr_lower,
+            cfg.model.snr_upper,
+            cfg.model.event_shift_start,
+            Mode.TRAIN
+        )
+        val_dataset = CleanUNetDatasetCSV(
+            cfg.user.data.csv_path,
+            cfg.model.signal_length,
+            cfg.model.snr_lower,
+            cfg.model.snr_upper,
+            cfg.model.event_shift_start,
+            Mode.VALIDATION
+        )
+
+    train_dl = torch.utils.data.DataLoader(
+        train_dataset, batch_size=cfg.model.batch_size
+    )
+    val_dl = torch.utils.data.DataLoader(val_dataset, batch_size=cfg.model.batch_size)
+
+    model.summary() 
+
+    model.fit(
+        train_dl, epochs=cfg.model.epochs, validation_data=val_dl, callbacks=callbacks
+    )
+
     return model
-
-### Loss
-def p_losses(args, denoise_model, eq_in, noise_real, t, sqrt_alphas_cumprod, sqrt_one_minus_alphas_cumprod, device, loss_type="l1"):
-    '''
-    Computes the loss for the denoising model.
-    
-    Args:
-        args (argparse.Namespace): The arguments containing training parameters.
-        denoise_model (Unet1D): The denoising model.
-        eq_in (torch.Tensor): The input tensor.
-        noise_real (torch.Tensor): The real noise tensor.
-        t (torch.Tensor): The time steps tensor.
-        sqrt_alphas_cumprod (torch.Tensor): The cumulative product of alphas.
-        sqrt_one_minus_alphas_cumprod (torch.Tensor): The square root of one minus the cumulative product of alphas.
-        device (torch.device): The device to run the model on.
-        loss_type (str): The type of loss to use ('l1', 'l2', 'huber').
-        
-    Returns:
-        final_loss (torch.Tensor): The computed loss.
-    '''
-    x_start = eq_in
-    x_end = eq_in + noise_real
-    x_noisy = forward_diffusion_sample(x_start, x_end, t, sqrt_alphas_cumprod, sqrt_one_minus_alphas_cumprod).to(torch.float32)
-    predicted_eq = denoise_model(x_noisy.to(torch.float32), t.to(torch.float32))
-    x = x_noisy
-    new_x_start = predicted_eq
-    predicted_noise = ((x - get_index_from_list(sqrt_alphas_cumprod, t, x.shape) * predicted_eq) / get_index_from_list(sqrt_one_minus_alphas_cumprod, t, x.shape))
-    new_x_end = predicted_noise + predicted_eq
-    new_t = torch.randint(0, args.T, (x.shape[0],), device=device).long()
-    new_x_noisy = forward_diffusion_sample(new_x_start, new_x_end, new_t, sqrt_alphas_cumprod, sqrt_one_minus_alphas_cumprod).to(device)
-    new_predicted_eq = denoise_model(new_x_noisy.to(torch.float32), new_t.to(torch.float32))
-
-    if loss_type == 'l1':
-        loss = F.l1_loss(eq_in, predicted_eq)
-        loss2 = F.l1_loss(eq_in, new_predicted_eq)
-        final_loss = (loss + args.penalization * loss2)
-    elif loss_type == 'l2':
-        loss = F.mse_loss(eq_in, predicted_eq)
-        loss2 = F.mse_loss(eq_in, new_predicted_eq)
-        final_loss = (loss + args.penalization * loss2)
-    elif loss_type == "huber":
-        loss = F.smooth_l1_loss(eq_in, predicted_eq)
-        loss2 = F.smooth_l1_loss(eq_in, new_predicted_eq)
-        final_loss = (loss + args.penalization * loss2)
-    else:
-        raise NotImplementedError()
-
-    return final_loss
-
-def train_one_epoch(model, optimizer, tr_dl, tr_dl_noise, args, device):
-    '''
-    Trains the model for one epoch.
-    
-    Args:
-        model (Unet1D): The model to train.
-        optimizer (Adam): The optimizer.
-        tr_dl (DataLoader): The training data loader.
-        tr_dl_noise (DataLoader): The noisy training data loader.
-        args (argparse.Namespace): The arguments containing training parameters.
-        device (torch.device): The device to run the model on.
-        
-    Returns:
-        curr_train_loss (float): The average training loss for the epoch.
-    '''
-    model.train()
-    sqrt_alphas_cumprod, sqrt_one_minus_alphas_cumprod = compute_beta_schedule(args)
-    sum_train_loss = 0
-    for step, (eq_in, noise_in) in tqdm(enumerate(zip(tr_dl, tr_dl_noise)), total=len(tr_dl)):
-        optimizer.zero_grad()
-        eq_in = eq_in[1][:, args.channel_type, :].unsqueeze(dim=1).to(device)
-        reduce_noise = random.randint(*args.Range_RNF) * 0.01
-        noise_real = (noise_in[1][:, args.channel_type, :].unsqueeze(dim=1) * reduce_noise).to(device)
-        t = torch.randint(0, args.T, (eq_in.shape[0],), device=device).long()
-        loss = p_losses(args, model.to(device), eq_in, noise_real, t, sqrt_alphas_cumprod, sqrt_one_minus_alphas_cumprod, device)
-        sum_train_loss += loss.item()
-        loss.backward()
-        optimizer.step()
-    curr_train_loss = sum_train_loss / len(tr_dl)
-    return curr_train_loss
-
-def validate_model(model, val_dl, val_dl_noise, args, device=device):
-    '''
-    Validates the model on the validation dataset.
-    
-    Args:
-        model (Unet1D): The model to validate.
-        val_dl (DataLoader): The validation data loader.
-        val_dl_noise (DataLoader): The noisy validation data loader.
-        args (argparse.Namespace): The arguments containing validation parameters.
-        device (torch.device): The device to run the model on.
-        
-    Returns:
-        curr_val_loss (float): The average validation loss.
-    '''
-    model.eval()
-    sqrt_alphas_cumprod, sqrt_one_minus_alphas_cumprod = compute_beta_schedule(args)
-    sum_val_loss = 0
-    with torch.no_grad():
-        for step, (eq_in, noise_in) in enumerate(zip(val_dl, val_dl_noise)):
-            eq_in = eq_in[1][:, args.channel_type, :].unsqueeze(dim=1).to(device)
-            reduce_noise = random.randint(*args.Range_RNF) * 0.01
-            noise_real = (noise_in[1][:, args.channel_type, :].unsqueeze(dim=1) * reduce_noise).to(device)
-            t = torch.randint(0, args.T, (eq_in.shape[0],), device=device).long()
-            loss = p_losses(args, model.to(device), eq_in, noise_real, t, sqrt_alphas_cumprod, sqrt_one_minus_alphas_cumprod, device)
-            sum_val_loss += loss.item()
-        curr_val_loss = sum_val_loss / len(val_dl)
-    return curr_val_loss
-
-def train_model(args, tr_dl, tr_dl_noise, val_dl, val_dl_noise):
-    '''
-    Trains the model for multiple epochs and validates it.
-    
-    Args:
-        args (argparse.Namespace): The arguments containing training parameters.
-        tr_dl (DataLoader): The training data loader.
-        tr_dl_noise (DataLoader): The noisy training data loader.
-        val_dl (DataLoader): The validation data loader.
-        val_dl_noise (DataLoader): The noisy validation data loader.
-        
-    Returns:
-        min_loss (float): The minimum validation loss achieved during training.
-    '''
-    print(f"Trial: T={args.T}, scheduler_type = {args.scheduler_type}, s={args.s}, Range_RNF={args.Range_RNF}")
-    if args.iswandb:
-        wandb.login()
-        wandb.init(project=args.wandb_project, entity=args.wandb_entity, name=args.wandb_name_project)    
-    device = torch.device(f"cuda:{args.gpu}" if torch.cuda.is_available() else "cpu")
-    
-    model, optimizer = create_model_and_optimizer(args)
-    model = model.to(device)
-    min_loss = np.inf
-    scheduler = lr_scheduler.StepLR(optimizer, step_size=5, gamma=0.1)
-    for epoch in range(args.epochs):
-        train_loss = train_one_epoch(model, optimizer, tr_dl, tr_dl_noise, args, device)
-        print(f'Epoch: {epoch}, Train Loss: {train_loss}')
-        if args.iswandb:
-            wandb.log({"Train Loss": train_loss}, step=epoch)  # Log train loss to wandb
-        val_loss = validate_model(model, val_dl, val_dl_noise, args, device)
-        print(f'Epoch: {epoch}, Val Loss: {val_loss}')
-        if args.iswandb:
-            wandb.log({"Val Loss": val_loss}, step=epoch)  # Log validation loss to wandb
-        scheduler.step()
-        if val_loss < min_loss:
-            min_loss = val_loss
-            save_path = f'{args.checkpoint_path}epoch_{epoch}_{args.T}_{args.scheduler_type}_{args.Range_RNF}_{args.file_name}' 
-            torch.save(model.state_dict(), save_path)
-            if args.iswandb:
-                wandb.save(save_path)  # Log the model checkpoint to wandb
-            print(f"Best Epoch (so far): {epoch+1}")
-    if args.iswandb:
-        wandb.finish()  # End the wandb run after training is complete
-    return min_loss
-
-
-def test_model(args, test_loader, noise_test_loader):
-    '''
-    Tests the model on the test dataset and saves the results.
-    
-    Args:
-        args (argparse.Namespace): The arguments containing test parameters.
-        test_loader (DataLoader): The test data loader.
-        noise_test_loader (DataLoader): The noisy test data loader.
-    '''
-    device = torch.device(f"cuda:{args.gpu}" if torch.cuda.is_available() else "cpu")
-    testing.initialize_parameters(args.T)
-    model = load_model_and_weights(args.path_model)
-    model = model.to(device)
-
-    Original, restored_direct, restored_sampling, Noised = [], [], [], []
-    
-    T = args.T
-
-    with torch.no_grad():
-        model.eval()
-        for eq_in, noise_in in tqdm(zip(test_loader, noise_test_loader), total=len(test_loader)):
-            eq_in = eq_in[1][:,args.channel_type,:].unsqueeze(dim=1).to(device)
-            reduce_noise = random.randint(*args.Range_RNF) * 0.01
-            noise_real = (noise_in[1][:,args.channel_type,:].unsqueeze(dim=1) * reduce_noise).to(device)
-            signal_noisy = eq_in + noise_real
-            t = torch.Tensor([T-1]).long().to(device)
-            
-            restored_ch1 = testing.direct_denoising(model, signal_noisy.to(device).float().reshape(-1,1,args.trace_size), t)
-            restored_direct.extend([x[0].cpu().numpy() for x in restored_ch1])
-
-            t = T-1
-            restored_sample = testing.sample(
-                                            model,
-                                            signal_noisy.float().reshape(-1, 1, args.trace_size),
-                                            t,
-                                            batch_size=signal_noisy.shape[0]
-                                            )
-            restored_sampling.extend([x[0].cpu().numpy() for x in restored_sample[-1]])
-            Original.extend(eq_in.squeeze().cpu().numpy())
-            Noised.extend(signal_noisy.squeeze().cpu().numpy())
-
-    np.save(f"{args.dataset_path}Restored_direct_0.npy", np.array(restored_direct))
-    np.save(f"{args.dataset_path}Restored_sampling_0.npy", np.array(restored_sampling))
-    np.save(f"{args.dataset_path}Original.npy", np.array(Original))
-    np.save(f"{args.dataset_path}Noised.npy", np.array(Noised))
-    print(np.array(restored_direct).shape)
-
-if __name__ == '__main__':
-
-    args = cp.configure_args()
-
-    df = pd.read_pickle(args.dataset_path + "/signal_validation.pkl")
-    df_noise = pd.read_pickle(args.dataset_path + "/noise_validation.pkl")
-
-    # Change df columns to correct names
-    columns = ['Z', 'N', 'E']
-    df = df[columns]
-    df_noise = df_noise[columns][:len(df)]
-
-    start = 4500
-    signal_length = 6000
-
-    for column in columns:
-        df[column] = df[column].apply(lambda x: x[start:start + signal_length])
-        df_noise[column] = df_noise[column].apply(lambda x: x[:signal_length])
-
-    df['p_arrival_sample'] = 6000 - start
-    df['s_arrival_sample'] = 0
-    df_noise['p_arrival_sample'] = 6000 - start
-    df_noise['s_arrival_sample'] = 0
-    df['trace_name'] = pd.Series(df.index)
-    df_noise['trace_name'] = pd.Series(df_noise.index)
-
-    df = df.rename(columns={'Z': 'Z_channel', 'N': 'N_channel', 'E': 'E_channel'}, inplace=False)
-    df_noise = df_noise.rename(columns={'Z': 'Z_channel', 'N': 'N_channel', 'E': 'E_channel'}, inplace=False)
-
-    print("Start processing Dataloaders")
-    tr_dl, val_dl, test_dl, index_train = create_dataloader(df, batch_size=args.batch_size, is_noise=False, train_frac=args.train_percentage, val_frac=args.val_percentage, test_frac=args.test_percentage)
-    tr_dl_noise, val_dl_noise, test_dl_noise, index_noise = create_dataloader(df_noise, batch_size=args.batch_size, is_noise=True, train_frac=args.train_percentage, val_frac=args.val_percentage, test_frac=args.test_percentage)
-    print("Finished processing dataloaders")
-    if args.training:
-        model = train_model(args, tr_dl, tr_dl_noise, val_dl, val_dl_noise)
-    else:
-        print("Full dataset path:", args.dataset_path)
-        test_model(args, test_dl, test_dl_noise)
-    print("came here")

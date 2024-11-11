@@ -1,26 +1,30 @@
-import keras 
+import keras
 from numpy import ndarray
-import tensorflow as tf
+
 
 
 @keras.saving.register_keras_serializable()
 class WaveDecompLoss(keras.losses.Loss):
-    def __init__(self, name= "wave_decomp_loss" , reduction='sum_over_batch_size'):
+    def __init__(self, signal_weight: float, name= "wave_decomp_loss" , reduction='sum_over_batch_size'):
         super().__init__(name = name, reduction=reduction)
 
         self.mse = keras.losses.MeanSquaredError()
+        self.signal_weight = signal_weight
 
-    def call(self, y_true: tuple[ndarray, ndarray], y_pred:tuple[ndarray, ndarray]) -> float:
-
-        print(y_true.shape)
-        print(y_pred.shape)
-        
-        return 0.5 * self.mse(y_true[:,0,:,:], y_pred[:,0,:,:]) + 0.5 * self.mse(y_true[:,1,:,:], y_pred[:,1,:,:])
+    def call(self, y_true: ndarray, y_pred:ndarray) -> float:
+        signal_error = self.mse(y_true[:,0,:,:], y_pred[:,0,:,:])
+        noise_error = self.mse(y_true[:,1,:,:], y_pred[:,1,:,:])            
+        return self.signal_weight * signal_error + (1 - self.signal_weight) * noise_error
 
     def get_config(self):
         config = super().get_config()
+        # Update the config with the custom layer's parameters
+        config.update(
+            {
+                "signal_weight": self.signal_weight,
+            }
+        )
         return config
-
 
 
 @keras.saving.register_keras_serializable()
@@ -154,7 +158,7 @@ class Decoder(keras.layers.Layer):
 @keras.saving.register_keras_serializable()
 class UNet1D(keras.models.Model):
 
-    def __init__(self, n_layers:int=3, dropout:float=0.0, channel_base:int=8, bottleneck:str=None, **kwargs):
+    def __init__(self, n_layers:int=3, dropout:float=0.0, channel_base:int=8, n_lstm_layers:int=1, **kwargs):
         super().__init__()
 
         self.batchnorm1 = keras.layers.BatchNormalization()
@@ -163,7 +167,7 @@ class UNet1D(keras.models.Model):
             DownsamplingLayer(channel_base*(2**i), dropout, kernel_size=2 * (n_layers - i) + 1) for i in range(n_layers)
             ]
         
-        self.bottleneck = keras.layers.LSTM(channel_base*(2**n_layers), enable_sequence=True)
+        self.bottleneck = keras.Sequential([keras.layers.LSTM(channel_base*(2**n_layers), return_sequences=True) for _ in range(n_lstm_layers)])
 
         self.batchnorm_middle = keras.layers.BatchNormalization()
         self.dropout_layer = keras.layers.Dropout
@@ -181,7 +185,7 @@ class UNet1D(keras.models.Model):
         for down in self.downsamplers:
             x, res = down(x)
             residuals.append(res)
-        
+
         self.signal_decoder.residuals = residuals
         self.noise_decoder.residuals = residuals
         
@@ -194,4 +198,4 @@ class UNet1D(keras.models.Model):
 
         output = keras.ops.stack([signal, noise], axis=1)
 
-        return signal, noise
+        return output

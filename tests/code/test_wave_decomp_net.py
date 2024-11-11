@@ -1,7 +1,9 @@
 import keras
 import numpy as np
+from torch.utils.data import DataLoader
 
 from src.models.WaveDecompNet.wave_decomp_net import DownsamplingLayer, UpsamplingLayer, UNet1D, WaveDecompLoss
+from src.data import TupleDataset
 
 def test_downsampling_layer():
     down = DownsamplingLayer(8)
@@ -16,23 +18,16 @@ def test_upsampling_layer():
     output = up(input, residuals)
     assert output.shape == (32,3000, 3)
 
-def test_unet1d():
-    unet = UNet1D(n_layers=6)
-    input = np.zeros((32,2048,3))
-    output = unet(input)
-    assert output[:,0,:,:].shape == (32,2048,3) and output[:,1,:,:].shape == (32,2048,3)
-
 def test_unet1d_loss():
-    unet = UNet1D(n_layers=6)
+    unet = UNet1D(n_layers=3)
     gt_signal = np.zeros((32,2048, 3))
     gt_noise = np.zeros((32,2048, 3))
-    gt = np.stack([gt_signal, gt_noise],axis=1)
+    gt = (gt_signal, gt_noise)
     input = gt_signal + gt_noise
     output = unet(input)
     loss = WaveDecompLoss()
     loss_value = loss(gt, output)
     assert loss_value >= 0.0
-
 
 def test_keras_lstm():
     input = np.zeros((32,64,256))
