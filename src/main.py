@@ -12,7 +12,7 @@ import torch as th
 from train import train_model
 from tuner import tune_model, tune_model_optuna
 from validate import compute_metrics
-from plot import compare_two, visualize_predictions
+from plot import compare_model_and_baselines, visualize_predictions
 
 
 log = logging.getLogger(__name__)
@@ -53,18 +53,22 @@ def main(cfg: omegaconf.DictConfig):
         elif cfg.test:
             model_df, butterworth_df = compute_metrics(cfg)
             if cfg.plot.metrics:
-                compare_two(
+                compare_model_and_baselines(
                 output_dir / "metrics_model.csv",
                 output_dir / "metrics_butterworth.csv",
+                cfg.user.metrics_deepdenoiser_path,
                 label1=cfg.model.model_name,
                 label2="Butterworth",
+                label3="DeepDenoiser"
             )
         elif cfg.plot.metrics:
-            compare_two(
+            compare_model_and_baselines(
                 cfg.user.metrics_model_path,
                 cfg.user.metrics_butterworth_path,
+                cfg.user.metrics_deepdenoiser_path,
                 label1=cfg.model.model_name,
                 label2="Butterworth",
+                label3="DeepDenoiser"
             )
         elif cfg.plot.visualization:
             visualize_predictions(cfg)

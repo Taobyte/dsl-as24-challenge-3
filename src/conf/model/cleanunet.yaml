@@ -33,9 +33,11 @@ dropout: 0.0
 # encoder/decoder settings           
 channels_H: 8
 max_H: 768
-encoder_n_layers: 6
+encoder_n_layers: 5
 kernel_size: 3
 stride: 2
+
+bottleneck: None
 
 # transformer settings
 tsfm_n_layers: 3

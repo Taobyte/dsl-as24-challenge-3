@@ -31,7 +31,8 @@ def fit_clean_unet(cfg: omegaconf.DictConfig) -> keras.Model:
                       cfg.model.tsfm_n_layers,
                       cfg.model.tsfm_n_head,
                       cfg.model.tsfm_d_model,
-                      cfg.model.tsfm_d_inner)
+                      cfg.model.tsfm_d_inner,
+                      cfg.model.bottleneck)
 
     sample_shape = np.zeros(
         (cfg.model.batch_size, cfg.model.signal_length, cfg.model.channels_input)
