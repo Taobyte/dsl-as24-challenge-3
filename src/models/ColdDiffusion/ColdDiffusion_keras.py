@@ -23,6 +23,7 @@ class SinusoidalEmbeddings(keras.layers.Layer):
         embedding = keras.ops.exp(keras.ops.arange(half_dim) * -embedding)
         embedding = time[:,None] * embedding[None,:] # multiplies each time onto same embedding vector
         embedding = keras.ops.concatenate([keras.ops.sin(embedding), keras.ops.sin(embedding)], axis=-1)
+        embedding = einops.rearrange(embedding, "b 1 c -> b c")
         return embedding
     
     def get_config(self):
@@ -144,7 +145,7 @@ class ResNetBlock(keras.layers.Layer):
         scale_shift = None
         if (time_embedding is not None) and (self.mlp is not None):
             time_embedding = self.mlp(time_embedding)
-            time_embedding = einops.rearrange(time_embedding, "b 1 c -> b c 1")
+            time_embedding = einops.rearrange(time_embedding, "b c -> b c 1")
             scale_shift = keras.ops.split(time_embedding, 2, axis=1) # returns tuple
 
         h = self.conv1(x)
@@ -245,7 +246,7 @@ class AttentionBlock(keras.layers.Layer):
 
 
 @keras.saving.register_keras_serializable()
-class DiffusionUnet1D(keras.models.Model):
+class Unet1D(keras.models.Model):
 
     def __init__(
             self,  
@@ -259,7 +260,7 @@ class DiffusionUnet1D(keras.models.Model):
 
             ):
         
-        super().__init__()
+        super().__init__(name=f"UNet1D_d{dim}")
 
         self.dim = dim
         self.dim_multiples = dim_multiples
@@ -320,7 +321,7 @@ class DiffusionUnet1D(keras.models.Model):
     def call(self, x, time):
         
         x = self.init_conv(x)
-        r = x.copy()
+        r = x.clone()
 
         t = self.time_mlp(time)
 
@@ -371,3 +372,40 @@ class DiffusionUnet1D(keras.models.Model):
             }
         )
         return config
+    
+
+@keras.saving.register_keras_serializable()
+class ColdDiffusion(keras.models.Model):
+
+    def __init__(
+            self,  
+            dim, 
+            dim_multiples:tuple=(1,2,4,8),
+            in_dim:int=3,
+            out_dim:int=3,
+            attn_dim_head:int=32,
+            attn_heads:int=4,
+            resnet_norm_groups:int=8,
+            ):
+        super.__init__(name=f"ColdDiffusion_d{dim}")
+
+        self.unet = Unet1D(dim, dim_multiples, in_dim, out_dim, attn_dim_head, attn_heads, resnet_norm_groups)
+
+    def call(self, x, time):
+        return self.unet(x, time)
+    
+    def get_config(self):
+        config = super().get_config()
+        config.update(
+            {
+                "dim": self.dim,
+                "dim_multiples": self.dim_multiples,
+                "in_dim": self.in_dim,
+                "out_dim": self.out_dim,
+                "resnet_norm_groups": self.resnet_norm_groups,
+                "attn_dim_head": self.attn_dim_head,
+                "attn_heads": self.attn_heads,
+            }
+        )
+        return config
+    
