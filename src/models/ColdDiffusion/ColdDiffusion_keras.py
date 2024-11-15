@@ -1,9 +1,12 @@
 import os
 from functools import partial
 
-os.environ["KERAS_BACKEND"] = "jax"
+os.environ["KERAS_BACKEND"] = "torch"
 import keras
+import torch
 import einops
+
+from models.ColdDiffusion.utils import generate_degraded_sample
 
 @keras.saving.register_keras_serializable()
 class SinusoidalEmbeddings(keras.layers.Layer):
@@ -394,6 +397,40 @@ class ColdDiffusion(keras.models.Model):
     def call(self, x, time):
         return self.unet(x, time)
     
+    def train_step(self, data):
+        eq, noise = data
+        device = eq.get_device()
+
+        self.zero_grad()
+
+        T = 20
+        t = torch.randint(0, T, (eq.shape[0],), device=device).long()
+
+        x_noisy = generate_degraded_sample(eq, noise, t, T)
+        denoised_eq = self(x_noisy, t)
+
+        new_t = torch.randint(0, T, (eq.shape[0],), device=device).long()
+        new_x_noisy = generate_degraded_sample(denoised_eq, noise, new_t, T)
+        new_denoised_eq = self(new_x_noisy, new_t)
+
+        loss = self.compute_loss(eq, denoised_eq, new_denoised_eq)
+        loss.backward()
+
+        trainable_weights = [v for v in self.trainable_weights]
+        gradients = [v.value.grad for v in trainable_weights]
+
+        with torch.no_grad():
+            self.optimizer.apply(gradients, trainable_weights)
+        
+        for metric in self.metrics:
+            if metric.name == "loss":
+                metric.update_state(loss)
+        
+        return {m.name: m.result() for m in self.metrics}
+
+
+
+    
     def get_config(self):
         config = super().get_config()
         config.update(
@@ -408,4 +445,6 @@ class ColdDiffusion(keras.models.Model):
             }
         )
         return config
+    
+
     

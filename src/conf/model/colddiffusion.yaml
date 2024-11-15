@@ -5,6 +5,8 @@ dim: 8
 dim_mults: [1, 2, 4, 8]
 channels: 3
 
+T: 50
+
 # data
 signal_length: 2048
 snr_lower: 0.1
