@@ -1,7 +1,6 @@
 import os
 from functools import partial
 
-os.environ["KERAS_BACKEND"] = "torch"
 import keras
 import torch
 import einops
@@ -26,7 +25,7 @@ class SinusoidalEmbeddings(keras.layers.Layer):
         embedding = keras.ops.exp(keras.ops.arange(half_dim) * -embedding)
         embedding = time[:,None] * embedding[None,:] # multiplies each time onto same embedding vector
         embedding = keras.ops.concatenate([keras.ops.sin(embedding), keras.ops.sin(embedding)], axis=-1)
-        embedding = einops.rearrange(embedding, "b 1 c -> b c")
+        # embedding = einops.rearrange(embedding, "b 1 c -> b c")
         return embedding
     
     def get_config(self):
@@ -288,7 +287,7 @@ class Unet1D(keras.models.Model):
             keras.layers.Dense(self.time_dim, activation=None)
         ])
         
-        self.init_conv = keras_conv1d(self.dim, 7)
+        self.init_conv = keras_conv1d(self.dim, 6)
         self.downs = []
         self.ups = []
 
@@ -378,7 +377,7 @@ class Unet1D(keras.models.Model):
     
 
 @keras.saving.register_keras_serializable()
-class ColdDiffusion(keras.models.Model):
+class ColdDiffusion(Unet1D):
 
     def __init__(
             self,  
@@ -390,15 +389,12 @@ class ColdDiffusion(keras.models.Model):
             attn_heads:int=4,
             resnet_norm_groups:int=8,
             ):
-        super.__init__(name=f"ColdDiffusion_d{dim}")
-
-        self.unet = Unet1D(dim, dim_multiples, in_dim, out_dim, attn_dim_head, attn_heads, resnet_norm_groups)
-
-    def call(self, x, time):
-        return self.unet(x, time)
+        super().__init__(dim, dim_multiples, in_dim, out_dim, 
+                       attn_dim_head, attn_heads, resnet_norm_groups,
+        )
     
     def train_step(self, data):
-        eq, noise = data
+        eq, noise = (data[:3], data[3:])
         device = eq.get_device()
 
         self.zero_grad()
@@ -427,9 +423,30 @@ class ColdDiffusion(keras.models.Model):
                 metric.update_state(loss)
         
         return {m.name: m.result() for m in self.metrics}
+    
+    def test_step(self, data):
+        eq, noise = (data[:3], data[3:])
+        device = eq.get_device()
 
+        self.zero_grad()
 
+        T = 20
+        t = torch.randint(0, T, (eq.shape[0],), device=device).long()
 
+        x_noisy = generate_degraded_sample(eq, noise, t, T)
+        denoised_eq = self(x_noisy, t)
+
+        new_t = torch.randint(0, T, (eq.shape[0],), device=device).long()
+        new_x_noisy = generate_degraded_sample(denoised_eq, noise, new_t, T)
+        new_denoised_eq = self(new_x_noisy, new_t)
+
+        loss = self.compute_loss(eq, denoised_eq, new_denoised_eq)
+        
+        for metric in self.metrics:
+            if metric.name == "loss":
+                metric.update_state(loss)
+        
+        return {m.name: m.result() for m in self.metrics}
     
     def get_config(self):
         config = super().get_config()
