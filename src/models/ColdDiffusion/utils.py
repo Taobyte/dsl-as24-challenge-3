@@ -16,7 +16,7 @@ def generate_degraded_sample(eq, noise, times, T):
     steps = keras.ops.arange(T)
     # cosine scheduling
     beta_0 = keras.ops.cos(s / (1 + s) * torch.pi * 0.5) ** 2
-    beta_t = torch.cos(((steps / T) + s) / (1 + s) * torch.pi * 0.5) ** 2
+    beta_t = keras.ops.cos(((steps / T) + s) / (1 + s) * torch.pi * 0.5) ** 2
     alpha_t = beta_t / beta_0
     alphas_cumprod = keras.ops.cumprod(alpha_t,axis=0)
     sqrt_alpha_cumprod = keras.ops.sqrt(alphas_cumprod)

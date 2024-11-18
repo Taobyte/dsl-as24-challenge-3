@@ -388,7 +388,9 @@ class ColdDiffusion(keras.models.Model):
     
     def train_step(self, data):
         eq, noise = data
-        device = eq.get_device()
+        device = "cuda" if torch.cuda.is_available() else "cpu"
+        eq = eq.to(device)
+        noise = noise.to(device)
 
         self.zero_grad()
 
