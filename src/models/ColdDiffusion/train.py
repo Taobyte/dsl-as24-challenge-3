@@ -6,11 +6,9 @@ import torch
 import numpy as np
 import keras
 
-from src.utils import Mode
-from src.models.CleanUNet.dataset import CleanUNetDatasetCSV
-from src.models.ColdDiffusion.cold_diffusion_model_clemens import Unet1D
-from src.models.ColdDiffusion.dataset import ColdDiffusionDataset
-from src.models.CleanUNet.utils import CleanUNetLoss
+from utils import Mode
+from models.ColdDiffusion.ColdDiffusion_keras import ColdDiffusion
+from models.ColdDiffusion.dataset import ColdDiffusionDataset
 
 def fit_cold_diffusion(cfg: omegaconf.DictConfig) -> keras.Model:
 
@@ -18,90 +16,83 @@ def fit_cold_diffusion(cfg: omegaconf.DictConfig) -> keras.Model:
         hydra.core.hydra_config.HydraConfig.get().runtime.output_dir
     )
 
-    model = Unet1D(
-        cfg.model.dim,
-        init_dim=cfg.model.dim,
-        dim_mults=tuple(cfg.model.dim_mults),
-        channels=cfg.model.channels,
+    model = ColdDiffusion(
+        dim=int(cfg.model.dim), 
+        dim_multiples=list(cfg.model.dim_multiples),
+        in_dim=3,
+        out_dim=3,
+        attn_dim_head=int(cfg.model.attn_dim_head),
+        attn_heads=int(cfg.model.attn_heads),
+        resnet_norm_groups=int(cfg.model.resnet_norm_groups),
     )
 
-    # build model
-    sample_shape = np.zeros(
-        (cfg.model.batch_size, cfg.model.signal_length, cfg.model.channels)
-    )
-    model(sample_shape)
-
-    if cfg.model.loss == 'stft':
-        loss = CleanUNetLoss(signal_length=cfg.model.signal_length)
-    elif cfg.model.loss == 'mae':
-        loss = keras.losses.MeanAbsoluteError()
-    elif cfg.model.loss == 'mse':
-        loss = keras.losses.MeanSquaredError()
-    else:
-        print(f"loss {cfg.model.loss} is not supported")
-
+    loss = ColdDiffusionLoss()
     model.compile(
-        loss=loss,
+        loss=keras.losses.MeanSquaredError(),
         optimizer=keras.optimizers.AdamW(learning_rate=cfg.model.lr),
+        metrics=[keras.metrics.MeanSquaredError(name="Part1"),
+                 ],
+        # run_eagerly=True,
     )
-
     # build model
-    sample_shape = np.zeros(
-        (cfg.model.batch_size, cfg.model.signal_length, cfg.model.channels)
-    )
-    model(sample_shape)
+    time = keras.random.randint((cfg.model.batch_size,), 0, cfg.model.T)
+    x = keras.random.normal((cfg.model.batch_size, 3, cfg.model.signal_length))
+    model(x, time)
 
     callbacks = [
         keras.callbacks.ModelCheckpoint(
             filepath=output_dir / "checkpoints/model_at_epoch_{epoch}.keras"
         ),
         keras.callbacks.EarlyStopping(monitor="val_loss", patience=2),
-        keras.callbacks.TensorBoard(
-            log_dir=output_dir / "logs",
-            histogram_freq=1,
-            write_graph=True,
-            write_images=True,
-            update_freq="epoch",
-        ),
     ]
-    if not cfg.model.use_csv:
-        train_dataset = ColdDiffusionDataset(
-            cfg.user.data.signal_path + "/train/",
-            cfg.user.data.noise_path + "/train/",
-            cfg.model.signal_length,
-        )
-        val_dataset = ColdDiffusionDataset(
-            cfg.user.data.signal_path + "/validation/",
-            cfg.user.data.noise_path + "/validation/",
-            cfg.model.signal_length,
-        )
-    else:
-        train_dataset = CleanUNetDatasetCSV(
-            cfg.user.data.csv_path,
-            cfg.model.signal_length,
-            cfg.model.snr_lower,
-            cfg.model.snr_upper,
-            cfg.model.event_shift_start,
-            Mode.TRAIN
-        )
-        val_dataset = CleanUNetDatasetCSV(
-            cfg.user.data.csv_path,
-            cfg.model.signal_length,
-            cfg.model.snr_lower,
-            cfg.model.snr_upper,
-            cfg.model.event_shift_start,
-            Mode.VALIDATION
-        )
+    train_dataset = ColdDiffusionDataset(cfg.user.data.train_file, shape=(20230, 6, 4096))
+    val_dataset = ColdDiffusionDataset(cfg.user.data.val_file, shape=(4681, 6, 4096))
 
     train_dl = torch.utils.data.DataLoader(
-        train_dataset, batch_size=cfg.model.batch_size
+        train_dataset, batch_size=cfg.model.batch_size, num_workers=cfg.model.num_workers,
     )
-    val_dl = torch.utils.data.DataLoader(val_dataset, batch_size=cfg.model.batch_size)
+    val_dl = torch.utils.data.DataLoader(
+        val_dataset, batch_size=cfg.model.batch_size, num_workers=cfg.model.num_workers,
+    )
 
     model.summary() 
-
     model.fit(
-        train_dl, epochs=cfg.model.epochs, validation_data=val_dl, callbacks=callbacks
+        train_dl, 
+        epochs=cfg.model.epochs, 
+        validation_data=val_dl, 
+        callbacks=callbacks,
+        batch_size=cfg.model.batch_size,
     )
 
     return model
+
+
+def custom_metric(loss):
+    return loss
+
+
+class ColdDiffusionLoss(keras.losses.Loss):
+    def __init__(self, penalty: float=0.5, loss_type: str = "MSE"):
+        super().__init__()
+        self.penalty = penalty
+        self.loss_type = loss_type
+        if loss_type == "MSE":
+            self.fct = keras.losses.MeanSquaredError()
+        else:
+            raise Exception("CustomLossException --> not a valid loss_type")
+
+    def call(self, eq, denoised_eqs):
+        print(denoised_eqs.shape)
+        assert denoised_eqs.shape[1] == 6, "Custom Assertion: Dimensions do not match in loss"
+        l1 = self.fct(eq, denoised_eqs[:,:3,:])
+        l2 = self.fct(eq, denoised_eqs[:,3:,:])
+
+        return l1 + self.penalty*l2
+
+    def get_config(self):
+        config = super().get_config()
+        config.update({
+                "penalty": self.penalty,
+                "loss_type": self.loss_type,
+        })
+        return config

@@ -5,6 +5,8 @@ import keras
 import torch
 import einops
 
+from torchviz import make_dot
+
 from models.ColdDiffusion.utils import generate_degraded_sample
 
 @keras.saving.register_keras_serializable()
@@ -157,11 +159,11 @@ class ResNetBlock(keras.layers.Layer):
             scale, shift = scale_shift
             h = h * (1+scale) + shift
 
-        self.act1(h)
+        h = self.act1(h)
 
-        self.conv2(h)
-        self.norm2(h)
-        self.act2(h)
+        h = self.conv2(h)
+        h = self.norm2(h)
+        h = self.act2(h)
 
         return h + self.residual_projection(x)
     
@@ -248,21 +250,22 @@ class AttentionBlock(keras.layers.Layer):
 
 
 @keras.saving.register_keras_serializable()
-class Unet1D(keras.models.Model):
+class ColdDiffusion(keras.models.Model):
 
     def __init__(
             self,  
             dim, 
-            dim_multiples:tuple=(1,2,4,8),
-            in_dim:int=3,
-            out_dim:int=3,
-            attn_dim_head:int=32,
-            attn_heads:int=4,
-            resnet_norm_groups:int=8,
-
+            dim_multiples: tuple=(1,2,4,8),
+            in_dim: int=3,
+            out_dim: int=3,
+            attn_dim_head: int=32,
+            attn_heads: int=4,
+            resnet_norm_groups: int=8,
+            penalty: float=0.7,
+            T: int=50,
             ):
         
-        super().__init__(name=f"UNet1D_d{dim}")
+        super().__init__(name=f"ColdDiff_UNet1D_d{dim}")
 
         self.dim = dim
         self.dim_multiples = dim_multiples
@@ -272,6 +275,8 @@ class Unet1D(keras.models.Model):
         self.attn_heads = attn_heads
         self.resnet_norm_groups = resnet_norm_groups
         self.time_dim = self.dim * 4
+        self.penalty = penalty
+        self.T = T
         # new function classes to shorten code
         block_class = partial(ResNetBlock, n_groups=self.resnet_norm_groups, time_emb_dim=self.time_dim)
         keras_conv1d = partial(keras.layers.Conv1D, data_format="channels_first", padding="same")
@@ -317,25 +322,29 @@ class Unet1D(keras.models.Model):
             ])
 
         self.final_resnet = block_class(2*self.dim, self.dim)
-        self.final_conv = keras_conv1d(out_dim, 3)
+        self.final_conv = keras_conv1d(self.out_dim, 3)
+
+        # loss
+        self.loss_fn = keras.losses.MeanSquaredError()
 
 
-    def call(self, x, time):
+    def call(self, x, t=None):
         
         x = self.init_conv(x)
-        r = x.clone()
-
-        t = self.time_mlp(time)
+        r = keras.ops.copy(x)
+        if t is None:
+            t = keras.ops.zeros((x.shape[0],))
+        t = self.time_mlp(t)
 
         h = []
 
         for block1, block2, attn, downsample in self.downs:
             x = block1(x, t)
-            h.append(x)
+            h.append(keras.ops.copy(x))
 
             x = block2(x, t)
             x = attn(x)
-            h.append(x)
+            h.append(keras.ops.copy(x))
 
             x = downsample(x)
 
@@ -371,45 +380,29 @@ class Unet1D(keras.models.Model):
                 "resnet_norm_groups": self.resnet_norm_groups,
                 "attn_dim_head": self.attn_dim_head,
                 "attn_heads": self.attn_heads,
+                "penalty": self.penalty,
+                "T": self.T,
             }
         )
         return config
     
-
-@keras.saving.register_keras_serializable()
-class ColdDiffusion(Unet1D):
-
-    def __init__(
-            self,  
-            dim, 
-            dim_multiples:tuple=(1,2,4,8),
-            in_dim:int=3,
-            out_dim:int=3,
-            attn_dim_head:int=32,
-            attn_heads:int=4,
-            resnet_norm_groups:int=8,
-            ):
-        super().__init__(dim, dim_multiples, in_dim, out_dim, 
-                       attn_dim_head, attn_heads, resnet_norm_groups,
-        )
-    
     def train_step(self, data):
-        eq, noise = (data[:3], data[3:])
+        eq, noise = data
         device = eq.get_device()
 
         self.zero_grad()
 
-        T = 20
-        t = torch.randint(0, T, (eq.shape[0],), device=device).long()
+        T = self.T
+        t = torch.randint(0, T, (eq.shape[0],), device=eq.device).long()
 
         x_noisy = generate_degraded_sample(eq, noise, t, T)
         denoised_eq = self(x_noisy, t)
 
-        new_t = torch.randint(0, T, (eq.shape[0],), device=device).long()
+        new_t = torch.randint(0, T, (eq.shape[0],), device=eq.device).long()
         new_x_noisy = generate_degraded_sample(denoised_eq, noise, new_t, T)
         new_denoised_eq = self(new_x_noisy, new_t)
-
-        loss = self.compute_loss(eq, denoised_eq, new_denoised_eq)
+        
+        loss = self.compute_loss(y=eq, y_pred=denoised_eq) + self.penalty*self.compute_loss(y=eq, y_pred=new_denoised_eq)
         loss.backward()
 
         trainable_weights = [v for v in self.trainable_weights]
@@ -421,30 +414,38 @@ class ColdDiffusion(Unet1D):
         for metric in self.metrics:
             if metric.name == "loss":
                 metric.update_state(loss)
+            elif metric.name == "Part1":
+                metric.update_state(eq, denoised_eq)
+            else:
+                metric.update_state(eq, denoised_eq)
         
         return {m.name: m.result() for m in self.metrics}
     
     def test_step(self, data):
-        eq, noise = (data[:3], data[3:])
-        device = eq.get_device()
+        eq, noise = data
 
         self.zero_grad()
 
-        T = 20
-        t = torch.randint(0, T, (eq.shape[0],), device=device).long()
+        T = self.T
+        t = torch.randint(0, T, (eq.shape[0],), device=eq.device).long()
 
         x_noisy = generate_degraded_sample(eq, noise, t, T)
         denoised_eq = self(x_noisy, t)
 
-        new_t = torch.randint(0, T, (eq.shape[0],), device=device).long()
+        new_t = torch.randint(0, T, (eq.shape[0],), device=eq.device).long()
         new_x_noisy = generate_degraded_sample(denoised_eq, noise, new_t, T)
         new_denoised_eq = self(new_x_noisy, new_t)
-
-        loss = self.compute_loss(eq, denoised_eq, new_denoised_eq)
+        loss = self.compute_loss(y=eq, y_pred=denoised_eq) + self.penalty*self.compute_loss(y=eq, y_pred=new_denoised_eq)
         
         for metric in self.metrics:
             if metric.name == "loss":
                 metric.update_state(loss)
+            elif metric.name == "MSE1":
+                metric.update_state(eq, denoised_eq)
+            elif metric.name == "MSE2":
+                metric.update_state(eq, new_denoised_eq)
+            else:
+                metric.update_state(eq, denoised_eq)
         
         return {m.name: m.result() for m in self.metrics}
     

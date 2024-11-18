@@ -1,47 +1,52 @@
 import glob
 
+import torch
+import einops
 import numpy as np
 from numpy import ndarray
 import torch
 
-from src.utils import Mode
+from utils import Mode
+from models.DeepDenoiser.dataset import get_signal_noise_assoc
+
 
 
 class ColdDiffusionDataset(torch.utils.data.Dataset):
 
-    def __init__(self, signal_path: str, noise_path: str, signal_length: int, snr_lower: int=0.5, snr_upper: int=2.0, mode: Mode=Mode.TRAIN):
-        
-        self.signal_files = glob.glob(f"{signal_path}/**/*.npz", recursive=True)
-        self.noise_files = glob.glob(f"{noise_path}/**/*.npz", recursive=True)
+    def __init__(self, filename, shape):
+        # shape args: TRAIN: (20230, 6, 4096) VAL: (4681, 6, 4096)
+        self.memmap_file = np.memmap(filename, mode="r+", shape=shape, dtype='float32')
 
-        self.signal_length = signal_length
-        
-        self.snr_lower = snr_lower
-        self.snr_upper = snr_upper
-
-        self.mode = mode
-
+    def __getitem__(self, index):
+        return (self.memmap_file[index,:3,:], self.memmap_file[index,3:,:])
+    def __len__(self):
+        return len(self.memmap_file)
     
-    def __len__(self) -> int:
-        return len(self.signal_files)
-    
-    def __getitem__(self, idx) -> tuple[ndarray, ndarray]:
+
+def compute_train_dataset(signal_length, mode):
+
+    signal_path = "/home/tim/Documents/Data-Science_MSc/DSLab/earthquake_data/event"
+    noise_path = "/home/tim/Documents/Data-Science_MSc/DSLab/earthquake_data/noise"
+    if mode == Mode.TRAIN:
+        dataset_name = "/home/tim/Documents/Data-Science_MSc/DSLab/earthquake_data/dataset_train_001.dat"
+    else:
+        dataset_name = "/home/tim/Documents/Data-Science_MSc/DSLab/earthquake_data/dataset_val_001.dat"
+    assoc = get_signal_noise_assoc(signal_path, noise_path, mode, size_testset=1000,
+                                   snr=lambda : np.random.uniform(0.2, 1.5))
+    full = []
+
+    for (eq_file, noise_file, snr_random, event_shift) in assoc:
+        eq = np.load(eq_file, allow_pickle=True)
+        noise = np.load(noise_file, allow_pickle=True)
         
-        eq = np.load(self.signal_files[idx], allow_pickle=True)
-        random_noise_idx = np.random.randint(len(self.noise_files))
-        noise = np.load(self.noise_files[random_noise_idx], allow_pickle=True)
-        assert self.snr_lower <= self.snr_upper
-        snr_random = np.random.uniform(self.snr_lower,self.snr_upper)
-        event_shift = np.random.randint(6000 - self.signal_length + 500,6000)
-        
-        Z_eq = eq["earthquake_waveform_Z"][event_shift : event_shift + self.signal_length]
-        N_eq = eq["earthquake_waveform_N"][event_shift : event_shift + self.signal_length]
-        E_eq = eq["earthquake_waveform_E"][event_shift : event_shift + self.signal_length]
+        Z_eq = eq["earthquake_waveform_Z"][event_shift : event_shift + signal_length]
+        N_eq = eq["earthquake_waveform_N"][event_shift : event_shift + signal_length]
+        E_eq = eq["earthquake_waveform_E"][event_shift : event_shift + signal_length]
         eq_stacked = np.stack([Z_eq, N_eq, E_eq], axis=1)
 
-        Z_noise = noise["noise_waveform_Z"][:self.signal_length]
-        N_noise = noise["noise_waveform_N"][:self.signal_length]
-        E_noise = noise["noise_waveform_E"][:self.signal_length]
+        Z_noise = noise["noise_waveform_Z"][:signal_length]
+        N_noise = noise["noise_waveform_N"][:signal_length]
+        E_noise = noise["noise_waveform_E"][:signal_length]
         noise_stacked = np.stack([Z_noise, N_noise, E_noise], axis=1)
 
         max_val = max(np.max(np.abs(noise_stacked)), np.max(np.abs(eq_stacked))) + 1e-10
@@ -55,9 +60,23 @@ class ColdDiffusionDataset(torch.utils.data.Dataset):
         # change the SNR
         noise_stacked = noise_stacked * snr_original  # rescale noise so that SNR=1
         eq_stacked = eq_stacked * snr_random  # rescale event to desired SNR
-        noisy_eq = eq_stacked + noise_stacked # recombine
+        if np.isnan(noise_stacked).any():
+            print("std", snr_original)
+            print("shift", event_shift)
+            print("len", len(Z_noise))
+            print(Z_noise[6000-event_shift:6500-event_shift])
 
-        if self.mode == Mode.TEST:
-            return noisy_eq, eq_stacked, event_shift
-        else:
-            return noisy_eq, eq_stacked
+
+        output = np.stack([eq_stacked.T, noise_stacked.T], axis=0)
+        output = einops.rearrange(output, "n d t -> (n d) t")
+        
+        full.append(output)
+
+    # return np.array(full)
+
+    full = np.array(full)
+    print(full.shape)
+
+    file = np.memmap(dataset_name, dtype=np.float32, mode="w+", shape=full.shape)
+    file[:] = full
+    file.flush

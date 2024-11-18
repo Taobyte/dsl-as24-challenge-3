@@ -8,9 +8,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 from tqdm import tqdm
 
-from src.metrics import cross_correlation, max_amplitude_difference, p_wave_onset_difference
-from src.utils import Mode
-from src.models.ColdDiffusion.dataset import ColdDiffusionDataset
+from metrics import cross_correlation, max_amplitude_difference, p_wave_onset_difference
+from utils import Mode
+from models.ColdDiffusion.dataset import ColdDiffusionDataset
 
 def get_metrics_cold_diffusion(
     model: keras.Model, snr: int, cfg: omegaconf.DictConfig, idx: int = 0,
