@@ -1,3 +1,4 @@
+import os
 import pathlib
 import hydra
 import omegaconf 
@@ -5,6 +6,7 @@ import omegaconf
 import torch
 import numpy as np
 import keras
+import wandb
 
 from utils import Mode
 from models.ColdDiffusion.ColdDiffusion_keras import ColdDiffusion
@@ -15,6 +17,23 @@ def fit_cold_diffusion(cfg: omegaconf.DictConfig) -> keras.Model:
     output_dir = pathlib.Path(
         hydra.core.hydra_config.HydraConfig.get().runtime.output_dir
     )
+    if cfg.user.wandb:
+        wandb.init(
+            # set the wandb project where this run will be logged
+            project="earthquake denoising",
+            # track hyperparameters and run metadata
+            config={
+                "learning_rate": cfg.model.lr,
+                "architecture": "ColdDiffusion",
+                "dataset": "SED dataset",
+                "epochs": cfg.model.epochs,
+                "batch_size": cfg.model.batch_size,
+                "dim": cfg.model.dim,
+                "dim_multiples": cfg.model.dim_multiples,
+                "num_workers": cfg.model.num_workers,
+            },
+        )
+        wandb.run.name = "{}".format(os.getcwd().split('outputs/')[-1])
 
     model = ColdDiffusion(
         dim=int(cfg.model.dim), 
@@ -45,6 +64,10 @@ def fit_cold_diffusion(cfg: omegaconf.DictConfig) -> keras.Model:
         ),
         keras.callbacks.EarlyStopping(monitor="val_loss", patience=2),
     ]
+    if cfg.user.wandb:
+        wandb_callbacks = [wandb.integration.keras.WandbMetricsLogger(log_freq="batch")]
+        callbacks = callbacks.extend(wandb_callbacks)
+    
     train_dataset = ColdDiffusionDataset(cfg.user.data.train_file, shape=(20230, 6, 4096))
     val_dataset = ColdDiffusionDataset(cfg.user.data.val_file, shape=(4681, 6, 4096))
 
