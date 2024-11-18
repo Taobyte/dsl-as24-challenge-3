@@ -1,6 +1,6 @@
 defaults: 
   - _self_
-  - model: cleanunet
+  - model: colddiffusion
   - user: clemens
 
 tuner: False

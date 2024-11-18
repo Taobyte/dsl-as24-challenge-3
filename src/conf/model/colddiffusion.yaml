@@ -2,22 +2,22 @@ model_name: "ColdDiffusion"
 use_csv: True
 # architecture
 dim: 8
-dim_mults: [1, 2, 4, 8]
-channels: 3
+dim_multiples: [1]
+attn_dim_head: 32
+attn_heads: 4
+resnet_norm_groups: 1
 
 T: 50
 
 # data
-signal_length: 2048
-snr_lower: 0.1
-snr_upper: 2.0
-event_shift_start: 5000
+signal_length: 4096
 
 # training 
 batch_size: 16
+num_workers: 5
 lr: 0.0005
 epochs: 10
 seed: 123
 
 # loss can be either 'stft', 'mae' or 'mse'
-loss: 'mae'
+loss_type: 'mae'

@@ -1,6 +1,8 @@
 data:
   signal_path: '/home/tim/Documents/Data-Science_MSc/DSLab/earthquake_data/event'
   noise_path: '/home/tim/Documents/Data-Science_MSc/DSLab/earthquake_data/noise'
+  train_file: '/home/tim/Documents/Data-Science_MSc/DSLab/earthquake_data/dataset_train_001.dat'
+  val_file: '/home/tim/Documents/Data-Science_MSc/DSLab/earthquake_data/dataset_val_001.dat'
 
 # testing
 outside_repo: True
