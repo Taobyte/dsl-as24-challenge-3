@@ -49,8 +49,8 @@ def fit_cold_diffusion(cfg: omegaconf.DictConfig) -> keras.Model:
     model.compile(
         loss=keras.losses.MeanSquaredError(),
         optimizer=keras.optimizers.AdamW(learning_rate=cfg.model.lr),
-        metrics=[keras.metrics.MeanSquaredError(name="Part1"),
-                 ],
+        # metrics=[keras.metrics.MeanSquaredError(name="Part1"),
+        #          ],
         # run_eagerly=True,
     )
     # build model
@@ -68,7 +68,6 @@ def fit_cold_diffusion(cfg: omegaconf.DictConfig) -> keras.Model:
         wandb_callbacks = [wandb.integration.keras.WandbMetricsLogger(log_freq="batch")]
         callbacks = callbacks.extend(wandb_callbacks)
     
-    device = "cuda" if torch.cuda.is_available() else "cpu"
     train_dataset = ColdDiffusionDataset(cfg.user.data.train_file, shape=(20230, 6, 4096))
     val_dataset = ColdDiffusionDataset(cfg.user.data.val_file, shape=(4681, 6, 4096))
 

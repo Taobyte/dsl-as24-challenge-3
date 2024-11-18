@@ -14,10 +14,7 @@ signal_length: 4096
 
 # training 
 batch_size: 8
-num_workers: 1
+num_workers: 2
 lr: 0.0005
-epochs: 3
+epochs: 5
 seed: 123
-
-# loss can be either 'stft', 'mae' or 'mse'
-loss_type: 'mae'

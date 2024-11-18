@@ -425,27 +425,26 @@ class ColdDiffusion(keras.models.Model):
     
     def test_step(self, data):
         eq, noise = data
-
-        self.zero_grad()
+        device = "cuda" if torch.cuda.is_available() else "cpu"
+        eq = eq.to(device)
+        noise = noise.to(device)
 
         T = self.T
         t = torch.randint(0, T, (eq.shape[0],), device=eq.device).long()
 
         x_noisy = generate_degraded_sample(eq, noise, t, T)
-        denoised_eq = self(x_noisy, t)
+        denoised_eq = self(x_noisy, t, training=False)
 
         new_t = torch.randint(0, T, (eq.shape[0],), device=eq.device).long()
         new_x_noisy = generate_degraded_sample(denoised_eq, noise, new_t, T)
-        new_denoised_eq = self(new_x_noisy, new_t)
-        loss = self.compute_loss(y=eq, y_pred=denoised_eq) + self.penalty*self.compute_loss(y=eq, y_pred=new_denoised_eq)
+        new_denoised_eq = self(new_x_noisy, new_t, training=False)
         
+        loss = self.compute_loss(y=eq, y_pred=denoised_eq) + self.penalty*self.compute_loss(y=eq, y_pred=new_denoised_eq)
         for metric in self.metrics:
             if metric.name == "loss":
                 metric.update_state(loss)
-            elif metric.name == "MSE1":
-                metric.update_state(eq, denoised_eq)
-            elif metric.name == "MSE2":
-                metric.update_state(eq, new_denoised_eq)
+            # elif metric.name == "Part1":
+            #     metric.update_state(eq, denoised_eq)
             else:
                 metric.update_state(eq, denoised_eq)
         
