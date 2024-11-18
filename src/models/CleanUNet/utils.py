@@ -2,6 +2,8 @@ import keras
 # import keras_hub
 import numpy as np
 import einops
+import jax 
+import jax.numpy as jnp
 
 @keras.saving.register_keras_serializable()
 class CleanUNetInitializer(keras.initializers.Initializer):
@@ -56,7 +58,6 @@ class CleanUNetLoss(keras.losses.Loss):
         self.mse = keras.losses.MeanSquaredError()
         self.msle = keras.losses.MeanSquaredLogarithmicError()
         self.mape = keras.losses.MeanAbsolutePercentageError()
-        self.bce = keras.losses.BinaryCrossentropy()
 
     def call(self, y_true, y_pred):
 
@@ -82,21 +83,21 @@ class CleanUNetLoss(keras.losses.Loss):
             y_true_stft = einops.rearrange(y_true_stft, "b c w h -> (b c) w h") # (96, 256, 64)
             y_pred_stft = compute_stft_magnitude(y_pred, frame_length, frame_step, fft_size)  # B C W H
             y_pred_stft = einops.rearrange(y_pred_stft, "b c w h -> (b c) w h") 
-
+            """
             frobenius_loss = keras.ops.mean(
                 keras.ops.norm(y_true_stft - y_pred_stft, ord="fro", axis=(1, 2))
                 / (keras.ops.norm(y_true_stft, ord="fro", axis=(1, 2)) + 1e-8)
             )
+            """
+            frobenius_loss = (1.0 / 100) * self.mape(y_true_stft, y_pred_stft)
+            
+            log_loss = self.mae(keras.ops.log(y_true_stft), keras.ops.log(y_pred_stft))
 
-            y_true_stft_clipped = keras.ops.clip(y_true_stft, 1e-6, 1e9)
-            y_pred_stft_clipped = keras.ops.clip(y_pred_stft, 1e-6, 1e9)
-
-            log_loss = self.mae(keras.ops.log(y_true_stft_clipped), keras.ops.log(y_pred_stft_clipped))
             stft_loss += frobenius_loss + (1.0 / self.signal_length) * log_loss
             
-            stft_loss += self.mape(y_true_stft, y_pred_stft)
+            # stft_loss += self.mape(y_true_stft, y_pred_stft)
         
-        return 0.5 * stft_loss + self.mae(y_true, y_pred)
+        return 0.5 * stft_loss
 
     def get_config(self):
         config = super().get_config()
@@ -152,8 +153,8 @@ class FeedForward(keras.layers.Layer):
 
 class PositionalEncoding(keras.layers.Layer):
 
-    def __init__(self, d_hid: int, n_position=200):
-        super().__init__()
+    def __init__(self, d_hid: int, n_position=200, name="PositionalEncoding", **kwargs):
+        super(PositionalEncoding, self).__init__(name=name, **kwargs)
 
         self.d_hid = d_hid
         self.n_position = n_position
@@ -391,7 +392,7 @@ class GLU(keras.layers.Layer):
         self.axis = axis
 
     def call(self, x):
-        a, b = keras.ops.split(x, 2, axis=self.axis)
+        a, b = keras.ops.split(x, 2, axis=self.axis) # (B, T, 2*C) ->  2 x (B,T,C)
         return a * keras.activations.sigmoid(b)
 
     def get_config(self):
@@ -405,19 +406,18 @@ class GLU(keras.layers.Layer):
 
 class GLUDown(keras.layers.Layer):
     
-    def __init__(self, channels_H, kernel_size, stride, initializer):
-        super().__init__()
+    def __init__(self, channels_H, kernel_size, stride, initializer, name="GLUDown"):
+        super().__init__(name=name)
         self.layer = keras.Sequential(
                         [
                             keras.layers.Conv1D(
                                 channels_H,
                                 kernel_size,
                                 stride,
-                                activation=None,
+                                activation="relu",
                                 padding="same",
                                 kernel_initializer=initializer
                             ),
-                            keras.layers.ReLU(),
                             keras.layers.Conv1D(channels_H * 2, 1, kernel_initializer=initializer),
                             GLU(axis=2),
                         ]
@@ -428,8 +428,8 @@ class GLUDown(keras.layers.Layer):
 
 class GLUUp(keras.layers.Layer):
     
-    def __init__(self,channels_H, channels_output, kernel_size, stride, initializer, use_relu=False):
-        super().__init__()
+    def __init__(self,channels_H, channels_output, kernel_size, stride, initializer, use_relu=False, name="GLUUp"):
+        super().__init__(name=name)
 
         self.layer = keras.Sequential(
                         [
@@ -497,8 +497,8 @@ class TemporalAttentionBlock(keras.layers.Layer):
 
 class RAGLUDown(keras.layers.Layer):
 
-    def __init__(self, channels_H, kernel_size, stride, initializer):
-        super().__init__()
+    def __init__(self, channels_H, kernel_size, stride, initializer, name="RAGLUDown"):
+        super().__init__(name=name)
 
         self.conv_1 = keras.layers.Conv1D(channels_H, kernel_size, stride, activation="relu", padding="same", kernel_initializer=initializer)
         self.conv_2 = keras.layers.Conv1D(channels_H * 2, 1, kernel_initializer=initializer)
@@ -531,8 +531,8 @@ class RAGLUDown(keras.layers.Layer):
 
 class RAGLUUp(keras.layers.Layer):
 
-    def __init__(self,channels_H, channels_output, kernel_size, stride, initializer, use_relu=False):
-        super().__init__()
+    def __init__(self,channels_H, channels_output, kernel_size, stride, initializer, use_relu=False, name="RAGLUUp"):
+        super().__init__(name=name)
 
         self.conv= keras.layers.Conv1D(channels_H * 2, 1, kernel_initializer=initializer)
         self.conv_trans = keras.layers.Conv1DTranspose(
@@ -566,4 +566,61 @@ class RAGLUUp(keras.layers.Layer):
                 "axis": self.axis,
             }
         )
+        return config
+
+
+class TransformerEncoder(keras.layers.Layer):
+    def __init__(self, embed_dim, dense_dim, num_heads, **kwargs):
+        super().__init__(**kwargs)
+        self.embed_dim = embed_dim
+        self.dense_dim = dense_dim
+        self.num_heads = num_heads
+        self.attention = keras.layers.MultiHeadAttention(num_heads=num_heads, key_dim=embed_dim)
+        self.dense_proj = keras.Sequential([
+            keras.layers.Dense(dense_dim, activation="relu"), 
+            keras.layers.Dense(embed_dim),]
+        )
+        self.layernorm_1 = keras.layers.LayerNormalization()
+        self.layernorm_2 = keras.layers.LayerNormalization()
+
+    def call(self, inputs):
+        attention_output = self.attention(
+        inputs, inputs)
+        proj_input = self.layernorm_1(inputs + attention_output)
+        proj_output = self.dense_proj(proj_input)
+        return self.layernorm_2(proj_input + proj_output)
+    def get_config(self):
+        config = super().get_config()
+        config.update({
+            "embed_dim": self.embed_dim,
+            "num_heads": self.num_heads,
+            "dense_dim": self.dense_dim,
+        })
+        return config
+
+
+class PositionalEmbedding(keras.layers.Layer):
+    def __init__(self, sequence_length, input_dim, output_dim, **kwargs):
+        super().__init__(**kwargs)
+        self.token_embeddings = keras.layers.Embedding(
+            input_dim=input_dim, output_dim=output_dim)
+        self.position_embeddings = keras.layers.Embedding(
+            input_dim=sequence_length, output_dim=output_dim)
+        self.sequence_length = sequence_length
+        self.input_dim = input_dim
+        self.output_dim = output_dim
+    def call(self, inputs):
+        length = inputs.shape[1] # (B, T, C)
+        positions = keras.ops.arange(length)
+        embedded_tokens = self.token_embeddings(inputs)
+        embedded_positions = self.position_embeddings(positions)
+        return embedded_tokens + embedded_positions
+
+    def get_config(self):
+        config = super().get_config()
+        config.update({
+            "output_dim": self.output_dim,
+            "sequence_length": self.sequence_length,
+            "input_dim": self.input_dim,
+        })
         return config

@@ -1,6 +1,11 @@
 model_name: "CleanUNet"
 use_csv: True
 
+# baseline
+use_baseline: True
+channel_base: 8
+channel_dims: [1,2,4,8]
+
 # data
 snr_lower: 0.1
 snr_upper: 2.0
@@ -8,39 +13,46 @@ event_shift_start: 5000
 
 # training
 batch_size: 256
-lr: 0.0001
-epochs: 30
+lr: 0.001
+epochs: 50
 patience: null
+log_checkpoints: False
 
 lr_schedule: False
-decay_steps: 2340
-warmup_target: 0.01
-warmup_steps: 200
+decay_steps: 1920
+warmup_target: 0.1
+alpha: 0.0
+warmup_steps: 80
 
 seed: 123
 clipnorm: null
 
-# loss can be either 'stft' or 'mae'
-loss: 'mse'
+# loss can be either 'stft', 'mae' or 'mse'
+loss: 'mae'
 
-signal_length: 6120
-frame_lengths: [64, 128, 32]
-frame_steps: [16, 32, 8]
-fft_sizes: [128, 256, 64]
+signal_length: 2048
+# frame_lengths: [64, 128, 32]
+# frame_steps: [16, 32, 8]
+# fft_sizes: [128, 256, 64]
+frame_lengths: [100]
+frame_steps: [24]
+fft_sizes: [126]
 
 # architecture
 channels_input: 3 
 channels_output: 3
 dropout: 0.0
 
-# encoder/decoder settings           
+# encoder/decoder settings   
+use_raglu: False        
 channels_H: 8
 max_H: 768
 encoder_n_layers: 4
 kernel_size: 3
 stride: 2
 
-bottleneck: 'lstm'
+# choices: 'lstm', 'transformer', null
+bottleneck: null
 
 # transformer settings
 tsfm_n_layers: 1

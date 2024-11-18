@@ -1,7 +1,9 @@
 import numpy as np
+import keras
 
 from src.models.CleanUNet.utils import FeedForward, PositionalEncoding, EncoderLayer, TransformerEncoder, CleanUNetLoss, ChannelAttentionBlock, TemporalAttentionBlock, RAGLUDown, RAGLUUp, CleanUNetInitializer
 from src.models.CleanUNet.clean_unet_model import CleanUNet
+from src.models.CleanUNet.clean_unet2_model import baseline_unet
 
 def test_feed_forward():
 
@@ -92,3 +94,26 @@ def test_raglu_up():
     output = layer(input)
 
     assert output.shape == (32, int(T * 2), n_channels // 2)
+
+
+def test_baseline_unet():
+
+    model = baseline_unet(6120,[1,2,4,8], 8, 3)
+
+    input = np.zeros((1, 6120, 3))
+    output = model(input)
+    assert output.shape == input.shape
+
+def test_randomization_tuner():
+
+    input = np.zeros((1,3,6120))
+    choices = [8, 16, 32, 64, 128, 256]
+
+    for a in choices:
+        for b in choices:
+            for c in [fft_length for fft_length in choices if fft_length >= a]:
+                _, _ = keras.ops.stft(input, a, b, c)
+    
+    assert True
+
+

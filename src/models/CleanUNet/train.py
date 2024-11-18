@@ -14,6 +14,7 @@ from src.models.CleanUNet.clean_unet_model import CleanUNet
 from src.models.CleanUNet.utils import CleanUNetLoss
 from src.models.CleanUNet.dataset import CleanUNetDataset, CleanUNetDatasetCSV
 from src.models.CleanUNet.validate import visualize_predictions_clean_unet
+from src.models.CleanUNet.clean_unet2_model import baseline_model, baseline_unet
 
 
 def fit_clean_unet(cfg: omegaconf.DictConfig) -> keras.Model:
@@ -22,19 +23,24 @@ def fit_clean_unet(cfg: omegaconf.DictConfig) -> keras.Model:
         hydra.core.hydra_config.HydraConfig.get().runtime.output_dir
     )
 
-    model = CleanUNet(cfg.model.channels_input, 
-                      cfg.model.channels_output, 
-                      cfg.model.signal_length, 
-                      cfg.model.channels_H,
-                      cfg.model.max_H,
-                      cfg.model.encoder_n_layers,
-                      cfg.model.kernel_size,
-                      cfg.model.stride,
-                      cfg.model.tsfm_n_layers,
-                      cfg.model.tsfm_n_head,
-                      cfg.model.tsfm_d_model,
-                      cfg.model.tsfm_d_inner,
-                      cfg.model.bottleneck)
+    if not cfg.model.use_baseline:
+
+        model = CleanUNet(cfg.model.channels_input, 
+                        cfg.model.channels_output, 
+                        cfg.model.signal_length, 
+                        cfg.model.channels_H,
+                        cfg.model.max_H,
+                        cfg.model.encoder_n_layers,
+                        cfg.model.kernel_size,
+                        cfg.model.stride,
+                        cfg.model.tsfm_n_layers,
+                        cfg.model.tsfm_n_head,
+                        cfg.model.tsfm_d_model,
+                        cfg.model.tsfm_d_inner,
+                        cfg.model.bottleneck,
+                        cfg.model.use_raglu)
+    else:
+        model = baseline_unet(cfg.model.signal_length, cfg.model.channel_dims, cfg.model.channel_base, cfg.model.kernel_size)
 
     sample_shape = np.zeros(
         (cfg.model.batch_size, cfg.model.signal_length, cfg.model.channels_input)
@@ -82,9 +88,6 @@ def fit_clean_unet(cfg: omegaconf.DictConfig) -> keras.Model:
     model.summary()
 
     callbacks = [
-        keras.callbacks.ModelCheckpoint(
-            filepath=output_dir / "checkpoints/model_at_epoch_{epoch}.keras"
-        ),
         keras.callbacks.TensorBoard(
             log_dir=output_dir / "logs",
             histogram_freq=1,
@@ -94,6 +97,11 @@ def fit_clean_unet(cfg: omegaconf.DictConfig) -> keras.Model:
         ),
         keras.callbacks.TerminateOnNaN()
     ]
+    
+    if cfg.model.log_checkpoints:
+        callbacks.append(keras.callbacks.ModelCheckpoint(
+            filepath=output_dir / "checkpoints/model_at_epoch_{epoch}.keras"
+        ))
 
     if cfg.plot.visualization:
         callbacks.append(VisualizeCallback(cfg))

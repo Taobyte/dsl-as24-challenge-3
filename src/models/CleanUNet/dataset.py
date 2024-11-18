@@ -4,16 +4,17 @@ import numpy as np
 from numpy import ndarray
 import torch
 import pandas as pd
+import einops
 
 from src.utils import Mode
 
 
 class CleanUNetDataset(torch.utils.data.Dataset):
 
-    def __init__(self, signal_path: str, noise_path: str, signal_length: int, snr_lower: int=0.1, snr_upper: int=2.0, event_shift_start:int=1000, mode: Mode=Mode.TRAIN):
+    def __init__(self, signal_path: str, noise_path: str, signal_length: int, snr_lower: int=0.1, snr_upper: int=2.0, event_shift_start:int=1000, mode: Mode=Mode.TRAIN, random=True):
         
-        self.signal_files = glob.glob(f"{signal_path}/**/*.npz", recursive=True)
-        self.noise_files = glob.glob(f"{noise_path}/**/*.npz", recursive=True)
+        self.signal_files = glob.glob(f"{signal_path}/**/*.npz", recursive=True) if random else sorted(glob.glob(f"{signal_path}/**/*.npz", recursive=True))
+        self.noise_files = glob.glob(f"{noise_path}/**/*.npz", recursive=True) if random else sorted(glob.glob(f"{noise_path}/**/*.npz", recursive=True))
 
         print(f'length signal files: {len(self.signal_files)}')
         print(f'length noise files: {len(self.noise_files)}')
@@ -28,18 +29,23 @@ class CleanUNetDataset(torch.utils.data.Dataset):
 
         self.mode = mode
 
-    
+        self.random = random
+
+        if not random:
+            np.random.seed(123)
+
     def __len__(self) -> int:
         return len(self.signal_files)
     
     def __getitem__(self, idx) -> tuple[ndarray, ndarray]:
+
         
         eq = np.load(self.signal_files[idx], allow_pickle=True)
-        random_noise_idx = np.random.randint(len(self.noise_files))
+        random_noise_idx = np.random.randint(len(self.noise_files)) if self.random else idx
         noise = np.load(self.noise_files[random_noise_idx], allow_pickle=True)
         assert self.snr_lower <= self.snr_upper
-        snr_random = np.random.uniform(self.snr_lower,self.snr_upper)
-        event_shift = np.random.randint(6000-self.signal_length + 500,6000)
+        snr_random = np.random.uniform(self.snr_lower,self.snr_upper) if self.random else 1.0
+        event_shift = np.random.randint(6000-self.signal_length + 500,6000) if self.random else 3000
         
         Z_eq = eq["earthquake_waveform_Z"][event_shift : event_shift + self.signal_length]
         N_eq = eq["earthquake_waveform_N"][event_shift : event_shift + self.signal_length]
@@ -69,9 +75,10 @@ class CleanUNetDataset(torch.utils.data.Dataset):
         else:
             return noisy_eq, eq_stacked
 
+
 class CleanUNetDatasetCSV(torch.utils.data.Dataset):
 
-    def __init__(self, path: str, signal_length: int, snr_lower: int=0.1, snr_upper: int=2.0, event_shift_start:int=1000, mode: Mode=Mode.TRAIN):
+    def __init__(self, path: str, signal_length: int, snr_lower: int=0.1, snr_upper: int=2.0, event_shift_start:int=1000, mode: Mode=Mode.TRAIN, data_format="channel_last"):
         
         print("start loading pickle files")
         
@@ -98,6 +105,7 @@ class CleanUNetDatasetCSV(torch.utils.data.Dataset):
         self.event_shift_start = event_shift_start
 
         self.mode = mode
+        self.data_format = data_format
 
     
     def __len__(self) -> int:
@@ -134,6 +142,10 @@ class CleanUNetDatasetCSV(torch.utils.data.Dataset):
         noise_stacked = noise_stacked * snr_original  # rescale noise so that SNR=1
         eq_stacked = eq_stacked * snr_random  # rescale event to desired SNR
         noisy_eq = eq_stacked + noise_stacked # recombine
+
+        if self.data_format == "channel_first":
+            noisy_eq = einops.rearrange(noisy_eq, "t c -> c t")
+            eq_stacked = einops.rearrange(eq_stacked, "t c -> c t")
 
         if self.mode == Mode.TEST:
             return noisy_eq, eq_stacked, event_shift

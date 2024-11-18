@@ -9,6 +9,8 @@ import optuna
 
 from src.utils import Mode
 from models.CleanUNet.clean_unet_model import CleanUNet
+from models.CleanUNet.clean_unet2_model import baseline_unet
+from src.models.CleanUNet.utils import CleanUNetLoss
 from src.models.CleanUNet.dataset import CleanUNetDatasetCSV
 
 # ======================= KERAS TUNER ===================================================
@@ -32,18 +34,27 @@ def tune_model_deep_denoiser_optuna(cfg: DictConfig):
     val_dataset = CleanUNetDatasetCSV(cfg.user.data.csv_path, cfg.model.signal_length, cfg.model.snr_lower, cfg.model.snr_upper, Mode.VALIDATION)
     
     def objective(trial):
-        # Define the hyperparameters for tuning
 
         dropout = trial.suggest_float('dropout', 0, 1)
         learning_rate = trial.suggest_float("learning_rate", 0.0001, 0.1)
-        batch_size = trial.suggest_categorical("batch_size", [16, 32, 64, 128, 256, 512])  # Add batch size options here
-        epochs = trial.suggest_int('epochs', 3, 10)
+        batch_size = trial.suggest_categorical("batch_size", [16, 32, 64, 128, 256, 512]) 
+        epochs = trial.suggest_int('epochs', 3, 50)
         
         # Build the model with the suggested hyperparameters
-        model = CleanUNet(dropout=dropout)
+        if not cfg.model.use_baseline:
+            model = CleanUNet(dropout=dropout)
+        else:
+            channel_base = trial.suggest_categorical("channel_base", [4, 8, 16])
+            model = baseline_unet(cfg.model.signal_length, cfg.model.channel_dims, channel_base)
+        
+        choices = [8, 16, 32, 64, 128, 256, 512]
+        frame_lengths = trial.suggest_categorical("frame_lengths", choices) 
+        frame_steps = trial.suggest_categorical("frame_steps", choices) 
+        fft_sizes = trial.suggest_categorical("fft_sizes", [fft_length for fft_length in choices if fft_length >= frame_lengths]) 
+
         model.compile(
-            loss=keras.losses.BinaryCrossentropy(),
-            optimizer=keras.optimizers.Adam(learning_rate=learning_rate)
+            loss= CleanUNetLoss(cfg.model.signal_length, frame_lengths, frame_steps, fft_sizes),
+            optimizer=keras.optimizers.AdamW(learning_rate=learning_rate)
         )
         
         train_dl = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size)

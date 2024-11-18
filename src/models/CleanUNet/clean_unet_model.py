@@ -1,4 +1,5 @@
 import keras
+import math
 # import keras_hub
 import numpy as np
 import einops
@@ -23,6 +24,7 @@ class CleanUNet(keras.Model):
         tsfm_d_model=512,
         tsfm_d_inner=2048,
         bottleneck="transformer",
+        use_raglu=False,
         name=None,
         **kwargs
     ):
@@ -45,6 +47,7 @@ class CleanUNet(keras.Model):
         self.tsfm_d_inner = tsfm_d_inner
 
         self.bottleneck = bottleneck
+        self.use_raglu = use_raglu
 
         self.encoder = []
         self.decoder = []
@@ -55,24 +58,49 @@ class CleanUNet(keras.Model):
         mid = encoder_n_layers // 2
 
         for i in range(encoder_n_layers):
-
+            """
             if i < mid:
-                self.encoder.append(GLUDown(channels_H, kernel_size, stride, initializer))
+                self.encoder.append(GLUDown(channels_H, kernel_size, stride, initializer, name = f"GLUDown_{i}"))
             else:
-                self.encoder.append(RAGLUDown(channels_H, kernel_size, stride, initializer))
-            
+                if use_raglu:
+                    self.encoder.append(RAGLUDown(channels_H, kernel_size, stride, initializer, name = f"RAGLUDown_{i}"))
+                else:
+                    self.encoder.append(GLUDown(channels_H, kernel_size, stride, initializer, name = f"GLUDown_{i}"))
+            """
+
+            self.encoder.append(keras.Sequential([
+                keras.layers.Conv1D(channels_H, kernel_size, 1, padding="same", activation="relu"),
+                keras.layers.Conv1D(channels_H, kernel_size, 1, padding="same", activation="relu"),
+                keras.layers.Conv1D(channels_H, kernel_size, stride, padding="same", activation="relu"),
+                ]))
+
             channels_input = channels_H
 
             if i == 0:
                 # no relu at end
-                self.decoder.append(GLUUp(channels_H, channels_output, kernel_size, stride, initializer, False))
+                # self.decoder.append(GLUUp(channels_H, channels_output, kernel_size, stride, initializer, False, name=f"GLUUp_{i}"))
+                self.decoder.append(keras.Sequential([
+                    keras.layers.Conv1D(channels_output, kernel_size, 1, padding="same", activation="relu"),
+                    keras.layers.Conv1D(channels_output, kernel_size, 1, padding="same", activation="relu"),
+                    keras.layers.Conv1DTranspose(channels_output, kernel_size, stride, padding="same", activation=None)
+                ]))
             else:
+                """
                 if i < mid:
-                    self.decoder.insert(0, GLUUp(channels_H, channels_output, kernel_size, stride, initializer, True))
+                    self.decoder.insert(0, GLUUp(channels_H, channels_output, kernel_size, stride, initializer, True, f"GLUUp_{i}"))
                 else:
-                    self.decoder.insert(0, RAGLUUp(channels_H, channels_output, kernel_size, stride, initializer, True))
-            
-            channels_output = channels_H
+                    if use_raglu:
+                        self.decoder.insert(0, RAGLUUp(channels_H, channels_output, kernel_size, stride, initializer, True, f"RAGLUUp_{i}"))
+                    else:
+                        self.decoder.insert(0, GLUUp(channels_H, channels_output, kernel_size, stride, initializer, True, f"GLUUp_{i}"))
+                """
+                self.decoder.insert(0, keras.Sequential([
+                    keras.layers.Conv1D(channels_output, kernel_size, 1, padding="same", activation="relu"),
+                    keras.layers.Conv1D(channels_output, kernel_size, 1, padding="same", activation="relu"),
+                    keras.layers.Conv1DTranspose(channels_output, kernel_size, stride, padding="same", activation="relu")
+                ]))
+
+            channels_output = channels_H    
             channels_H *= 2
             channels_H = min(channels_H, max_H)
 
@@ -89,22 +117,31 @@ class CleanUNet(keras.Model):
                 d_model=tsfm_d_model,
                 d_inner=tsfm_d_inner,
                 dropout=0.0,
-                n_position=seq_length // (2**encoder_n_layers),
+                n_position=np.ceil(seq_length / (2**encoder_n_layers)),
                 scale_emb=False,
             )
             self.tsfm_conv2 = keras.layers.Conv1D(channels_output, kernel_size=1, kernel_initializer=initializer)
+            print("Bottleneck Transformer")
         
         elif self.bottleneck == "lstm":
 
             self.lstm_layers = keras.Sequential([keras.layers.LSTM(channels_output, return_sequences=True) for _ in range(tsfm_n_layers)])
+            print("Bottlneck LSTM")
         
         else:
 
-            self.bottleneck_conv = keras.layers.Conv1D(channels_output, 1)
+            self.bottleneck_conv = keras.layers.Conv1D(channels_output, 1, activation="relu")
+            print("Bottleneck Conv1D")
 
 
     def call(self, x):
         _, T, _ = x.shape
+        
+        """
+        # normalization
+        std = keras.ops.std(x, axis=1, keepdims=True) + 1e-3 
+        x /= std
+        """
 
         # encoder
         skip_connections = []
@@ -130,6 +167,7 @@ class CleanUNet(keras.Model):
             x = x[:, :skip_T, :] + skip  # adding instead of concatenation
             x = upsampling_layer(x)
 
+        # x = x[:, :T, :] * std
         x = x[:, :T, :]
 
         return x
@@ -151,7 +189,8 @@ class CleanUNet(keras.Model):
                 "tsfm_n_head": self.tsfm_n_head,
                 "tsfm_d_model": self.tsfm_d_model,
                 "tsfm_d_inner": self.tsfm_d_inner,
-                "bottleneck": self.bottleneck
+                "bottleneck": self.bottleneck,
+                "use_raglu": self.use_raglu
             }
         )
 
