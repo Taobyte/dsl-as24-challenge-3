@@ -11,7 +11,7 @@ from numpy import ndarray
 import pandas as pd
 import torch as th
 
-from src.utils import Mode
+from utils import Mode
 from models.Butterworth.butterworth_filter import bandpass_obspy
 from models.DeepDenoiser.validate import get_metrics_deepdenoiser
 from models.DeepDenoiser.dataset import get_signal_noise_assoc, InputSignals

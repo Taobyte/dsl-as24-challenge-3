@@ -3,13 +3,13 @@ import pathlib
 import omegaconf
 import hydra
 
-import nvidia_smi
+# import nvidia_smi
 import psutil
 import keras
 import torch
 import os
 
-from src.models.CleanUNet.validate import visualize_predictions_clean_unet
+from models.CleanUNet.validate import visualize_predictions_clean_unet
 
 logger = logging.getLogger(__name__)
 

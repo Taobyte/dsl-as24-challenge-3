@@ -8,9 +8,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 from tqdm import tqdm
 
-from src.utils import Mode
-from src.models.DeepDenoiser.dataset import InputSignals, get_signal_noise_assoc
-from src.metrics import cross_correlation, max_amplitude_difference, p_wave_onset_difference
+from utils import Mode
+from models.DeepDenoiser.dataset import InputSignals, get_signal_noise_assoc
+from metrics import cross_correlation, max_amplitude_difference, p_wave_onset_difference
 
 def get_metrics_deepdenoiser(
     model: keras.Model, assoc: list, snr: int, cfg: omegaconf.DictConfig, idx: int = 0

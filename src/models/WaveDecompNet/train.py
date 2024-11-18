@@ -5,11 +5,11 @@ import omegaconf
 import torch
 import keras
 
-from src.callbacks import GPUMonitorCallback, LogCallback
-from src.utils import Mode
-from src.metrics import AmpMetric
-from src.models.WaveDecompNet.wave_decomp_net import UNet1D, WaveDecompLoss
-from src.models.WaveDecompNet.dataset import WaveDecompNetDataset, WaveDecompNetDatasetCSV
+from callbacks import GPUMonitorCallback, LogCallback
+from utils import Mode
+from metrics import AmpMetric
+from models.WaveDecompNet.wave_decomp_net import UNet1D, WaveDecompLoss
+from models.WaveDecompNet.dataset import WaveDecompNetDataset, WaveDecompNetDatasetCSV
 
 
 def fit_wave_decomp_net(cfg: omegaconf.DictConfig) -> keras.Model:

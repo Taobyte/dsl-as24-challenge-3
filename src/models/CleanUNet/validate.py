@@ -11,8 +11,8 @@ import jax.numpy as jnp
 import matplotlib.pyplot as plt
 from tqdm import tqdm
 
-from src.metrics import cross_correlation, max_amplitude_difference, p_wave_onset_difference
-from src.models.CleanUNet.dataset import CleanUNetDataset
+from metrics import cross_correlation, max_amplitude_difference, p_wave_onset_difference
+from models.CleanUNet.dataset import CleanUNetDataset
 
 
 def get_metrics_clean_unet(

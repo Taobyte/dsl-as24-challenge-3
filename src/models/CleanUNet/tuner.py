@@ -7,9 +7,9 @@ import keras
 import torch
 import optuna
 
-from src.utils import Mode
+from utils import Mode
 from models.CleanUNet.clean_unet_model import CleanUNet
-from src.models.CleanUNet.dataset import CleanUNetDatasetCSV
+from models.CleanUNet.dataset import CleanUNetDatasetCSV
 
 # ======================= KERAS TUNER ===================================================
 

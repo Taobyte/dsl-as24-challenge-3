@@ -1,7 +1,12 @@
 import random
 import logging
 import pathlib
+import os
 
+os.environ["KERAS_BACKEND"] = "torch"
+import keras
+import torch
+import einops
 import jax
 import hydra
 import omegaconf
@@ -10,7 +15,7 @@ import tensorflow as tf
 import torch as th
 
 from train import train_model
-from tuner import tune_model, tune_model_optuna
+# from tuner import tune_model, tune_model_optuna
 from validate import compute_metrics
 from plot import compare_model_and_baselines, visualize_predictions
 

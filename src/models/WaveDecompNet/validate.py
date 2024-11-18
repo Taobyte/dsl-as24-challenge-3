@@ -8,9 +8,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 from tqdm import tqdm
 
-from src.utils import Mode
-from src.metrics import cross_correlation, max_amplitude_difference, p_wave_onset_difference
-from src.models.WaveDecompNet.dataset import WaveDecompNetDataset 
+from utils import Mode
+from metrics import cross_correlation, max_amplitude_difference, p_wave_onset_difference
+from models.WaveDecompNet.dataset import WaveDecompNetDataset 
 
 
 def get_metrics_wave_decomp_net(

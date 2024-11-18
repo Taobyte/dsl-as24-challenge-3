@@ -9,7 +9,7 @@ import wandb.integration.keras
 import hydra
 import omegaconf
 
-from src.utils import Mode
+from utils import Mode
 from models.DeepDenoiser.deep_denoiser_model_2 import UNet
 from models.DeepDenoiser.dataset import get_dataloaders, CSVDataset
 

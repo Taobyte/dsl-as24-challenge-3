@@ -3,7 +3,7 @@ import keras
 import numpy as np
 import einops
 
-from src.models.CleanUNet.utils import CleanUNetInitializer, TransformerEncoder, GLUDown, GLUUp, RAGLUUp, RAGLUDown
+from models.CleanUNet.utils import CleanUNetInitializer, TransformerEncoder, GLUDown, GLUUp, RAGLUUp, RAGLUDown
 
 class CleanUNet(keras.Model):
     """CleanUNet architecture."""

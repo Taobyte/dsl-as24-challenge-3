@@ -5,10 +5,10 @@ import omegaconf
 import pandas as pd
 import matplotlib.pyplot as plt
 
-from src.models.DeepDenoiser.validate import visualize_predictions_deep_denoiser
-from src.models.WaveDecompNet.validate import visualize_predictions_wave_decomp_net
-from src.models.ColdDiffusion.validate import visualize_predictions_cold_diffusion
-from src.models.CleanUNet.validate import visualize_predictions_clean_unet
+from models.DeepDenoiser.validate import visualize_predictions_deep_denoiser
+from models.WaveDecompNet.validate import visualize_predictions_wave_decomp_net
+from models.ColdDiffusion.validate import visualize_predictions_cold_diffusion
+from models.CleanUNet.validate import visualize_predictions_clean_unet
 
 
 def visualize_predictions(cfg: omegaconf.DictConfig):

@@ -5,7 +5,7 @@ import pandas as pd
 from numpy import ndarray
 import torch
 
-from src.utils import Mode
+from utils import Mode
 
 
 class WaveDecompNetDataset(torch.utils.data.Dataset):

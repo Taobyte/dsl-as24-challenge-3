@@ -7,9 +7,9 @@ import keras
 import torch
 import optuna
 
-from src.utils import Mode
+from utils import Mode
 from models.DeepDenoiser.deep_denoiser_model_2 import UNet
-from src.models.DeepDenoiser.dataset import get_dataloaders, CSVDataset
+from models.DeepDenoiser.dataset import get_dataloaders, CSVDataset
 
 # ======================= KERAS TUNER ===================================================
 

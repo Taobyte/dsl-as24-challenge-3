@@ -2,7 +2,7 @@ import hydra
 from omegaconf import DictConfig
 from pathlib import Path
 
-from src.models.DeepDenoiser.tuner import tune_model_deep_denoiser, tune_model_deep_denoiser_optuna
+from models.DeepDenoiser.tuner import tune_model_deep_denoiser, tune_model_deep_denoiser_optuna
 
 
 def tune_model(cfg: DictConfig):

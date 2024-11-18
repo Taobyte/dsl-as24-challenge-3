@@ -7,13 +7,13 @@ import jax
 import numpy as np
 import keras
 
-from src.metrics import AmpMetric
-from src.utils import Mode
-from src.callbacks import VisualizeCallback
-from src.models.CleanUNet.clean_unet_model import CleanUNet
-from src.models.CleanUNet.utils import CleanUNetLoss
-from src.models.CleanUNet.dataset import CleanUNetDataset, CleanUNetDatasetCSV
-from src.models.CleanUNet.validate import visualize_predictions_clean_unet
+from metrics import AmpMetric
+from utils import Mode
+from callbacks import VisualizeCallback
+from models.CleanUNet.clean_unet_model import CleanUNet
+from models.CleanUNet.utils import CleanUNetLoss
+from models.CleanUNet.dataset import CleanUNetDataset, CleanUNetDatasetCSV
+from models.CleanUNet.validate import visualize_predictions_clean_unet
 
 
 def fit_clean_unet(cfg: omegaconf.DictConfig) -> keras.Model:

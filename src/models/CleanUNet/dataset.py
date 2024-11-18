@@ -5,7 +5,7 @@ from numpy import ndarray
 import torch
 import pandas as pd
 
-from src.utils import Mode
+from utils import Mode
 
 
 class CleanUNetDataset(torch.utils.data.Dataset):

@@ -8,7 +8,7 @@ import pandas as pd
 import numpy as np
 from numpy import ndarray
 
-from src.utils import Mode, Model
+from utils import Mode, Model
 
 
 def get_dataloaders(signal_path: str, noise_path: str, shuffle = False, batch_size=32) -> tuple[DataLoader, DataLoader]:
