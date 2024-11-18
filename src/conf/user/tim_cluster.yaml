@@ -1,10 +1,14 @@
 data:
   signal_path: '/work/courses/dsl/team3/earthquake_data/event'
   noise_path: '/work/courses/dsl/team3/earthquake_data/noise'
-
-model_path: '/work/courses/dsl/team3/models/DeepDenoiser/'
+  train_file: '/work/courses/dsl/team3/earthquake_data/dataset_train_001.dat'
+  val_file: '/work/courses/dsl/team3/earthquake_data/dataset_val_001.dat'
 
 # testing
-model_dir: '/work/courses/dsl/team3/models/DeepDenoiser/'
+outside_repo: True
+model_path: '/home/tim/Documents/Data-Science_MSc/DSLab/models/DeepDenoiser_l5_e3.keras'
+
+# model dir
+model_dir: '/home/tim/Documents/Data-Science_MSc/DSLab/models/'
 
 wandb: True
