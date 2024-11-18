@@ -11,7 +11,7 @@ from src.utils import Mode
 
 class CleanUNetDataset(torch.utils.data.Dataset):
 
-    def __init__(self, signal_path: str, noise_path: str, signal_length: int, snr_lower: int=0.1, snr_upper: int=2.0, event_shift_start:int=1000, mode: Mode=Mode.TRAIN, random=True):
+    def __init__(self, signal_path: str, noise_path: str, signal_length: int, snr_lower: int=0.1, snr_upper: int=2.0, mode: Mode=Mode.TRAIN, random=True):
         
         self.signal_files = glob.glob(f"{signal_path}/**/*.npz", recursive=True) if random else sorted(glob.glob(f"{signal_path}/**/*.npz", recursive=True))
         self.noise_files = glob.glob(f"{noise_path}/**/*.npz", recursive=True) if random else sorted(glob.glob(f"{noise_path}/**/*.npz", recursive=True))
@@ -23,9 +23,6 @@ class CleanUNetDataset(torch.utils.data.Dataset):
         
         self.snr_lower = snr_lower
         self.snr_upper = snr_upper
-
-        assert event_shift_start >= 0 and event_shift_start <= 6000
-        self.event_shift_start = event_shift_start
 
         self.mode = mode
 
@@ -78,7 +75,7 @@ class CleanUNetDataset(torch.utils.data.Dataset):
 
 class CleanUNetDatasetCSV(torch.utils.data.Dataset):
 
-    def __init__(self, path: str, signal_length: int, snr_lower: int=0.1, snr_upper: int=2.0, event_shift_start:int=1000, mode: Mode=Mode.TRAIN, data_format="channel_last"):
+    def __init__(self, path: str, signal_length: int, snr_lower: int=0.1, snr_upper: int=2.0, mode: Mode=Mode.TRAIN, data_format="channel_last"):
         
         print("start loading pickle files")
         
@@ -101,8 +98,7 @@ class CleanUNetDatasetCSV(torch.utils.data.Dataset):
         self.snr_lower = snr_lower
         self.snr_upper = snr_upper
 
-        assert event_shift_start >= 0 and event_shift_start <= 6000
-        self.event_shift_start = event_shift_start
+
 
         self.mode = mode
         self.data_format = data_format

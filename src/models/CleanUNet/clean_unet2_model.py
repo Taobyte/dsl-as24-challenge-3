@@ -1,7 +1,5 @@
 import keras
-from src.models.CleanUNet.utils import TransformerEncoder, PositionalEmbedding, PositionalEncoding
-from src.models.ColdDiffusion.ColdDiffusion_keras import DiffusionUnet1D
-
+from src.models.CleanUNet.utils import TransformerEncoderChollet, PositionalEncoding
 
 def baseline_model(seq_length: int, kernel_size: int = 3):
 
@@ -47,7 +45,7 @@ def baseline_unet(seq_length: int, channel_dims: list[int], channel_base: int, k
     # x = keras.layers.Bidirectional(keras.layers.LSTM(channel_dims[0] * channel_base, return_sequences = True))(x)
     # encoding = PositionalEmbedding(seq_length // (2 ** len(channel_dims)), 10000, embed_dim)(x)
     encoding = PositionalEncoding(channel_dims[0] * channel_base, x.shape[1])(x)
-    x = TransformerEncoder(channel_dims[0] * channel_base, dense_dim, n_heads)(x + encoding)
+    x = TransformerEncoderChollet(channel_dims[0] * channel_base, dense_dim, n_heads)(x + encoding)
     x = keras.layers.BatchNormalization()(x)
 
     # decoder

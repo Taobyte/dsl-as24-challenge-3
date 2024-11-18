@@ -25,7 +25,7 @@ def tune_model_deep_denoiser(cfg: DictConfig):
 
 # =================================== OPTUNA ===================================================
 
-def tune_model_deep_denoiser_optuna(cfg: DictConfig):
+def tune_model_clean_unet_optuna(cfg: DictConfig):
 
     output_dir = Path(hydra.core.hydra_config.HydraConfig.get().runtime.output_dir)
 
@@ -33,42 +33,58 @@ def tune_model_deep_denoiser_optuna(cfg: DictConfig):
     train_dataset = CleanUNetDatasetCSV(cfg.user.data.csv_path, cfg.model.signal_length, cfg.model.snr_lower, cfg.model.snr_upper, Mode.TRAIN)
     val_dataset = CleanUNetDatasetCSV(cfg.user.data.csv_path, cfg.model.signal_length, cfg.model.snr_lower, cfg.model.snr_upper, Mode.VALIDATION)
     
+    choices = [4, 8, 16, 32, 64, 128, 256, 512]
+    zipped = []
+    for frame_l in choices:
+        for frame_s in choices:
+            for fft_l in choices:
+                if fft_l >= frame_l:
+                    zipped.append((frame_l, frame_s, fft_l))
+
     def objective(trial):
 
-        dropout = trial.suggest_float('dropout', 0, 1)
         learning_rate = trial.suggest_float("learning_rate", 0.0001, 0.1)
-        batch_size = trial.suggest_categorical("batch_size", [16, 32, 64, 128, 256, 512]) 
         epochs = trial.suggest_int('epochs', 3, 50)
+        frame_lengths, frame_steps, fft_sizes = trial.suggest_categorical("stft_params", zipped) 
+
+        print("Next Trial")
+        print(f"Learning Rate: {learning_rate}")
+        print(f"Epochs: {epochs}")
+        print(f"Frame Length: {frame_lengths}")
+        print(f"Frame Step: {frame_steps}")
+        print(f"FFT Size: {frame_lengths}")
         
         # Build the model with the suggested hyperparameters
         if not cfg.model.use_baseline:
-            model = CleanUNet(dropout=dropout)
+            model = CleanUNet(dropout=cfg.model.dropout)
         else:
-            channel_base = trial.suggest_categorical("channel_base", [4, 8, 16])
-            model = baseline_unet(cfg.model.signal_length, cfg.model.channel_dims, channel_base)
+            # channel_base = trial.suggest_categorical("channel_base", [4, 8, 16])
+            model = baseline_unet(cfg.model.signal_length, cfg.model.channel_dims, cfg.model.channel_base)
         
-        choices = [8, 16, 32, 64, 128, 256, 512]
-        frame_lengths = trial.suggest_categorical("frame_lengths", choices) 
-        frame_steps = trial.suggest_categorical("frame_steps", choices) 
-        fft_sizes = trial.suggest_categorical("fft_sizes", [fft_length for fft_length in choices if fft_length >= frame_lengths]) 
 
         model.compile(
-            loss= CleanUNetLoss(cfg.model.signal_length, frame_lengths, frame_steps, fft_sizes),
+            loss= CleanUNetLoss(cfg.model.signal_length, [frame_lengths], [frame_steps], [fft_sizes]),
             optimizer=keras.optimizers.AdamW(learning_rate=learning_rate)
         )
         
-        train_dl = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size)
-        val_dl = torch.utils.data.DataLoader(val_dataset, batch_size=batch_size)
+        train_dl = torch.utils.data.DataLoader(train_dataset, batch_size=cfg.model.batch_size)
+        val_dl = torch.utils.data.DataLoader(val_dataset, batch_size=cfg.model.batch_size)
+
+        callbacks = [keras.callbacks.TerminateOnNaN(),
+                     keras.callbacks.EarlyStopping(monitor="val_loss", patience=cfg.model.patience)
+                     ]
 
         # Train the model
-        history = model.fit(train_dl, epochs=epochs, validation_data=val_dl, verbose=0)
+        history = model.fit(train_dl, epochs=epochs, validation_data=val_dl, verbose=0, callbacks=callbacks)
 
         # Use the last validation loss as the objective to minimize
         val_loss = history.history['val_loss'][-1]
 
+        print(f"Trial finished with validation loss: {val_loss}")
+
         return val_loss
 
-        # Configure Optuna Study
+    # Configure Optuna Study
     study = optuna.create_study(direction="minimize")
     study.optimize(objective, n_trials=cfg.n_trials)  # Define the number of trials
 

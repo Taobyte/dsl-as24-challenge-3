@@ -53,15 +53,20 @@ class VisualizeCallback(keras.callbacks.Callback):
         super().__init__()
 
         self.cfg = cfg
+        self.counter = 0
 
     def on_epoch_end(self, epoch, logs=None):
+
+        self.counter += 1
         
-        visualize_predictions_clean_unet(
-            self.model,
-            self.cfg.user.data.signal_path,
-            self.cfg.user.data.noise_path,
-            self.cfg.model.signal_length,
-            self.cfg.plot.n_examples,
-            self.cfg.snrs,
-            epoch=epoch,
-        )
+        if self.counter % self.cfg.plot.vis_freq == 0:
+        
+            visualize_predictions_clean_unet(
+                self.model,
+                self.cfg.user.data.signal_path,
+                self.cfg.user.data.noise_path,
+                self.cfg.model.signal_length,
+                self.cfg.plot.n_examples,
+                self.cfg.snrs,
+                epoch=epoch,
+            )

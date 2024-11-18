@@ -337,7 +337,6 @@ class TransformerEncoder(keras.layers.Layer):
         else:
             self.position_enc = lambda x: x
         
-        # self.position_enc = keras_hub.layers.SinePositionEncoding()
 
         self.dropout = keras.layers.Dropout(dropout)
         self.layer_stack = [
@@ -414,11 +413,14 @@ class GLUDown(keras.layers.Layer):
                                 channels_H,
                                 kernel_size,
                                 stride,
-                                activation="relu",
+                                activation=None,
                                 padding="same",
                                 kernel_initializer=initializer
                             ),
+                            keras.layers.BatchNormalization(),
+                            keras.layers.ReLU(),
                             keras.layers.Conv1D(channels_H * 2, 1, kernel_initializer=initializer),
+                            keras.layers.BatchNormalization(),
                             GLU(axis=2),
                         ]
                 )
@@ -569,7 +571,7 @@ class RAGLUUp(keras.layers.Layer):
         return config
 
 
-class TransformerEncoder(keras.layers.Layer):
+class TransformerEncoderChollet(keras.layers.Layer):
     def __init__(self, embed_dim, dense_dim, num_heads, **kwargs):
         super().__init__(**kwargs)
         self.embed_dim = embed_dim

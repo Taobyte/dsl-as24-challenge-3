@@ -58,7 +58,7 @@ class CleanUNet(keras.Model):
         mid = encoder_n_layers // 2
 
         for i in range(encoder_n_layers):
-            """
+            
             if i < mid:
                 self.encoder.append(GLUDown(channels_H, kernel_size, stride, initializer, name = f"GLUDown_{i}"))
             else:
@@ -66,26 +66,15 @@ class CleanUNet(keras.Model):
                     self.encoder.append(RAGLUDown(channels_H, kernel_size, stride, initializer, name = f"RAGLUDown_{i}"))
                 else:
                     self.encoder.append(GLUDown(channels_H, kernel_size, stride, initializer, name = f"GLUDown_{i}"))
-            """
-
-            self.encoder.append(keras.Sequential([
-                keras.layers.Conv1D(channels_H, kernel_size, 1, padding="same", activation="relu"),
-                keras.layers.Conv1D(channels_H, kernel_size, 1, padding="same", activation="relu"),
-                keras.layers.Conv1D(channels_H, kernel_size, stride, padding="same", activation="relu"),
-                ]))
+            
 
             channels_input = channels_H
 
             if i == 0:
                 # no relu at end
-                # self.decoder.append(GLUUp(channels_H, channels_output, kernel_size, stride, initializer, False, name=f"GLUUp_{i}"))
-                self.decoder.append(keras.Sequential([
-                    keras.layers.Conv1D(channels_output, kernel_size, 1, padding="same", activation="relu"),
-                    keras.layers.Conv1D(channels_output, kernel_size, 1, padding="same", activation="relu"),
-                    keras.layers.Conv1DTranspose(channels_output, kernel_size, stride, padding="same", activation=None)
-                ]))
+                self.decoder.append(GLUUp(channels_H, channels_output, kernel_size, stride, initializer, False, name=f"GLUUp_{i}"))
             else:
-                """
+                
                 if i < mid:
                     self.decoder.insert(0, GLUUp(channels_H, channels_output, kernel_size, stride, initializer, True, f"GLUUp_{i}"))
                 else:
@@ -93,13 +82,7 @@ class CleanUNet(keras.Model):
                         self.decoder.insert(0, RAGLUUp(channels_H, channels_output, kernel_size, stride, initializer, True, f"RAGLUUp_{i}"))
                     else:
                         self.decoder.insert(0, GLUUp(channels_H, channels_output, kernel_size, stride, initializer, True, f"GLUUp_{i}"))
-                """
-                self.decoder.insert(0, keras.Sequential([
-                    keras.layers.Conv1D(channels_output, kernel_size, 1, padding="same", activation="relu"),
-                    keras.layers.Conv1D(channels_output, kernel_size, 1, padding="same", activation="relu"),
-                    keras.layers.Conv1DTranspose(channels_output, kernel_size, stride, padding="same", activation="relu")
-                ]))
-
+                
             channels_output = channels_H    
             channels_H *= 2
             channels_H = min(channels_H, max_H)
@@ -117,7 +100,7 @@ class CleanUNet(keras.Model):
                 d_model=tsfm_d_model,
                 d_inner=tsfm_d_inner,
                 dropout=0.0,
-                n_position=np.ceil(seq_length / (2**encoder_n_layers)),
+                n_position= int(np.ceil(seq_length / (2**encoder_n_layers))),
                 scale_emb=False,
             )
             self.tsfm_conv2 = keras.layers.Conv1D(channels_output, kernel_size=1, kernel_initializer=initializer)

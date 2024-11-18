@@ -120,8 +120,7 @@ def fit_clean_unet(cfg: omegaconf.DictConfig) -> keras.Model:
             cfg.user.data.noise_path + "/validation/",
             cfg.model.signal_length,
             cfg.model.snr_lower,
-            cfg.model.snr_upper,
-            cfg.model.event_shift_start
+            cfg.model.snr_upper
         )
     else:
         train_dataset = CleanUNetDatasetCSV(
@@ -129,7 +128,6 @@ def fit_clean_unet(cfg: omegaconf.DictConfig) -> keras.Model:
             cfg.model.signal_length,
             cfg.model.snr_lower,
             cfg.model.snr_upper,
-            cfg.model.event_shift_start,
             Mode.TRAIN
         )
         val_dataset = CleanUNetDatasetCSV(
@@ -137,7 +135,6 @@ def fit_clean_unet(cfg: omegaconf.DictConfig) -> keras.Model:
             cfg.model.signal_length,
             cfg.model.snr_lower,
             cfg.model.snr_upper,
-            cfg.model.event_shift_start,
             Mode.VALIDATION
         )
         
