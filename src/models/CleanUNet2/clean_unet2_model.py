@@ -1,9 +1,10 @@
 import torch 
 
 from src.models.CleanUNet.clean_unet_pytorch import CleanUNet
+import einops
 
 
-class CleanUnet2(keras.Model):
+class CleanUnet2(torch.nn.Model):
 
     def __init__(self, channels_input=1, channels_output=1,
                  channels_H=64, max_H=768,
@@ -15,5 +16,5 @@ class CleanUnet2(keras.Model):
         
 
     
-    def call(self, x):
+    def forward(self, x):
         pass

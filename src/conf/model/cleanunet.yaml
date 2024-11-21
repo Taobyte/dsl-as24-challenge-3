@@ -15,8 +15,8 @@ event_shift_start: 5000
 
 # training
 batch_size: 256
-lr: 0.001
-epochs: 100
+lr: 0.0002
+epochs: 300
 
 # Early Stopping callback
 patience: 5
@@ -42,12 +42,12 @@ clipnorm: null
 loss: 'stft'
 
 signal_length: 6120
-frame_steps: [2, 4, 9]
-frame_lengths: [9, 23, 46]
-fft_sizes: [19, 40, 78]
-# frame_lengths: [100]
-# frame_steps: [24]
-# fft_sizes: [126]
+# frame_steps: [2, 4, 9]
+# frame_lengths: [9, 23, 46]
+# fft_sizes: [19, 40, 78]
+frame_lengths: [100]
+frame_steps: [24]
+fft_sizes: [126]
 stft_lambda: 1.0
 sc_lambda: 0.5
 mag_lambda: 0.5

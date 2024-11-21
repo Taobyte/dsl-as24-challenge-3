@@ -1,4 +1,5 @@
 import torch.nn as nn
+import einops
 
 from src.models.CleanUNet.clean_unet_pytorch import TransformerEncoder, padding, weight_scaling_init
 from src.models.CleanUNet.stft_loss import stft
@@ -56,10 +57,8 @@ class CleanSpecNet(nn.Module):
                 nn.Conv1d(channels_H, channels_H * 2, kernel_size, padding="same"), 
                 nn.GLU(dim=1)
             ))
-            channels_input = channels_H
-            channels_output = channels_H
             
-            # double H but keep below max_H
+            channels_input = channels_H
             channels_H *= 2
             channels_H = min(channels_H, max_H)
         
@@ -75,7 +74,8 @@ class CleanSpecNet(nn.Module):
                                                dropout=0.0, 
                                                n_position=0, 
                                                scale_emb=False)
-        self.tsfm_conv2 = nn.Conv1d(tsfm_d_model, channels_output, kernel_size=1)
+        self.tsfm_conv2 = nn.Conv1d(tsfm_d_model, channels_H, kernel_size=1)
+        self.output_conv = nn.Conv1d(channels_H, channels_output, kernel_size=1)
 
         # weight scaling initialization
         for layer in self.modules():
@@ -87,6 +87,7 @@ class CleanSpecNet(nn.Module):
 
         # compute STFT 
         x = stft(noisy_audio, self.fft_size, self.hop_size, self.win_length, self.window) # (3*B, #frames, fft_size // 2 + 1)
+        x = einops.rearrange(x, "(repeat b) t c -> b (repeat c) t", repeat=3)
         
         # encoder
         for encoder_block in self.encoder:
@@ -95,11 +96,11 @@ class CleanSpecNet(nn.Module):
         # attention mask for causal inference; for non-causal, set attn_mask to None
         attn_mask = None
 
-        x = self.tsfm_conv1(x)  # C 1024 -> 512
+        x = self.tsfm_conv1(x)
         x = x.permute(0, 2, 1)
         x = self.tsfm_encoder(x, src_mask=attn_mask)
         x = x.permute(0, 2, 1)
-        x = self.tsfm_conv2(x)  # C 512 -> 1024
+        x = self.output_conv(x)
 
         x = x[:, :, :L]
 
