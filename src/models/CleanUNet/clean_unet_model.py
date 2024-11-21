@@ -25,11 +25,14 @@ class CleanUNet(keras.Model):
         tsfm_d_inner=2048,
         bottleneck="transformer",
         use_raglu=False,
+        kernel_sizes=[9,7,5,3, 3, 3, 3, 3],
         name=None,
         **kwargs
     ):
 
         super(CleanUNet, self).__init__(name=name, **kwargs)
+
+        assert len(kernel_sizes) == encoder_n_layers
 
         self.channels_input = channels_input
         self.channels_output = channels_output
@@ -60,28 +63,28 @@ class CleanUNet(keras.Model):
         for i in range(encoder_n_layers):
             
             if i < mid:
-                self.encoder.append(GLUDown(channels_H, kernel_size, stride, initializer, name = f"GLUDown_{i}"))
+                self.encoder.append(GLUDown(channels_H, kernel_sizes[i], stride, initializer, name = f"GLUDown_{i}"))
             else:
                 if use_raglu:
-                    self.encoder.append(RAGLUDown(channels_H, kernel_size, stride, initializer, name = f"RAGLUDown_{i}"))
+                    self.encoder.append(RAGLUDown(channels_H, kernel_sizes[i], stride, initializer, name = f"RAGLUDown_{i}"))
                 else:
-                    self.encoder.append(GLUDown(channels_H, kernel_size, stride, initializer, name = f"GLUDown_{i}"))
+                    self.encoder.append(GLUDown(channels_H, kernel_sizes[i], stride, initializer, name = f"GLUDown_{i}"))
             
 
             channels_input = channels_H
 
             if i == 0:
                 # no relu at end
-                self.decoder.append(GLUUp(channels_H, channels_output, kernel_size, stride, initializer, False, name=f"GLUUp_{i}"))
+                self.decoder.append(GLUUp(channels_H, channels_output, kernel_sizes[i], stride, initializer, False, name=f"GLUUp_{i}"))
             else:
                 
                 if i < mid:
-                    self.decoder.insert(0, GLUUp(channels_H, channels_output, kernel_size, stride, initializer, True, f"GLUUp_{i}"))
+                    self.decoder.insert(0, GLUUp(channels_H, channels_output, kernel_sizes[i], stride, initializer, True, f"GLUUp_{i}"))
                 else:
                     if use_raglu:
-                        self.decoder.insert(0, RAGLUUp(channels_H, channels_output, kernel_size, stride, initializer, True, f"RAGLUUp_{i}"))
+                        self.decoder.insert(0, RAGLUUp(channels_H, channels_output, kernel_sizes[i], stride, initializer, True, f"RAGLUUp_{i}"))
                     else:
-                        self.decoder.insert(0, GLUUp(channels_H, channels_output, kernel_size, stride, initializer, True, f"GLUUp_{i}"))
+                        self.decoder.insert(0, GLUUp(channels_H, channels_output, kernel_sizes[i], stride, initializer, True, f"GLUUp_{i}"))
                 
             channels_output = channels_H    
             channels_H *= 2
@@ -108,7 +111,7 @@ class CleanUNet(keras.Model):
         
         elif self.bottleneck == "lstm":
 
-            self.lstm_layers = keras.Sequential([keras.layers.LSTM(channels_output, return_sequences=True) for _ in range(tsfm_n_layers)])
+            self.lstm_layers = keras.Sequential([keras.layers.Bidirectional(keras.layers.LSTM(channels_output, return_sequences=True)) for _ in range(tsfm_n_layers)])
             print("Bottlneck LSTM")
         
         else:
@@ -120,12 +123,6 @@ class CleanUNet(keras.Model):
     def call(self, x):
         _, T, _ = x.shape
         
-        """
-        # normalization
-        std = keras.ops.std(x, axis=1, keepdims=True) + 1e-3 
-        x /= std
-        """
-
         # encoder
         skip_connections = []
         for downsampling_layer in self.encoder:
@@ -147,10 +144,9 @@ class CleanUNet(keras.Model):
         for i, upsampling_layer in enumerate(self.decoder):
             skip = skip_connections[i]
             _, skip_T, _ = skip.shape
-            x = x[:, :skip_T, :] + skip  # adding instead of concatenation
+            x = keras.ops.concatenate([x[:, :skip_T, :],skip], axis=2)  # adding instead of concatenation
             x = upsampling_layer(x)
 
-        # x = x[:, :T, :] * std
         x = x[:, :T, :]
 
         return x

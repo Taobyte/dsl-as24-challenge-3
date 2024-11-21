@@ -66,14 +66,3 @@ def baseline_unet(seq_length: int, channel_dims: list[int], channel_base: int, k
 
     model = keras.Model(inputs, outputs)
     return model
-
-            
-
-class CleanUnet2(keras.Model):
-
-    def __init__(self):
-        super().__init__()
-
-    
-    def call(self, x):
-        pass

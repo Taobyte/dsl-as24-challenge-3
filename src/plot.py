@@ -20,7 +20,7 @@ def visualize_predictions(cfg: omegaconf.DictConfig):
     elif cfg.model.model_name == "ColdDiffusion":
         visualize_predictions_cold_diffusion(cfg.user.model_path, cfg.user.data.signal_path, cfg.user.data.noise_path, cfg.model.signal_length, cfg.plot.n_examples, cfg.snrs)
     elif cfg.model.model_name == "CleanUNet":
-        visualize_predictions_clean_unet(cfg.user.model_path, cfg.user.data.signal_path, cfg.user.data.noise_path, cfg.model.signal_length, cfg.plot.n_examples, cfg.snrs)
+        visualize_predictions_clean_unet(cfg.user.model_path, cfg.user.data.signal_path, cfg.user.data.noise_path, cfg.model.signal_length, cfg.plot.n_examples, cfg.snrs, cfg=cfg)
     else:
         raise ValueError(f"{cfg.model.model_name} not visualization function or not implemented")
 

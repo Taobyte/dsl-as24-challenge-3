@@ -436,6 +436,7 @@ class GLUUp(keras.layers.Layer):
         self.layer = keras.Sequential(
                         [
                             keras.layers.Conv1D(channels_H * 2, 1, kernel_initializer=initializer),
+                            keras.layers.BatchNormalization(),
                             GLU(axis=2),
                             keras.layers.Conv1DTranspose(
                                 channels_output,

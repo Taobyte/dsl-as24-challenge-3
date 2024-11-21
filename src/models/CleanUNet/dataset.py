@@ -11,7 +11,7 @@ from src.utils import Mode
 
 class CleanUNetDataset(torch.utils.data.Dataset):
 
-    def __init__(self, signal_path: str, noise_path: str, signal_length: int, snr_lower: int=0.1, snr_upper: int=2.0, mode: Mode=Mode.TRAIN, random=True):
+    def __init__(self, signal_path: str, noise_path: str, signal_length: int, snr_lower: int=0.1, snr_upper: int=2.0, mode: Mode=Mode.TRAIN, random=True, data_format="channel_last"):
         
         self.signal_files = glob.glob(f"{signal_path}/**/*.npz", recursive=True) if random else sorted(glob.glob(f"{signal_path}/**/*.npz", recursive=True))
         self.noise_files = glob.glob(f"{noise_path}/**/*.npz", recursive=True) if random else sorted(glob.glob(f"{noise_path}/**/*.npz", recursive=True))
@@ -25,6 +25,7 @@ class CleanUNetDataset(torch.utils.data.Dataset):
         self.snr_upper = snr_upper
 
         self.mode = mode
+        self.data_format = data_format
 
         self.random = random
 
@@ -67,6 +68,10 @@ class CleanUNetDataset(torch.utils.data.Dataset):
         eq_stacked = eq_stacked * snr_random  # rescale event to desired SNR
         noisy_eq = eq_stacked + noise_stacked # recombine
 
+        if self.data_format == "channel_first":
+            noisy_eq = einops.rearrange(noisy_eq, "t c -> c t")
+            eq_stacked = einops.rearrange(eq_stacked, "t c -> c t")
+
         if self.mode == Mode.TEST:
             return noisy_eq, eq_stacked, event_shift
         else:
@@ -97,8 +102,6 @@ class CleanUNetDatasetCSV(torch.utils.data.Dataset):
         
         self.snr_lower = snr_lower
         self.snr_upper = snr_upper
-
-
 
         self.mode = mode
         self.data_format = data_format

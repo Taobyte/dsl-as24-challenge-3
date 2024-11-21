@@ -9,7 +9,7 @@ import omegaconf
 import numpy as np
 from numpy import ndarray
 import pandas as pd
-import torch as th
+import torch
 
 from src.utils import Mode
 from models.Butterworth.butterworth_filter import bandpass_obspy
@@ -19,6 +19,7 @@ from models.WaveDecompNet.validate import get_metrics_wave_decomp_net
 from models.CleanUNet.validate import get_metrics_clean_unet
 from models.ColdDiffusion.validate import get_metrics_cold_diffusion
 from metrics import cross_correlation, p_wave_onset_difference, max_amplitude_difference
+from models.CleanUNet.clean_unet_pytorch import CleanUNetPytorch
 
 def get_metrics(model: keras.Model, assoc: list, snr:int, cfg: omegaconf.DictConfig) -> tuple[ndarray, ndarray, ndarray]:
 
@@ -33,6 +34,10 @@ def get_metrics(model: keras.Model, assoc: list, snr:int, cfg: omegaconf.DictCon
     elif cfg.model.model_name == "ColdDiffusion":
         cross_correlations, max_amplitude_differences, p_wave_onset_differences = (
             get_metrics_cold_diffusion(model, snr, cfg, idx=0)
+        )
+    elif cfg.model.model_name == "CleanUNet":
+         cross_correlations, max_amplitude_differences, p_wave_onset_differences = (
+            get_metrics_clean_unet(model,cfg, snr, idx=0)
         )
     else:
        raise NotImplementedError(f"{cfg.model.model_name} get_metrics function not implemented")
@@ -72,8 +77,24 @@ def compute_metrics(cfg: omegaconf.DictConfig) -> pd.DataFrame:
         )
     else:
     """
+    if not cfg.model.train_pytorch:
+        model = keras.saving.load_model(cfg.user.model_path) 
+    else:
+        device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+        model = CleanUNetPytorch(
+            channels_input=3,
+            channels_output=3,
+            channels_H=cfg.model.channels_H,
+            encoder_n_layers=cfg.model.encoder_n_layers,
+            tsfm_n_layers=cfg.model.tsfm_n_layers,
+            tsfm_n_head=cfg.model.tsfm_n_head,
+            tsfm_d_model=cfg.model.tsfm_d_model,
+            tsfm_d_inner=cfg.model.tsfm_d_inner,
+        ).to(device)
 
-    model = keras.saving.load_model(cfg.user.model_path)
+        checkpoint = torch.load(cfg.user.model_path, map_location=torch.device('cpu'))
+        model.load_state_dict(checkpoint['model_state_dict'])
+        model.eval()
 
     print(f"running predictions for snrs {cfg.snrs}")
     for snr in tqdm.tqdm(cfg.snrs, total=len(cfg.snrs)):
@@ -133,7 +154,7 @@ def get_bandpass_results(assoc, snr, idx=0):
     """
 
     test_dataset = InputSignals(assoc, Mode.TEST, snr)
-    test_dl = th.utils.data.DataLoader(test_dataset, batch_size=1, shuffle=False)
+    test_dl = torch.utils.data.DataLoader(test_dataset, batch_size=1, shuffle=False)
     ccs = []
     amplitudes = []
     onsets = []
