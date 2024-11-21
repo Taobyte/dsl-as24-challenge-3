@@ -68,8 +68,8 @@ def fit_cold_diffusion(cfg: omegaconf.DictConfig) -> keras.Model:
         wandb_callbacks = [wandb.integration.keras.WandbMetricsLogger(log_freq="batch")]
         callbacks = callbacks.extend(wandb_callbacks)
     
-    train_dataset = ColdDiffusionDataset(cfg.user.data.train_file, shape=(20230, 6, cfg.model.signal_length), memmap=True)
-    val_dataset = ColdDiffusionDataset(cfg.user.data.val_file, shape=(4681, 6, cfg.model.signal_length), memmap=True)
+    train_dataset = ColdDiffusionDataset(cfg.user.data.train_file, shape=(20230, 6, cfg.model.signal_length))
+    val_dataset = ColdDiffusionDataset(cfg.user.data.val_file, shape=(4681, 6, cfg.model.signal_length))
 
     train_dl = torch.utils.data.DataLoader(
         train_dataset, batch_size=cfg.model.batch_size, num_workers=cfg.model.num_workers,

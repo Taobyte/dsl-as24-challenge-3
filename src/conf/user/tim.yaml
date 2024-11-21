@@ -3,12 +3,18 @@ data:
   noise_path: '/home/tim/Documents/Data-Science_MSc/DSLab/earthquake_data/noise'
   train_file: '/home/tim/Documents/Data-Science_MSc/DSLab/earthquake_data/dataset_train_001.dat'
   val_file: '/home/tim/Documents/Data-Science_MSc/DSLab/earthquake_data/dataset_val_001.dat'
+  test_data_file: '/home/tim/Documents/Data-Science_MSc/DSLab/earthquake_data/dataset_tst_001.npy'
 
 # testing
 outside_repo: True
 model_path: '/home/tim/Documents/Data-Science_MSc/DSLab/models/DeepDenoiser_l5_e3.keras'
+test_model_path: '/home/tim/Documents/Data-Science_MSc/DSLab/models/ColdDiffusion_lr_0.0005_e3.keras'
 
 # model dir
 model_dir: '/home/tim/Documents/Data-Science_MSc/DSLab/models/'
 
 wandb: True
+
+# plotting
+plot_n: 5
+plot_channel: 0

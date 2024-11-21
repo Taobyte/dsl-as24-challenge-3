@@ -10,7 +10,7 @@ from tqdm import tqdm
 
 from metrics import cross_correlation, max_amplitude_difference, p_wave_onset_difference
 from utils import Mode
-from models.ColdDiffusion.dataset import ColdDiffusionDataset
+from models.ColdDiffusion.dataset import ColdDiffusionDataset, TestColdDiffusionDataset
 
 def get_metrics_cold_diffusion(
     model: keras.Model, snr: int, cfg: omegaconf.DictConfig, idx: int = 0,
@@ -27,11 +27,8 @@ def get_metrics_cold_diffusion(
         - a dictionary with results (mean and std) for the cross-correlation,
           maximum amplitude difference (percentage) and p wave onset shift (timesteps)
     """
-    test_dataset = ColdDiffusionDataset(
-        cfg.user.test_data_file,
-        None, 
-        memmap=False,
-        test=True,
+    test_dataset = TestColdDiffusionDataset(
+        cfg.user.data.test_data_file
     )
     test_dl = torch.utils.data.DataLoader(
         test_dataset, cfg.model.batch_size, shuffle=False
@@ -70,31 +67,43 @@ def get_metrics_cold_diffusion(
     return np.array(ccs), np.array(amplitudes), np.array(onsets)
 
 
-def visualize_predictions_cold_diffusion(model_path: str, signal_path: str, noise_path:str, signal_length: int, n_examples: int, snrs:list[int], channel:int = 0) -> None:
+def visualize_predictions_cold_diffusion(cfg):
     
     print("Visualizing predictions")
     output_dir = pathlib.Path(hydra.core.hydra_config.HydraConfig.get().runtime.output_dir)
 
-    for snr in tqdm(snrs, total=len(snrs)):
+    for snr in tqdm(cfg.snrs, total=len(cfg.snrs)):
 
-        test_dl = torch.utils.data.DataLoader(ColdDiffusionDataset(signal_path + "/validation", noise_path + "/validation", signal_length, snr, snr), batch_size=n_examples)
-        model = keras.saving.load_model(model_path)
-        input, ground_truth = next(iter(test_dl))
-        predictions = model(input)
+        n_examples = cfg.user.plot_n
+        signal_length = cfg.model.signal_length
+        channel = cfg.user.plot_channel
+        test_dataset = TestColdDiffusionDataset(
+            cfg.user.data.test_data_file
+        )
+        test_dl = torch.utils.data.DataLoader(
+            test_dataset, cfg.model.test_batch_size, shuffle=False
+        )
+        model = keras.saving.load_model(cfg.user.test_model_path)
+        eq, noise, _ = next(iter(test_dl))
+        print("shapes ", eq.shape, noise.shape)
+        noisy = eq*snr + noise
+        ground_truth = eq
+        t = np.ones((noise.shape[0],)) * 50
+        predictions = model(noisy, t, training=False).detach()
 
         _, axs = plt.subplots(n_examples, 3,  figsize=(15, n_examples * 3))
         time = range(signal_length)
 
         for i in tqdm(range(n_examples), total=n_examples):
 
-            axs[i,0].plot(time, input[i,:,channel]) # noisy earthquake
-            axs[i,1].plot(time, ground_truth[i,:,channel]) # ground truth noise
-            axs[i,2].plot(time, predictions[i,:,channel]) # predicted noise
+            axs[i,0].plot(time, noisy[i,channel,:]) # noisy earthquake
+            axs[i,1].plot(time, ground_truth[i,channel,:]) # ground truth noise
+            axs[i,2].plot(time, predictions[i,channel,:]) # predicted noise
 
             row_y_values = []
-            row_y_values.extend(input[i, :, channel].numpy())
-            row_y_values.extend(ground_truth[i, :, channel].numpy())
-            row_y_values.extend(predictions[i, :, channel].numpy())
+            row_y_values.extend(noisy[i, channel, :].numpy())
+            row_y_values.extend(ground_truth[i, channel, :].numpy())
+            row_y_values.extend(predictions[i, channel, :].numpy())
             
             # Get the y-axis limits for this row
             y_min = np.min(row_y_values)

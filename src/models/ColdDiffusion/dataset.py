@@ -13,20 +13,26 @@ from models.DeepDenoiser.dataset import get_signal_noise_assoc
 
 class ColdDiffusionDataset(torch.utils.data.Dataset):
 
-    def __init__(self, filename, shape, memmap, test=False):
-        if memmap:
-            # shape args: TRAIN: (20230, 6, signal_length) VAL: (4681, 6, signal_length)
-            self.memmap_file = np.memmap(filename, mode="r+", shape=shape, dtype='float32')
-        else: 
-            self.memmap_file = np.load(filename, allow_pickle=True)
-        if test:
-            self.assoc = np.load(filename[:-4] + "_assoc.dat", allow_pickle=True)
+    def __init__(self, filename, shape):
+        # shape args: TRAIN: (20230, 6, signal_length) VAL: (4681, 6, signal_length)
+        self.memmap_file = np.memmap(filename, mode="r+", shape=shape, dtype='float32')
 
     def __getitem__(self, index):
         return (self.memmap_file[index,:3,:], self.memmap_file[index,3:,:]) 
     def __len__(self):
         return len(self.memmap_file)
     
+
+class TestColdDiffusionDataset(torch.utils.data.Dataset):
+
+    def __init__(self, filename):
+        self.memmap_file = np.load(filename, allow_pickle=True)
+        self.assoc = np.load(filename[:-4] + "_assoc.npy", allow_pickle=True)
+
+    def __getitem__(self, index):
+        return (self.memmap_file[index,:3,:], self.memmap_file[index,3:,:], self.assoc[index][3]) 
+    def __len__(self):
+        return len(self.memmap_file)  
 
 def compute_train_dataset(signal_length, mode, memmap):
 
@@ -92,6 +98,6 @@ def compute_train_dataset(signal_length, mode, memmap):
         file[:] = full
         file.flush
     else: 
-        np.save(dataset_name, full, allow_pickle=True)
-    if mode == Model.TEST:
-        np.save(dataset_name[:-4] + "_assoc.dat", assoc, allow_pickle=True)
+        np.save(dataset_name[:-4], full, allow_pickle=True)
+    if mode == Mode.TEST:
+        np.save(dataset_name[:-4] + "_assoc", assoc, allow_pickle=True)

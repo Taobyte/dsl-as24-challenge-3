@@ -18,3 +18,6 @@ num_workers: 2
 lr: 0.0005
 epochs: 10
 seed: 123
+
+# testing
+test_batch_size: 32

@@ -41,11 +41,11 @@ def main(cfg: omegaconf.DictConfig):
     )
 
     if cfg.tuner:
-
-        if cfg.use_optuna:
-            best_params = tune_model_optuna(cfg)
-        else:
-            best_hypers = tune_model(cfg)
+        pass
+        # if cfg.use_optuna:
+        #     best_params = tune_model_optuna(cfg)
+        # else:
+        #     best_hypers = tune_model(cfg)
 
     else:
 
