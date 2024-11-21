@@ -263,9 +263,11 @@ class ColdDiffusion(keras.models.Model):
             resnet_norm_groups: int=8,
             penalty: float=0.7,
             T: int=50,
+            **kwargs,
             ):
         
-        super().__init__(name=f"ColdDiff_UNet1D_d{dim}")
+        # super().__init__(name=f"ColdDiff_UNet1D_d{dim}", **kwargs)
+        super().__init__(**kwargs)
 
         self.dim = dim
         self.dim_multiples = dim_multiples
