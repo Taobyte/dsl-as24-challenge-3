@@ -57,7 +57,7 @@ class CleanSpecNet(nn.Module):
                 nn.Conv1d(channels_H, channels_H * 2, kernel_size, padding="same"), 
                 nn.GLU(dim=1)
             ))
-            
+
             channels_input = channels_H
             channels_H *= 2
             channels_H = min(channels_H, max_H)
@@ -100,6 +100,7 @@ class CleanSpecNet(nn.Module):
         x = x.permute(0, 2, 1)
         x = self.tsfm_encoder(x, src_mask=attn_mask)
         x = x.permute(0, 2, 1)
+        x = self.tsfm_conv2(x)
         x = self.output_conv(x)
 
         x = x[:, :, :L]
