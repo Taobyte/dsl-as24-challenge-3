@@ -28,12 +28,10 @@ def get_metrics_cold_diffusion(
           maximum amplitude difference (percentage) and p wave onset shift (timesteps)
     """
     test_dataset = ColdDiffusionDataset(
-        cfg.user.data.signal_path + "/validation/",
-        cfg.user.data.noise_path + "/validation/",
-        cfg.model.signal_length,
-        snr,
-        snr,
-        Mode.TEST,
+        cfg.user.test_data_file,
+        None, 
+        memmap=False,
+        test=True,
     )
     test_dl = torch.utils.data.DataLoader(
         test_dataset, cfg.model.batch_size, shuffle=False
@@ -41,10 +39,12 @@ def get_metrics_cold_diffusion(
     ccs = []
     amplitudes = []
     onsets = []
-    for noisy_batch, eq_batch, shifts in test_dl:
+    for eq_batch, noise_batch, shifts in test_dl:
 
         # get predictions
-        prediction = model(noisy_batch)
+        t = np.ones((noise_batch.shape[0],)) * 50
+        noisy_batch = eq_batch * snr + noise_batch
+        prediction = model(noisy_batch, t, training=False)
 
         # compute metrics
         eq_batch = eq_batch.numpy()

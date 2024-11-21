@@ -5,16 +5,16 @@ dim: 8
 dim_multiples: [1, 2, 4]
 attn_dim_head: 32
 attn_heads: 4
-resnet_norm_groups: 1
+resnet_norm_groups: 8
 
 T: 50
 
 # data
-signal_length: 4096
+signal_length: 6144
 
 # training 
 batch_size: 8
 num_workers: 2
 lr: 0.0005
-epochs: 5
+epochs: 15
 seed: 123

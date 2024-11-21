@@ -13,26 +13,37 @@ from models.DeepDenoiser.dataset import get_signal_noise_assoc
 
 class ColdDiffusionDataset(torch.utils.data.Dataset):
 
-    def __init__(self, filename, shape):
-        # shape args: TRAIN: (20230, 6, 4096) VAL: (4681, 6, 4096)
-        self.memmap_file = np.memmap(filename, mode="r+", shape=shape, dtype='float32')
+    def __init__(self, filename, shape, memmap, test=False):
+        if memmap:
+            # shape args: TRAIN: (20230, 6, signal_length) VAL: (4681, 6, signal_length)
+            self.memmap_file = np.memmap(filename, mode="r+", shape=shape, dtype='float32')
+        else: 
+            self.memmap_file = np.load(filename, allow_pickle=True)
+        if test:
+            self.assoc = np.load(filename[:-4] + "_assoc.dat", allow_pickle=True)
 
     def __getitem__(self, index):
-        return (self.memmap_file[index,:3,:], self.memmap_file[index,3:,:])
+        return (self.memmap_file[index,:3,:], self.memmap_file[index,3:,:], self.assoc[index][3])
     def __len__(self):
         return len(self.memmap_file)
     
 
-def compute_train_dataset(signal_length, mode):
+def compute_train_dataset(signal_length, mode, memmap):
 
     signal_path = "/home/tim/Documents/Data-Science_MSc/DSLab/earthquake_data/event"
     noise_path = "/home/tim/Documents/Data-Science_MSc/DSLab/earthquake_data/noise"
     if mode == Mode.TRAIN:
         dataset_name = "/home/tim/Documents/Data-Science_MSc/DSLab/earthquake_data/dataset_train_001.dat"
+    elif mode == Mode.TEST:
+        dataset_name = "/home/tim/Documents/Data-Science_MSc/DSLab/earthquake_data/dataset_tst_001.dat"
     else:
         dataset_name = "/home/tim/Documents/Data-Science_MSc/DSLab/earthquake_data/dataset_val_001.dat"
-    assoc = get_signal_noise_assoc(signal_path, noise_path, mode, size_testset=1000,
+    if not mode == Mode.TEST:
+        assoc = get_signal_noise_assoc(signal_path, noise_path, mode, size_testset=1000,
                                    snr=lambda : np.random.uniform(0.2, 1.5))
+    else: 
+        assoc = get_signal_noise_assoc(signal_path, noise_path, mode, size_testset=1000,
+                                    snr=lambda : 1.0)
     full = []
 
     for (eq_file, noise_file, snr_random, event_shift) in assoc:
@@ -76,7 +87,11 @@ def compute_train_dataset(signal_length, mode):
 
     full = np.array(full)
     print(full.shape)
-
-    file = np.memmap(dataset_name, dtype=np.float32, mode="w+", shape=full.shape)
-    file[:] = full
-    file.flush
+    if memmap:
+        file = np.memmap(dataset_name, dtype=np.float32, mode="w+", shape=full.shape)
+        file[:] = full
+        file.flush
+    else: 
+        np.save(dataset_name, full, allow_pickle=True)
+    if mode == Model.TEST:
+        np.save(dataset_name[:-4] + "_assoc.dat", assoc, allow_pickle=True)
