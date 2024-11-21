@@ -23,7 +23,7 @@ class ColdDiffusionDataset(torch.utils.data.Dataset):
             self.assoc = np.load(filename[:-4] + "_assoc.dat", allow_pickle=True)
 
     def __getitem__(self, index):
-        return (self.memmap_file[index,:3,:], self.memmap_file[index,3:,:], self.assoc[index][3])
+        return (self.memmap_file[index,:3,:], self.memmap_file[index,3:,:]) 
     def __len__(self):
         return len(self.memmap_file)
     
