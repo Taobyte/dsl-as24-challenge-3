@@ -44,14 +44,16 @@ class CleanSpecNet(nn.Module):
         self.tsfm_d_model = tsfm_d_model
         self.tsfm_d_inner = tsfm_d_inner
 
+        self.initial_conv = nn.Conv1D(channels_input, channels_H, 1)
+        channels_input = channels_H
         # encoder and decoder
         self.encoder = nn.ModuleList()
 
         for i in range(encoder_n_layers):
             self.encoder.append(nn.Sequential(
                 nn.Conv1d(channels_input, channels_H, kernel_size, padding="same"),
-                nn.ReLU(inplace=False),
-                nn.Conv1d(channels_H, channels_H * 2, 1, padding="same"), 
+                nn.ReLU(),
+                nn.Conv1d(channels_H, channels_H * 2, kernel_size, padding="same"), 
                 nn.GLU(dim=1)
             ))
             channels_input = channels_H
