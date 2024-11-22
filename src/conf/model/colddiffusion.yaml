@@ -5,7 +5,7 @@ dim: 8
 dim_multiples: [1, 2, 4]
 attn_dim_head: 32
 attn_heads: 4
-resnet_norm_groups: 1
+resnet_norm_groups: 8
 
 T: 50
 

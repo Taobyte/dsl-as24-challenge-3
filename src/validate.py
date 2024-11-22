@@ -92,8 +92,8 @@ def compute_metrics(cfg: omegaconf.DictConfig) -> pd.DataFrame:
         cross_correlation_mean = np.mean(cross_correlations)
         cross_correlation_std = np.std(cross_correlations)
 
-        max_amplitude_difference_mad = np.mean(np.abs(1 - max_amplitude_differences))
-        max_amplitude_difference_std = np.std(np.abs(1 - max_amplitude_differences))
+        max_amplitude_difference_mad = np.mean(max_amplitude_differences)
+        max_amplitude_difference_std = np.std(max_amplitude_differences)
 
         p_wave_onset_difference_mean = np.mean(p_wave_onset_differences)
         p_wave_onset_difference_std = np.std(p_wave_onset_differences)
@@ -170,8 +170,8 @@ def get_bandpass_results(assoc, snr, idx=0):
     # cross, SNR, max amplitude difference
     cross_correlation_mean = np.mean(ccs)
     cross_correlation_std = np.std(ccs)
-    max_amplitude_difference_mad = np.mean(np.abs(1 - amplitudes))
-    max_amplitude_difference_std = np.std(np.abs(1 - amplitudes))
+    max_amplitude_difference_mad = np.mean(amplitudes)
+    max_amplitude_difference_std = np.std(amplitudes)
     p_wave_onset_difference_mean = np.mean(onsets)
     p_wave_onset_difference_std = np.std(onsets)
 

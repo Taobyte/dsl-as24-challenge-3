@@ -3,6 +3,8 @@ import hydra
 import omegaconf
 
 import pandas as pd
+import matplotlib
+matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
 
 from models.DeepDenoiser.validate import visualize_predictions_deep_denoiser
@@ -71,14 +73,15 @@ def compare_model_and_baselines(df1_path: str, df2_path: str, df3_path: str, lab
         ax.tick_params(axis='both', which='minor', labelsize=10)
 
         if i == 1:
-            ax.set_ylim(0, 1000)
+            ax.set_yscale("log")
+            # ax.set_ylim(0, 1000)
 
     # Set the title for the entire figure
     fig.suptitle('Comparison of Denoising Models', fontsize=16)
 
     # Adjust layout to prevent overlap
     plt.tight_layout(rect=[0, 0, 1, 0.95])
-    plt.savefig(output_dir / 'metrics.jpg')
+    plt.savefig(output_dir / 'metrics.png')
     plt.show()
 
 
