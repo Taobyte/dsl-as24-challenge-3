@@ -17,3 +17,21 @@ def test_stft():
 
     assert output.shape == (96, 256, 64)
 
+def test_stft_dns_dataset():
+
+    fft_size=1024
+    shift_size=256
+    win_length=1024
+    window="hann_window"
+
+    window_tensor = getattr(torch, window)(win_length)
+
+    input = torch.randn((1,160000))
+    print(input.shape)
+    output = stft(input, fft_size, shift_size, win_length, window_tensor)
+
+    assert output.shape == (96, 256, 64)
+
+
+def test_clean_spec_net():
+    pass

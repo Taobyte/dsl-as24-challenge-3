@@ -52,15 +52,11 @@ class CleanSpecNet(nn.Module):
 
         for i in range(encoder_n_layers):
             self.encoder.append(nn.Sequential(
-                nn.Conv1d(channels_input, channels_H, kernel_size, padding="same"),
+                nn.Conv1d(channels_H, channels_H, kernel_size, padding="same"),
                 nn.ReLU(),
                 nn.Conv1d(channels_H, channels_H * 2, kernel_size, padding="same"), 
                 nn.GLU(dim=1)
             ))
-
-            channels_input = channels_H
-            channels_H *= 2
-            channels_H = min(channels_H, max_H)
         
         # self attention block
         self.tsfm_conv1 = nn.Conv1d(channels_output, tsfm_d_model, kernel_size=1)

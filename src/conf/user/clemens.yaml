@@ -12,7 +12,7 @@ data:
 # model_path: /cluster/scratch/ckeusch/dsl-as24-challenge-3/outputs/2024-11-17/08-47-48/CleanUNet_lr_0.0001_e50.keras
 # model_path: '/cluster/scratch/ckeusch/dsl-as24-challenge-3/outputs/2024-11-06/15-22-50/checkpoints/model_at_epoch_7.keras' # ColdDiffusion stft loss
 # model_path: /cluster/scratch/ckeusch/dsl-as24-challenge-3/outputs/2024-11-19/11-33-55/90.pkl # CleanUNet Pytorch
-model_path: /cluster/scratch/ckeusch/dsl-as24-challenge-3/outputs/2024-11-21/15-07-53/90.pkl
+model_path: /cluster/scratch/ckeusch/dsl-as24-challenge-3/outputs/2024-11-21/17-08-11/200.pkl
 
 # plotting
 metrics_model_path: /cluster/scratch/ckeusch/dsl-as24-challenge-3/outputs/2024-11-06/14-41-34/metrics_model.csv # ColdDiffusion 1 step

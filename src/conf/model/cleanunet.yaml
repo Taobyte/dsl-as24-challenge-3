@@ -15,7 +15,7 @@ event_shift_start: 5000
 
 # training
 batch_size: 256
-lr: 0.0002
+lr: 0.001
 epochs: 300
 
 # Early Stopping callback
@@ -38,8 +38,8 @@ plateau_patience: 3
 seed: 123
 clipnorm: null
 
-# use 'stft' for multi-resolution stft loss
-loss: 'stft'
+# use 'stft' for multi-resolution stft loss otherwise L1 loss
+loss: 'mae'
 
 signal_length: 6120
 # frame_steps: [2, 4, 9]
@@ -60,10 +60,10 @@ dropout: 0.0
 # encoder/decoder settings   
 use_raglu: False        
 channels_H: 8
-max_H: 768
 encoder_n_layers: 8
-kernel_size: 3
+kernel_size: 4
 stride: 2
+max_H: 768
 kernel_sizes: [9, 9, 7, 7, 5, 5, 3, 3]
 
 # choices: 'lstm', 'transformer', null

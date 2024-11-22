@@ -211,9 +211,7 @@ def fit_clean_unet(cfg: omegaconf.DictConfig) -> keras.Model:
 
 
 def fit_clean_unet_pytorch(cfg: omegaconf.DictConfig):
-
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-
+    
     output_dir = pathlib.Path(
         hydra.core.hydra_config.HydraConfig.get().runtime.output_dir
     )
@@ -269,21 +267,35 @@ def fit_clean_unet_pytorch(cfg: omegaconf.DictConfig):
     else:
         stft_loss = None
     
+    # define optimizer
+    optimizer = torch.optim.Adam(net.parameters(), lr=cfg.model.lr)
+
+    train_model()
+
+    return 0
+
+
+def train_model(net, optimizer, train_dl, val_dl, time_domain_loss, cfg, stft_loss=None, tb=None):
+
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
     def get_loss(time_domain_loss, stft_loss, denoised_audio, clean_audio):
         loss = time_domain_loss(denoised_audio, clean_audio)
         if stft_loss:
             spec_loss, mag_loss = stft_loss(denoised_audio, clean_audio)
             loss += (spec_loss + mag_loss) * cfg.model.stft_lambda
         return loss
-            
-
-    # define optimizer
-    optimizer = torch.optim.Adam(net.parameters(), lr=cfg.model.lr)
-
+    
     # training
+
+    best_val_loss = float('inf')
+    best_epoch = 0
+    patience = cfg.model.patience  # Number of epochs to wait for improvement
+    stop_training = False
+
     time0 = time.time()
     n_iter = 0
-    while n_iter < cfg.model.epochs:
+    while n_iter < cfg.model.epochs and not stop_training:
         net.train(True)
         # for each epoch
         logging.info(f"Epoch {n_iter}")
@@ -300,14 +312,21 @@ def fit_clean_unet_pytorch(cfg: omegaconf.DictConfig):
 
             loss.backward()
             reduced_loss = loss.item()
+
+            if torch.isnan(loss) or torch.isinf(loss):
+                logging.info("Terminated on NaN/INF triggered.")
+                break
+
+
             c_loss += reduced_loss
             grad_norm = torch.nn.utils.clip_grad_norm_(net.parameters(), 1e9)
             optimizer.step()
-            
-            tb.add_scalar("Train/Gradient-Norm", grad_norm, n_iter)
-            tb.add_scalar(
-                "Train/learning-rate", optimizer.param_groups[0]["lr"], n_iter
-            )
+
+            if tb:
+                tb.add_scalar("Train/Gradient-Norm", grad_norm, n_iter)
+                tb.add_scalar(
+                    "Train/learning-rate", optimizer.param_groups[0]["lr"], n_iter
+                )
             
     
         logging.info(f"train_loss: {c_loss}")
@@ -327,9 +346,20 @@ def fit_clean_unet_pytorch(cfg: omegaconf.DictConfig):
         tb.add_scalar("Validation/Validation-Loss", val_c_loss, n_iter)
         logging.info(f"validation_loss: {val_c_loss}")
 
+                # Check for early stopping
+        if val_c_loss < best_val_loss:
+            best_val_loss = val_c_loss
+            best_epoch = n_iter
+        elif n_iter - best_epoch >= patience:
+            logging.info("Early stopping triggered.")
+            stop_training = True
+
         # save checkpoint
-        if n_iter > 0 and n_iter % cfg.model.checkpoint_freq == 0:
+        if cfg.model.log_checkpoints and n_iter > 0 and n_iter % cfg.model.checkpoint_freq == 0:
             checkpoint_name = "{}.pkl".format(n_iter)
+            output_dir = pathlib.Path(
+                hydra.core.hydra_config.HydraConfig.get().runtime.output_dir
+            )
             torch.save(
                 {
                     "iter": n_iter,
@@ -346,4 +376,4 @@ def fit_clean_unet_pytorch(cfg: omegaconf.DictConfig):
     # After training, close TensorBoard.
     tb.close()
 
-    return 0
+    return val_c_loss

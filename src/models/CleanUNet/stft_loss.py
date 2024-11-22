@@ -26,7 +26,6 @@ def stft(x, fft_size, hop_size, win_length, window):
 
     """
     if is_pytorch_17plus:
-        print("im here")
         x_stft = torch.stft(
             x, fft_size, hop_size, win_length, window, return_complex=False
         )
