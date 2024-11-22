@@ -14,7 +14,11 @@ class CleanSpecNet(nn.Module):
                  tsfm_n_layers=3, 
                  tsfm_n_head=8,
                  tsfm_d_model=512, 
-                 tsfm_d_inner=2048):
+                 tsfm_d_inner=2048,
+                 fft_size=126, 
+                 hop_size=24, 
+                 win_length=100, 
+                 window="han"):
         
         """
         Parameters:
@@ -32,6 +36,7 @@ class CleanSpecNet(nn.Module):
 
         super(CleanSpecNet, self).__init__()
 
+        # Encoder parameters
         self.channels_input = channels_input
         self.channels_output = channels_output
         self.channels_H = channels_H
@@ -40,13 +45,21 @@ class CleanSpecNet(nn.Module):
         self.kernel_size = kernel_size
         self.stride = stride
 
+        # Transformer parameters
         self.tsfm_n_layers = tsfm_n_layers
         self.tsfm_n_head = tsfm_n_head
         self.tsfm_d_model = tsfm_d_model
         self.tsfm_d_inner = tsfm_d_inner
 
+        # STFT parameters
+        self.fft_size = fft_size
+        self.hop_size = hop_size
+        self.win_length = win_length
+
+        channels_input = int(channels_input * (fft_size // 2 + 1))
+
         self.initial_conv = nn.Conv1D(channels_input, channels_H, 1)
-        channels_input = channels_H
+
         # encoder and decoder
         self.encoder = nn.ModuleList()
 

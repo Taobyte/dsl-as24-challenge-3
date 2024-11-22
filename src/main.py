@@ -15,12 +15,21 @@ from validate import compute_metrics
 from plot import compare_model_and_baselines, visualize_predictions
 
 
-log = logging.getLogger(__name__)
+def setup_logging(cfg: omegaconf.DictConfig):
+    output_dir = pathlib.Path(hydra.core.hydra_config.HydraConfig.get().runtime.output_dir)
+    log_file = output_dir / "main.log"
+    
+    logging.basicConfig(
+        filename=log_file,
+        level=logging.INFO,
+        format='%(asctime)s - %(message)s'
+    )
 
 @hydra.main(version_base=None, config_path="conf", config_name="config")
 def main(cfg: omegaconf.DictConfig):
 
-    log.info(omegaconf.OmegaConf.to_yaml(cfg))
+    setup_logging(cfg)
+    logging.info(omegaconf.OmegaConf.to_yaml(cfg))
 
     # Set see (default: 123)
     seed = cfg.model.seed

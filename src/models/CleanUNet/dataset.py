@@ -1,4 +1,5 @@
 import glob
+import omegaconf
 
 import numpy as np
 from numpy import ndarray
@@ -7,6 +8,9 @@ import pandas as pd
 import einops
 
 from src.utils import Mode
+
+def get_dataloaders(cfg: omegaconf.DictConfig):
+    pass
 
 
 class CleanUNetDataset(torch.utils.data.Dataset):

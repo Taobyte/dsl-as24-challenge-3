@@ -1,3 +1,4 @@
+import logging
 import hydra
 from omegaconf import DictConfig
 from pathlib import Path
@@ -8,12 +9,15 @@ import torch
 import optuna
 
 from src.utils import Mode
-from models.CleanUNet.clean_unet_model import CleanUNet
-from models.CleanUNet.clean_unet2_model import baseline_unet
+from src.models.CleanUNet.clean_unet_model import CleanUNet
+from src.models.CleanUNet.clean_unet2_model import baseline_unet
 from src.models.CleanUNet.utils import CleanUNetLoss
 from src.models.CleanUNet.dataset import CleanUNetDatasetCSV
 from src.models.CleanUNet.clean_unet_pytorch import CleanUNetPytorch
 from src.models.CleanUNet.train import train_model
+
+
+logger = logging.getLogger() 
 
 # ======================= KERAS TUNER ===================================================
 
@@ -28,8 +32,6 @@ def tune_model_deep_denoiser(cfg: DictConfig):
 # =================================== OPTUNA ===================================================
 
 def tune_model_clean_unet_optuna(cfg: DictConfig):
-
-    output_dir = Path(hydra.core.hydra_config.HydraConfig.get().runtime.output_dir)
 
     # dataset
     train_dataset = CleanUNetDatasetCSV(cfg.user.data.csv_path, cfg.model.signal_length, cfg.model.snr_lower, cfg.model.snr_upper, Mode.TRAIN)
@@ -101,31 +103,32 @@ def tune_model_clean_unet_optuna(cfg: DictConfig):
 
 def tune_model_clean_unet_pytorch_optuna(cfg: DictConfig):
 
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     output_dir = Path(hydra.core.hydra_config.HydraConfig.get().runtime.output_dir)
 
     # dataset
-    train_dataset = CleanUNetDatasetCSV(cfg.user.data.csv_path, cfg.model.signal_length, cfg.model.snr_lower, cfg.model.snr_upper, Mode.TRAIN)
-    val_dataset = CleanUNetDatasetCSV(cfg.user.data.csv_path, cfg.model.signal_length, cfg.model.snr_lower, cfg.model.snr_upper, Mode.VALIDATION)
+    train_dataset = CleanUNetDatasetCSV(cfg.user.data.csv_path, cfg.model.signal_length, cfg.model.snr_lower, cfg.model.snr_upper, Mode.TRAIN, data_format="channel_first")
+    val_dataset = CleanUNetDatasetCSV(cfg.user.data.csv_path, cfg.model.signal_length, cfg.model.snr_lower, cfg.model.snr_upper, Mode.VALIDATION, data_format="channel_first")
     
     def objective(trial):
         
         # encoder params
         encoder_n_layers = trial.suggest_int("encoder_n_layers", 3, 8) 
-        channels_H = trial.suggest_catgorical("channels_H", [4, 8, 16, 32, 64])
+        channels_H = trial.suggest_categorical("channels_H", [4, 8, 16, 32, 64])
 
         # transformer params
         tsfm_n_layers = trial.suggest_int("tsfm_n_layers", 1, 4)
         tsfm_n_head = trial.suggest_categorical("tsfm_n_head", [2, 4, 8])
         tsfm_d_model = trial.suggest_categorical("tsfm_d_model", [32, 64, 128, 256])
-        tsfm_d_inner = trial.suggest_categorical("tsfm_d_model", [32, 64, 128, 256, 512])
+        tsfm_d_inner = trial.suggest_categorical("tsfm_d_inner", [32, 64, 128, 256, 512])
 
-        print("Next Trial")
-        print(f"encoder_n_layers: {encoder_n_layers}")
-        print(f"channels_H: {channels_H}")
-        print(f"tsfm_n_layers: {tsfm_n_layers}")
-        print(f"tsfm_n_head: {tsfm_n_head}")
-        print(f"tsfm_d_model: {tsfm_d_model}")
-        print(f"tsfm_d_inner: {tsfm_d_inner}")
+        logger.info("Next Trial")
+        logger.info(f"encoder_n_layers: {encoder_n_layers}")
+        logger.info(f"channels_H: {channels_H}")
+        logger.info(f"tsfm_n_layers: {tsfm_n_layers}")
+        logger.info(f"tsfm_n_head: {tsfm_n_head}")
+        logger.info(f"tsfm_d_model: {tsfm_d_model}")
+        logger.info(f"tsfm_d_inner: {tsfm_d_inner}")
         
         net = CleanUNetPytorch(channels_input=3, 
                                  channels_output=3,
@@ -134,17 +137,19 @@ def tune_model_clean_unet_pytorch_optuna(cfg: DictConfig):
                                  tsfm_n_layers=tsfm_n_layers,
                                  tsfm_n_head=tsfm_n_head,
                                  tsfm_d_model=tsfm_d_model,
-                                 tsfm_d_inner=tsfm_d_inner
-                                 )
+                                 tsfm_d_inner=tsfm_d_inner,
+                                 kernel_size=cfg.model.kernel_size,
+                                 stride=cfg.model.stride
+                                 ).to(device)
         
         train_dl = torch.utils.data.DataLoader(train_dataset, batch_size=cfg.model.batch_size)
         val_dl = torch.utils.data.DataLoader(val_dataset, batch_size=cfg.model.batch_size)
         
         optimizer = torch.optim.Adam(net.parameters(), lr=cfg.model.lr)
 
-        val_loss = train_model(net, optimizer,train_dl,val_dl)
+        val_loss = train_model(net, optimizer, train_dl, val_dl, cfg)
 
-        print(f"Trial finished with validation loss: {val_loss}")
+        logger.info(f"Trial finished with validation loss: {val_loss}")
 
         return val_loss
 
@@ -154,7 +159,7 @@ def tune_model_clean_unet_pytorch_optuna(cfg: DictConfig):
 
     # Retrieve and summarize best hyperparameters
     best_hypers = study.best_params
-    print("Best hyperparameters:", best_hypers)
+    logger.info("Best hyperparameters:", best_hypers)
 
     study.trials_dataframe().to_csv(output_dir / "optuna_results.csv")
 

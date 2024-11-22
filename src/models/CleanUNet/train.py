@@ -1,4 +1,5 @@
 import pathlib
+import logging
 import time
 import hydra
 import omegaconf
@@ -21,14 +22,10 @@ from torch.utils.tensorboard import SummaryWriter
 from src.models.CleanUNet.clean_unet_pytorch import CleanUNetPytorch
 from src.models.CleanUNet.stft_loss import MultiResolutionSTFTLoss, STFTLoss
 
-import logging
 
-logging.basicConfig(
-    filename='training.log', 
-    level=logging.INFO,
-    format='%(asctime)s - %(message)s'
-)
+logger = logging.getLogger() 
 
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 def fit_clean_unet(cfg: omegaconf.DictConfig) -> keras.Model:
 
@@ -189,13 +186,9 @@ def fit_clean_unet(cfg: omegaconf.DictConfig) -> keras.Model:
     )
     val_dl = torch.utils.data.DataLoader(val_dataset, batch_size=cfg.model.batch_size)
 
-    # jax.profiler.start_trace(output_dir)
-
     model.fit(
         train_dl, epochs=cfg.model.epochs, validation_data=val_dl, callbacks=callbacks
     )
-
-    # jax.profiler.stop_trace()
 
     if cfg.plot.visualization:
         visualize_predictions_clean_unet(
@@ -259,13 +252,6 @@ def fit_clean_unet_pytorch(cfg: omegaconf.DictConfig):
         tsfm_d_model=cfg.model.tsfm_d_model,
         tsfm_d_inner=cfg.model.tsfm_d_inner,
     ).to(device)
-
-    # loss function
-    time_domain_loss = torch.nn.L1Loss()
-    if cfg.model.loss == "stft":
-        stft_loss = MultiResolutionSTFTLoss(cfg.model.fft_sizes, cfg.model.frame_lengths, cfg.model.frame_steps, sc_lambda=cfg.model.sc_lambda, mag_lambda=cfg.model.mag_lambda).to(device)
-    else:
-        stft_loss = None
     
     # define optimizer
     optimizer = torch.optim.Adam(net.parameters(), lr=cfg.model.lr)
@@ -275,9 +261,14 @@ def fit_clean_unet_pytorch(cfg: omegaconf.DictConfig):
     return 0
 
 
-def train_model(net, optimizer, train_dl, val_dl, time_domain_loss, cfg, stft_loss=None, tb=None):
+def train_model(net, optimizer, train_dl, val_dl, cfg, tb=None):
 
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    # loss function
+    time_domain_loss = torch.nn.L1Loss()
+    if cfg.model.loss == "stft":
+        stft_loss = MultiResolutionSTFTLoss(cfg.model.fft_sizes, cfg.model.frame_lengths, cfg.model.frame_steps, sc_lambda=cfg.model.sc_lambda, mag_lambda=cfg.model.mag_lambda).to(device)
+    else:
+        stft_loss = None
 
     def get_loss(time_domain_loss, stft_loss, denoised_audio, clean_audio):
         loss = time_domain_loss(denoised_audio, clean_audio)
@@ -298,7 +289,8 @@ def train_model(net, optimizer, train_dl, val_dl, time_domain_loss, cfg, stft_lo
     while n_iter < cfg.model.epochs and not stop_training:
         net.train(True)
         # for each epoch
-        logging.info(f"Epoch {n_iter}")
+        if tb:
+            logger.info(f"Epoch {n_iter}")
         c_loss = 0
         for noisy_audio, clean_audio in train_dl:
 
@@ -314,7 +306,7 @@ def train_model(net, optimizer, train_dl, val_dl, time_domain_loss, cfg, stft_lo
             reduced_loss = loss.item()
 
             if torch.isnan(loss) or torch.isinf(loss):
-                logging.info("Terminated on NaN/INF triggered.")
+                logger.info("Terminated on NaN/INF triggered.")
                 break
 
 
@@ -329,8 +321,9 @@ def train_model(net, optimizer, train_dl, val_dl, time_domain_loss, cfg, stft_lo
                 )
             
     
-        logging.info(f"train_loss: {c_loss}")
-        tb.add_scalar("Train/Train-Loss", c_loss, n_iter)
+        if tb:
+            logger.info(f"train_loss: {c_loss}")
+            tb.add_scalar("Train/Train-Loss", c_loss, n_iter)
         
         # Validation
         net.eval()
@@ -342,16 +335,17 @@ def train_model(net, optimizer, train_dl, val_dl, time_domain_loss, cfg, stft_lo
                 denoised_audio = net(noisy_audio)
                 loss = get_loss(time_domain_loss, stft_loss, denoised_audio, clean_audio)
                 val_c_loss += loss.item()
-
-        tb.add_scalar("Validation/Validation-Loss", val_c_loss, n_iter)
-        logging.info(f"validation_loss: {val_c_loss}")
+        
+        if tb:
+            tb.add_scalar("Validation/Validation-Loss", val_c_loss, n_iter)
+            logger.info(f"validation_loss: {val_c_loss}")
 
                 # Check for early stopping
         if val_c_loss < best_val_loss:
             best_val_loss = val_c_loss
             best_epoch = n_iter
         elif n_iter - best_epoch >= patience:
-            logging.info("Early stopping triggered.")
+            logger.info("Early stopping triggered.")
             stop_training = True
 
         # save checkpoint
@@ -369,7 +363,7 @@ def train_model(net, optimizer, train_dl, val_dl, time_domain_loss, cfg, stft_lo
                 },
                 output_dir / checkpoint_name,
             )
-            logging.info("model at iteration %s is saved" % n_iter)
+            logger.info("model at iteration %s is saved" % n_iter)
 
         n_iter += 1
 
