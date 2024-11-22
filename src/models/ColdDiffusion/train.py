@@ -44,8 +44,9 @@ def fit_cold_diffusion(cfg: omegaconf.DictConfig) -> keras.Model:
         attn_heads=int(cfg.model.attn_heads),
         resnet_norm_groups=int(cfg.model.resnet_norm_groups),
     )
+    if cfg.model.continue_from_pretrained:
+        model = keras.saving.load_model(cfg.model.pretrained_path, custom_objects={"ColdDiffusion": model})
 
-    loss = ColdDiffusionLoss()
     model.compile(
         loss=keras.losses.MeanSquaredError(),
         optimizer=keras.optimizers.AdamW(learning_rate=cfg.model.lr),

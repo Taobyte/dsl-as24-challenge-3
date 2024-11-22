@@ -13,10 +13,12 @@ T: 50
 signal_length: 6144
 
 # training 
+continue_from_pretrained: True
+pretrained_path: "/home/tlauner/DSLab/dsl-as24-challenge-3/outputs/2024-11-21/14-38-30/ColdDiffusion_lr_0.0005_e3.keras"
 batch_size: 8
 num_workers: 2
 lr: 0.0005
-epochs: 10
+epochs: 3
 seed: 123
 
 # testing
