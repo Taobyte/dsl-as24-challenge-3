@@ -18,3 +18,5 @@ wandb: True
 # plotting
 plot_n: 5
 plot_channel: 0
+metrics_deepdenoiser_path: '/home/tim/Documents/Data-Science_MSc/DSLab/metrics/metrics_deepdenoiser.csv' 
+metrics_model_path: "None"

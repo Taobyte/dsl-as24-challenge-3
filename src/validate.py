@@ -18,6 +18,7 @@ from models.DeepDenoiser.dataset import get_signal_noise_assoc, InputSignals
 from models.WaveDecompNet.validate import get_metrics_wave_decomp_net
 from models.CleanUNet.validate import get_metrics_clean_unet
 from models.ColdDiffusion.validate import get_metrics_cold_diffusion
+from models.ColdDiffusion.ColdDiffusion_keras import ColdDiffusion
 from metrics import cross_correlation, p_wave_onset_difference, max_amplitude_difference
 
 def get_metrics(model: keras.Model, assoc: list, snr:int, cfg: omegaconf.DictConfig) -> tuple[ndarray, ndarray, ndarray]:
@@ -73,8 +74,15 @@ def compute_metrics(cfg: omegaconf.DictConfig) -> pd.DataFrame:
     else:
     """
 
-    model = keras.saving.load_model(cfg.user.model_path)
-
+    if cfg.model.model_name == "ColdDiffusion":
+        CDiff = ColdDiffusion(
+            dim=cfg.model.dim,
+            dim_multiples=cfg.model.dim_multiples,
+            # resnet_norm_groups=cfg.model.resnet_norm_groups,
+        )
+        model = keras.saving.load_model(cfg.user.test_model_path, custom_objects={"ColdDiffusion": CDiff})
+    else:
+        model = keras.saving.load_model(cfg.user.model_path)
     print(f"running predictions for snrs {cfg.snrs}")
     for snr in tqdm.tqdm(cfg.snrs, total=len(cfg.snrs)):
 
@@ -150,7 +158,7 @@ def get_bandpass_results(assoc, snr, idx=0):
             freqmax=freq_range[1],
             df=sampling_rate,
             corners=4,
-            zerophase=False,
+            zerophase=True,
         )
 
         ccs.append(cross_correlation(eq_batch, filtered))

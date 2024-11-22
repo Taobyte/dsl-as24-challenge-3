@@ -78,9 +78,9 @@ def compare_model_and_baselines(df1_path: str, df2_path: str, df3_path: str, lab
 
     # Adjust layout to prevent overlap
     plt.tight_layout(rect=[0, 0, 1, 0.95])
+    plt.savefig(output_dir / 'metrics.jpg')
     plt.show()
 
-    plt.savefig(output_dir / 'metrics.jpg')
 
 
 

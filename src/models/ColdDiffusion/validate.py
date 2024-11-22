@@ -41,25 +41,26 @@ def get_metrics_cold_diffusion(
         # get predictions
         t = np.ones((noise_batch.shape[0],)) * 50
         noisy_batch = eq_batch * snr + noise_batch
-        prediction = model(noisy_batch, t, training=False)
+        prediction = model(noisy_batch, t, training=False).detach()
 
         # compute metrics
+        shifts = np.array(shifts, dtype=int)
         eq_batch = eq_batch.numpy()
         prediction = np.array(prediction)
         corr = [
             cross_correlation(a, b)
-            for a, b in zip(eq_batch[:, :, idx], prediction[:, :, idx])
+            for a, b in zip(eq_batch[:, idx, :], prediction[:, idx, :])
         ]
         ccs.extend(corr)
         max_amplitude_differences = [
             max_amplitude_difference(a, b)
-            for a, b in zip(eq_batch[:, :, idx], prediction[:, :, idx])
+            for a, b in zip(eq_batch[:, idx, :], prediction[:, idx, :])
         ]
         amplitudes.extend(max_amplitude_differences)
         onset = [
             p_wave_onset_difference(a, b, shift)
             for a, b, shift in zip(
-                eq_batch[:, :, idx], prediction[:, :, idx], shifts
+                eq_batch[:, idx, :], prediction[:, idx, :], shifts
             )
         ]
         onsets.extend(onset)
