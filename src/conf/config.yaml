@@ -3,10 +3,10 @@ defaults:
   - model: cleanunet
   - user: clemens
 
-tuner: True
-use_optuna: True
+tuner: False
+use_optuna: False
 n_trials: 100
-training: False
+training: True
 test: False
 plot:
   metrics: False
@@ -14,7 +14,7 @@ plot:
   vis_freq: 5
   n_examples: 5
 
-snrs: [0.1, 0.3, 0.5, 0.7, 1.0, 1.2, 1.5, 1.8, 2.0, 2.5, 3.5]
+snrs: [0.1, 0.3, 0.5, 0.7, 1.0]
 size_testset: 500
 
 

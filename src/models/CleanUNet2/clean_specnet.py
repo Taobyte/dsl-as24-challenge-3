@@ -1,3 +1,4 @@
+import torch
 import torch.nn as nn
 import einops
 
@@ -18,7 +19,7 @@ class CleanSpecNet(nn.Module):
                  fft_size=126, 
                  hop_size=24, 
                  win_length=100, 
-                 window="han"):
+                 window="hann_window"):
         
         """
         Parameters:
@@ -55,10 +56,13 @@ class CleanSpecNet(nn.Module):
         self.fft_size = fft_size
         self.hop_size = hop_size
         self.win_length = win_length
+        self.register_buffer("window", getattr(torch, window)(win_length))
 
         channels_input = int(channels_input * (fft_size // 2 + 1))
 
-        self.initial_conv = nn.Conv1D(channels_input, channels_H, 1)
+        print(channels_input)
+
+        self.initial_conv = nn.Conv1d(channels_input, channels_H, 1)
 
         # encoder and decoder
         self.encoder = nn.ModuleList()
@@ -72,7 +76,7 @@ class CleanSpecNet(nn.Module):
             ))
         
         # self attention block
-        self.tsfm_conv1 = nn.Conv1d(channels_output, tsfm_d_model, kernel_size=1)
+        self.tsfm_conv1 = nn.Conv1d(channels_H, tsfm_d_model, kernel_size=1)
         self.tsfm_encoder = TransformerEncoder(d_word_vec=tsfm_d_model, 
                                                n_layers=tsfm_n_layers, 
                                                n_head=tsfm_n_head, 
@@ -84,6 +88,7 @@ class CleanSpecNet(nn.Module):
                                                n_position=0, 
                                                scale_emb=False)
         self.tsfm_conv2 = nn.Conv1d(tsfm_d_model, channels_H, kernel_size=1)
+        channels_output = int(channels_output * (fft_size // 2 + 1))
         self.output_conv = nn.Conv1d(channels_H, channels_output, kernel_size=1)
 
         # weight scaling initialization
@@ -94,13 +99,18 @@ class CleanSpecNet(nn.Module):
     def forward(self, noisy_audio):
         B, C, L = noisy_audio.shape # (B, 3, 6120)
 
+        noisy_audio = einops.rearrange(noisy_audio, "b c t -> (b c) t")
+
         # compute STFT 
         x = stft(noisy_audio, self.fft_size, self.hop_size, self.win_length, self.window) # (3*B, #frames, fft_size // 2 + 1)
-        x = einops.rearrange(x, "(repeat b) t c -> b (repeat c) t", repeat=3)
-        
+        x = einops.rearrange(x, "(repeat b) t c -> b (repeat c) t", repeat=self.channels_input)
+    
+        x = self.initial_conv(x)
+        print(x.shape)
         # encoder
         for encoder_block in self.encoder:
             x = encoder_block(x)
+            print(x.shape)
 
         # attention mask for causal inference; for non-causal, set attn_mask to None
         attn_mask = None
@@ -113,6 +123,7 @@ class CleanSpecNet(nn.Module):
         x = self.output_conv(x)
 
         x = x[:, :, :L]
+        x = einops.rearrange(x, "b (repeat c) t -> b repeat c t", repeat=self.channels_output)
 
         return x
 

@@ -1,6 +1,7 @@
 import torch
 
 from src.models.CleanUNet.stft_loss import stft
+from src.models.CleanUNet2.clean_specnet import CleanSpecNet
 
 def test_stft():
 
@@ -34,4 +35,12 @@ def test_stft_dns_dataset():
 
 
 def test_clean_spec_net():
-    pass
+    
+    specnet = CleanSpecNet(channels_input=3, channels_output=3)
+
+    input_shape = (1,3,6120)
+    inputs = torch.randn(input_shape)
+
+    output = specnet(inputs)
+
+    assert output.shape == (1, 3, 64, 256)

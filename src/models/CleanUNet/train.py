@@ -20,7 +20,8 @@ from src.models.CleanUNet.clean_unet2_model import baseline_model, baseline_unet
 
 from torch.utils.tensorboard import SummaryWriter
 from src.models.CleanUNet.clean_unet_pytorch import CleanUNetPytorch
-from src.models.CleanUNet.stft_loss import MultiResolutionSTFTLoss, STFTLoss
+from src.models.CleanUNet.stft_loss import MultiResolutionSTFTLoss
+from src.metrics import max_amplitude_difference_torch, cross_correlation_torch, p_wave_onset_difference_torch
 
 
 logger = logging.getLogger() 
@@ -235,12 +236,6 @@ def fit_clean_unet_pytorch(cfg: omegaconf.DictConfig):
         train_dataset = torch.utils.data.TensorDataset(inps, tgts)
         val_dataset = train_dataset
     
-    train_dl = torch.utils.data.DataLoader(
-        train_dataset, batch_size=cfg.model.batch_size
-    )
-    val_dl = torch.utils.data.DataLoader(val_dataset, batch_size=cfg.model.batch_size)
-    print("Data loaded")
-
     # predefine model
     net = CleanUNetPytorch(
         channels_input=3,
@@ -256,12 +251,16 @@ def fit_clean_unet_pytorch(cfg: omegaconf.DictConfig):
     # define optimizer
     optimizer = torch.optim.Adam(net.parameters(), lr=cfg.model.lr)
 
-    train_model()
+    train_model(net, optimizer, train_dataset, val_dataset, cfg, tb=tb)
 
     return 0
 
 
-def train_model(net, optimizer, train_dl, val_dl, cfg, tb=None):
+def train_model(net, optimizer, train_dataset, val_dataset, cfg, tb=None):
+
+    train_dl = torch.utils.data.DataLoader(
+        train_dataset, batch_size=cfg.model.batch_size
+    )
 
     # loss function
     time_domain_loss = torch.nn.L1Loss()
@@ -327,17 +326,46 @@ def train_model(net, optimizer, train_dl, val_dl, cfg, tb=None):
         
         # Validation
         net.eval()
-        val_c_loss = 0
+        val_losses = []
+        amp_means, amp_stds, cc_means, cc_stds = [], [], [], []
         with torch.no_grad():
-            for noisy_audio, clean_audio in val_dl:
-                clean_audio = clean_audio.float().to(device)
-                noisy_audio = noisy_audio.float().to(device)
-                denoised_audio = net(noisy_audio)
-                loss = get_loss(time_domain_loss, stft_loss, denoised_audio, clean_audio)
-                val_c_loss += loss.item()
+            for snr in cfg.snrs:
+                
+                val_dataset.snr_upper = snr
+                val_dataset.snr_lower = snr
+                val_dl = torch.utils.data.DataLoader(val_dataset, batch_size=cfg.model.batch_size)
+                val_c_loss = 0
+                max_amp_differences = []
+                cc = []
+                for noisy_audio, clean_audio in val_dl:
+
+                    clean_audio = clean_audio.float().to(device)
+                    noisy_audio = noisy_audio.float().to(device)
+                    denoised_audio = net(noisy_audio)
+                    # loss
+                    loss = get_loss(time_domain_loss, stft_loss, denoised_audio, clean_audio)
+                    val_c_loss += loss.item()
+                    # metrics
+                    max_amp_differences.append(max_amplitude_difference_torch(clean_audio, denoised_audio))
+                    cc.append(cross_correlation_torch(clean_audio, denoised_audio))
+
+                max_amp_differences = torch.concatenate(max_amp_differences, dim=0)
+                amp_means.append(max_amp_differences.mean())
+                amp_stds.append(max_amp_differences.std())
+
+                cc = torch.concatenate(cc, dim=0)
+                cc_means.append(cc.mean())
+                cc_stds.append(cc.std())
+                
+                val_losses.append(val_c_loss)
         
         if tb:
-            tb.add_scalar("Validation/Validation-Loss", val_c_loss, n_iter)
+            for i, snr in enumerate(cfg.snrs):
+                tb.add_scalar(f"Validation/Validation-Loss_{snr}", val_losses[i], n_iter)
+                tb.add_scalar(f"Metrics/Max_Amplitude_Mean_{snr}", amp_means[i], n_iter)
+                tb.add_scalar(f"Metrics/Max_Amplitude_Std_{snr}", amp_stds[i], n_iter)
+                tb.add_scalar(f"Metrics/CC_Mean_{snr}", cc_means[i], n_iter)
+                tb.add_scalar(f"Metrics/CC_Std_{snr}", cc_stds[i], n_iter)
             logger.info(f"validation_loss: {val_c_loss}")
 
                 # Check for early stopping
@@ -368,6 +396,7 @@ def train_model(net, optimizer, train_dl, val_dl, cfg, tb=None):
         n_iter += 1
 
     # After training, close TensorBoard.
-    tb.close()
+    if tb:
+        tb.close()
 
     return val_c_loss

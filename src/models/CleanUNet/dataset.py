@@ -114,7 +114,7 @@ class CleanUNetDatasetCSV(torch.utils.data.Dataset):
     def __len__(self) -> int:
         return len(self.signal_df)
     
-    def __getitem__(self, idx) -> tuple[ndarray, ndarray]:
+    def __getitem__(self, idx, snr=None) -> tuple[ndarray, ndarray]:
         
         eq = self.signal_df.iloc[idx]
         random_noise_idx = np.random.randint(len(self.noise_df))

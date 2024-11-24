@@ -1,6 +1,9 @@
 import numpy as np
 from numpy import ndarray
 import keras 
+import torch 
+import torch.nn.functional as F
+import einops
 
 from obspy.signal.cross_correlation import correlate
 from obspy.signal.trigger import z_detect
@@ -98,3 +101,59 @@ class PWaveMetric(keras.metrics.Metric):
 
     def result(self):
         return self.cc
+
+# ======================================= TORCH METRICS ==================================================
+
+def cross_correlation_torch(eq: torch.Tensor, denoised_eq: torch.Tensor) -> torch.Tensor:
+    """
+    Pytorch's Conv1d is implemented as cross correlation
+    """
+
+    B, C, T = eq.shape
+    eq -= eq.mean(dim=-1, keepdim=True)
+    denoised_eq -= denoised_eq.mean(dim=-1, keepdim=True)
+    eq_reshaped = einops.rearrange(eq, "b c t -> (b c) t")
+    denoised_eq_reshaped = einops.rearrange(denoised_eq, "b c t -> (b c) t")
+    
+    result = F.conv1d(eq_reshaped, denoised_eq_reshaped.unsqueeze(1), padding=T-1, groups=B*C)
+    result = einops.rearrange(result, "(b channels) t -> b channels t", channels=C)
+
+    # normalization 
+    norm = (torch.sum(eq**2, dim=-1, keepdim=True) * torch.sum(denoised_eq**2, dim=-1, keepdim=True))**0.5
+    result = result / (norm + 1e-12)
+    maxs, _ = torch.max(result, dim=2)
+    
+    return torch.mean(torch.abs(maxs), dim=1)
+
+def max_amplitude_difference_torch(eq: torch.Tensor, denoised_eq: torch.Tensor) -> float:
+    """
+    Assumes tensors are of shape (B, C, T) e.g (64, 3, 6120)
+    """
+    max_eq, _ = torch.max(eq, dim=2)
+    max_denoised, _ = torch.max(denoised_eq, dim=2)
+    return torch.mean(torch.abs(max_denoised / max_eq), dim=1)
+
+def p_wave_onset_difference_torch(eq: torch.Tensor, denoised_eq: torch.Tensor, shift: int) -> float:
+    """
+    Assumes eq.shape == (B, C, T) e.g (64, 3, 6120)
+    """
+
+    def z_detect_pytorch(a, nsta):
+        sta = torch.cmsum(a ** 2, dim=-1)
+        sta[:, :, nsta + 1:] = sta[:, :, nsta:-1] - sta[:, :, :-nsta - 1]
+        sta[:, :, nsta] = sta[:, :, nsta - 1]
+        sta[:, :, :nsta] = 0
+        a_mean = torch.mean(sta, dim=-1, keepdim=True)
+        a_std = torch.std(sta, dim=-1, keepdim=True)
+        _z = (sta - a_mean) / (a_std + 1e-12)
+        return _z
+    
+    def find_onset_pytorch(denoised_eq,threshold=0.05,nsta=20):
+        zfunc = z_detect_pytorch(denoised_eq, nsta=nsta)
+        zfunc -= torch.mean(zfunc[:, :, :500], dim=-1, keepdim=True)
+        return np.argmax(zfunc[:, :, 700:]>threshold) + 700
+
+    ground_truth = 6000 - shift
+    denoised_p_wave_onset = find_onset_pytorch(denoised_eq)
+
+    return torch.abs(ground_truth - denoised_p_wave_onset)
