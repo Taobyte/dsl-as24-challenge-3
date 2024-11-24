@@ -3,7 +3,7 @@ import torch
 
 from src.metrics import CCMetric, AmpMetric
 from src.models.CleanUNet.clean_unet_pytorch import CleanUNetPytorch
-from src.metrics import max_amplitude_difference_torch, cross_correlation_torch
+from src.metrics import max_amplitude_difference_torch, cross_correlation_torch, p_wave_onset_difference_torch
 
 
 def test_cc_metric():
@@ -60,5 +60,16 @@ def test_cc_func_torch():
     print(cc_result)
 
     assert torch.all((cc_result == torch.Tensor([1.0 for _ in range(B)])))
+
+def test_p_wave_func_torch():
+    B = 4
+    input = torch.randn((B,3,6120))  
+    gt = input
+
+    result = p_wave_onset_difference_torch(input, gt, 300)
+
+    assert result.shape == (B,) 
+
+    
 
 

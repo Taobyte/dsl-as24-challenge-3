@@ -122,7 +122,7 @@ def cross_correlation_torch(eq: torch.Tensor, denoised_eq: torch.Tensor) -> torc
     norm = (torch.sum(eq**2, dim=-1, keepdim=True) * torch.sum(denoised_eq**2, dim=-1, keepdim=True))**0.5
     result = result / (norm + 1e-12)
     maxs, _ = torch.max(result, dim=2)
-    
+
     return torch.mean(torch.abs(maxs), dim=1)
 
 def max_amplitude_difference_torch(eq: torch.Tensor, denoised_eq: torch.Tensor) -> float:
@@ -139,7 +139,7 @@ def p_wave_onset_difference_torch(eq: torch.Tensor, denoised_eq: torch.Tensor, s
     """
 
     def z_detect_pytorch(a, nsta):
-        sta = torch.cmsum(a ** 2, dim=-1)
+        sta = torch.cumsum(a ** 2, dim=-1)
         sta[:, :, nsta + 1:] = sta[:, :, nsta:-1] - sta[:, :, :-nsta - 1]
         sta[:, :, nsta] = sta[:, :, nsta - 1]
         sta[:, :, :nsta] = 0
@@ -151,9 +151,11 @@ def p_wave_onset_difference_torch(eq: torch.Tensor, denoised_eq: torch.Tensor, s
     def find_onset_pytorch(denoised_eq,threshold=0.05,nsta=20):
         zfunc = z_detect_pytorch(denoised_eq, nsta=nsta)
         zfunc -= torch.mean(zfunc[:, :, :500], dim=-1, keepdim=True)
-        return np.argmax(zfunc[:, :, 700:]>threshold) + 700
+        zfunc = zfunc[:, :, 700:]
+        zfunc = torch.where(zfunc > threshold, zfunc, torch.tensor(float('-inf')))
+        return torch.argmax(zfunc, dim=-1) + 700
 
     ground_truth = 6000 - shift
-    denoised_p_wave_onset = find_onset_pytorch(denoised_eq)
+    denoised_p_wave_onset = find_onset_pytorch(denoised_eq).float()
 
-    return torch.abs(ground_truth - denoised_p_wave_onset)
+    return torch.mean(torch.abs(ground_truth - denoised_p_wave_onset), dim=-1)
