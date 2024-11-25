@@ -48,16 +48,16 @@ def fit_cold_diffusion(cfg: omegaconf.DictConfig) -> keras.Model:
         model = keras.saving.load_model(cfg.model.pretrained_path, custom_objects={"ColdDiffusion": model})
 
     model.compile(
-        loss=keras.losses.MeanSquaredError(),
+        loss=keras.losses.MeanAbsoluteError(),
         optimizer=keras.optimizers.AdamW(learning_rate=cfg.model.lr),
         # metrics=[keras.metrics.MeanSquaredError(name="Part1"),
         #          ],
         # run_eagerly=True,
     )
     # build model
-    time = keras.random.randint((cfg.model.batch_size,), 0, cfg.model.T)
+    # time = keras.random.randint((cfg.model.batch_size,), 0, cfg.model.T)
     x = keras.random.normal((cfg.model.batch_size, 3, cfg.model.signal_length))
-    model(x, time)
+    model(x)#, None)
 
     callbacks = [
         keras.callbacks.ModelCheckpoint(

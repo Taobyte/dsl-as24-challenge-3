@@ -121,7 +121,7 @@ class ResNetBlock(keras.layers.Layer):
         self.kernel_size = kernel_size
         self.n_groups = n_groups
 
-        self.mlp = keras.layers.Dense(out_filters*2, activation=keras.activations.silu) if time_emb_dim else None
+        # self.mlp = keras.layers.Dense(out_filters*2, activation=keras.activations.silu) if time_emb_dim else None
 
         self.conv1 = keras.layers.Conv1D(self.out_filters, self.kernel_size, padding="same", data_format="channels_first", activation=None)
         self.conv2 = keras.layers.Conv1D(self.out_filters, self.kernel_size, padding="same", data_format="channels_first", activation=None)
@@ -142,22 +142,22 @@ class ResNetBlock(keras.layers.Layer):
         else:
             self.residual_projection = keras.layers.Identity()
 
-    def call(self, x, time_embedding=None):
+    def call(self, x): #, time_embedding=None):
 
-        assert time_embedding.shape[-1] == self.time_emb_dim, "Custom Flag: time embeddings has unexpected dimension"
         assert x.shape[1] == self.in_filters, "Custom Flag, got unexpected number of input filters"
         scale_shift = None
-        if (time_embedding is not None) and (self.mlp is not None):
-            time_embedding = self.mlp(time_embedding)
-            time_embedding = einops.rearrange(time_embedding, "b c -> b c 1")
-            scale_shift = keras.ops.split(time_embedding, 2, axis=1) # returns tuple
+        # if (time_embedding is not None) and (self.mlp is not None):
+        #     assert time_embedding.shape[-1] == self.time_emb_dim, "Custom Flag: time embeddings has unexpected dimension"
+        #     time_embedding = self.mlp(time_embedding)
+        #     time_embedding = einops.rearrange(time_embedding, "b c -> b c 1")
+        #     scale_shift = keras.ops.split(time_embedding, 2, axis=1) # returns tuple
 
         h = self.conv1(x)
         h = self.norm1(h)
         # potential time shifting
-        if scale_shift is not None:
-            scale, shift = scale_shift
-            h = h * (1+scale) + shift
+        # if scale_shift is not None:
+        #     scale, shift = scale_shift
+        #     h = h * (1+scale) + shift
 
         h = self.act1(h)
 
@@ -287,12 +287,12 @@ class ColdDiffusion(keras.models.Model):
         self.dim_tuples = list(zip(dimensions[:-1], dimensions[1:])) # tuples (in_dim,out_dim) (e.g. [(1,6),(6,9)])
 
 
-        time_sinu_embeds = SinusoidalEmbeddings(self.dim)
-        self.time_mlp = keras.Sequential([
-            time_sinu_embeds,
-            keras.layers.Dense(self.time_dim, activation=keras.activations.gelu),
-            keras.layers.Dense(self.time_dim, activation=None)
-        ])
+        # time_sinu_embeds = SinusoidalEmbeddings(self.dim)
+        # self.time_mlp = keras.Sequential([
+        #     time_sinu_embeds,
+        #     keras.layers.Dense(self.time_dim, activation=keras.activations.gelu),
+        #     keras.layers.Dense(self.time_dim, activation=None)
+        # ])
         
         self.init_conv = keras_conv1d(self.dim, 6)
         self.downs = []
@@ -330,43 +330,43 @@ class ColdDiffusion(keras.models.Model):
         self.loss_fn = keras.losses.MeanSquaredError()
 
 
-    def call(self, x, t=None):
+    def call(self, x): #, t=None):
         
         x = self.init_conv(x)
         r = keras.ops.copy(x)
-        if t is None:
-            t = keras.ops.zeros((x.shape[0],))
-        t = self.time_mlp(t)
+        # if t is None:
+        #     t = keras.ops.zeros((x.shape[0],))
+        # t = self.time_mlp(t)
 
         h = []
 
         for block1, block2, attn, downsample in self.downs:
-            x = block1(x, t)
+            x = block1(x)#, t)
             h.append(keras.ops.copy(x))
 
-            x = block2(x, t)
+            x = block2(x)#, t)
             x = attn(x)
             h.append(keras.ops.copy(x))
 
             x = downsample(x)
 
-        x = self.mid_block1(x, t)
+        x = self.mid_block1(x)#, t)
         x = self.mid_attn(x)
-        x = self.mid_block2(x, t)
+        x = self.mid_block2(x)#, t)
 
         for block1, block2, attn, upsample in self.ups:
             x = keras.ops.concatenate([x, h.pop()], axis=1)
-            x = block1(x, t)
+            x = block1(x)#, t)
 
             x = keras.ops.concatenate([x,h.pop()], axis=1)
-            x = block2(x, t)
+            x = block2(x)#, t)
             x = attn(x)
 
             x = upsample(x)
 
         x = keras.ops.concatenate([x, r], axis=1)
 
-        x = self.final_resnet(x, t)
+        x = self.final_resnet(x)#, t)
         x = self.final_conv(x)
         return x
 
@@ -388,84 +388,84 @@ class ColdDiffusion(keras.models.Model):
         )
         return config
     
-    def train_step(self, data):
-        eq, noise = data
-        device = "cuda" if torch.cuda.is_available() else "cpu"
-        eq = eq.to(device)
-        noise = noise.to(device)
+    # def train_step(self, data):
+    #     eq, noise = data
+    #     device = "cuda" if torch.cuda.is_available() else "cpu"
+    #     eq = eq.to(device)
+    #     noise = noise.to(device)
 
-        self.zero_grad()
+    #     self.zero_grad()
 
-        T = self.T
-        t = torch.randint(0, T, (eq.shape[0],), device=eq.device).long()
+    #     T = self.T
+    #     t = torch.randint(0, T, (eq.shape[0],), device=eq.device).long()
 
-        x_noisy = generate_degraded_sample(eq, noise, t, T)
-        denoised_eq = self(x_noisy, t)
+    #     x_noisy = generate_degraded_sample(eq, noise, t, T)
+    #     denoised_eq = self(x_noisy, t)
 
-        new_t = torch.randint(0, T, (eq.shape[0],), device=eq.device).long()
-        new_x_noisy = generate_degraded_sample(denoised_eq, noise, new_t, T)
-        new_denoised_eq = self(new_x_noisy, new_t)
+    #     new_t = torch.randint(0, T, (eq.shape[0],), device=eq.device).long()
+    #     new_x_noisy = generate_degraded_sample(denoised_eq, noise, new_t, T)
+    #     new_denoised_eq = self(new_x_noisy, new_t)
         
-        loss = self.compute_loss(y=eq, y_pred=denoised_eq) + self.penalty*self.compute_loss(y=eq, y_pred=new_denoised_eq)
-        loss.backward()
+    #     loss = self.compute_loss(y=eq, y_pred=denoised_eq) + self.penalty*self.compute_loss(y=eq, y_pred=new_denoised_eq)
+    #     loss.backward()
 
-        trainable_weights = [v for v in self.trainable_weights]
-        gradients = [v.value.grad for v in trainable_weights]
+    #     trainable_weights = [v for v in self.trainable_weights]
+    #     gradients = [v.value.grad for v in trainable_weights]
 
-        with torch.no_grad():
-            self.optimizer.apply(gradients, trainable_weights)
+    #     with torch.no_grad():
+    #         self.optimizer.apply(gradients, trainable_weights)
         
-        for metric in self.metrics:
-            if metric.name == "loss":
-                metric.update_state(loss)
-            elif metric.name == "Part1":
-                metric.update_state(eq, denoised_eq)
-            else:
-                metric.update_state(eq, denoised_eq)
+    #     for metric in self.metrics:
+    #         if metric.name == "loss":
+    #             metric.update_state(loss)
+    #         elif metric.name == "Part1":
+    #             metric.update_state(eq, denoised_eq)
+    #         else:
+    #             metric.update_state(eq, denoised_eq)
         
-        return {m.name: m.result() for m in self.metrics}
+    #     return {m.name: m.result() for m in self.metrics}
     
-    def test_step(self, data):
-        eq, noise = data
-        device = "cuda" if torch.cuda.is_available() else "cpu"
-        eq = eq.to(device)
-        noise = noise.to(device)
+    # def test_step(self, data):
+    #     eq, noise = data
+    #     device = "cuda" if torch.cuda.is_available() else "cpu"
+    #     eq = eq.to(device)
+    #     noise = noise.to(device)
 
-        T = self.T
-        t = torch.randint(0, T, (eq.shape[0],), device=eq.device).long()
+    #     T = self.T
+    #     t = torch.randint(0, T, (eq.shape[0],), device=eq.device).long()
 
-        x_noisy = generate_degraded_sample(eq, noise, t, T)
-        denoised_eq = self(x_noisy, t, training=False)
+    #     x_noisy = generate_degraded_sample(eq, noise, t, T)
+    #     denoised_eq = self(x_noisy, t, training=False)
 
-        new_t = torch.randint(0, T, (eq.shape[0],), device=eq.device).long()
-        new_x_noisy = generate_degraded_sample(denoised_eq, noise, new_t, T)
-        new_denoised_eq = self(new_x_noisy, new_t, training=False)
+    #     new_t = torch.randint(0, T, (eq.shape[0],), device=eq.device).long()
+    #     new_x_noisy = generate_degraded_sample(denoised_eq, noise, new_t, T)
+    #     new_denoised_eq = self(new_x_noisy, new_t, training=False)
         
-        loss = self.compute_loss(y=eq, y_pred=denoised_eq) + self.penalty*self.compute_loss(y=eq, y_pred=new_denoised_eq)
-        for metric in self.metrics:
-            if metric.name == "loss":
-                metric.update_state(loss)
-            # elif metric.name == "Part1":
-            #     metric.update_state(eq, denoised_eq)
-            else:
-                metric.update_state(eq, denoised_eq)
+    #     loss = self.compute_loss(y=eq, y_pred=denoised_eq) + self.penalty*self.compute_loss(y=eq, y_pred=new_denoised_eq)
+    #     for metric in self.metrics:
+    #         if metric.name == "loss":
+    #             metric.update_state(loss)
+    #         # elif metric.name == "Part1":
+    #         #     metric.update_state(eq, denoised_eq)
+    #         else:
+    #             metric.update_state(eq, denoised_eq)
         
-        return {m.name: m.result() for m in self.metrics}
+    #     return {m.name: m.result() for m in self.metrics}
     
-    def get_config(self):
-        config = super().get_config()
-        config.update(
-            {
-                "dim": self.dim,
-                "dim_multiples": self.dim_multiples,
-                "in_dim": self.in_dim,
-                "out_dim": self.out_dim,
-                "resnet_norm_groups": self.resnet_norm_groups,
-                "attn_dim_head": self.attn_dim_head,
-                "attn_heads": self.attn_heads,
-            }
-        )
-        return config
+    # def get_config(self):
+    #     config = super().get_config()
+    #     config.update(
+    #         {
+    #             "dim": self.dim,
+    #             "dim_multiples": self.dim_multiples,
+    #             "in_dim": self.in_dim,
+    #             "out_dim": self.out_dim,
+    #             "resnet_norm_groups": self.resnet_norm_groups,
+    #             "attn_dim_head": self.attn_dim_head,
+    #             "attn_heads": self.attn_heads,
+    #         }
+    #     )
+    #     return config
     
 
     
