@@ -25,6 +25,7 @@ from src.metrics import (
     cross_correlation_torch,
     p_wave_onset_difference_torch,
 )
+from src.utils import LinearWarmupCosineDecay
 
 
 logger = logging.getLogger()
@@ -305,6 +306,17 @@ def train_model(net, optimizer, train_dataset, val_dataset, cfg, tb=None):
     patience = cfg.model.patience  # Number of epochs to wait for improvement
     stop_training = False
 
+    if cfg.model.lr_schedule:
+        scheduler = LinearWarmupCosineDecay(
+                        optimizer,
+                        lr_max=cfg.model.lr,
+                        n_iter=int((20600 // cfg.model.batch_size) * cfg.model.epochs),
+                        iteration=0,
+                        divider=25,
+                        warmup_proportion=0.05,
+                        phase=('linear', 'cosine'),
+                    )
+
     time0 = time.time()
     n_iter = 0
     while n_iter < cfg.model.epochs and not stop_training:
@@ -333,12 +345,14 @@ def train_model(net, optimizer, train_dataset, val_dataset, cfg, tb=None):
 
             c_loss += reduced_loss
             grad_norm = torch.nn.utils.clip_grad_norm_(net.parameters(), 1e9)
+            if cfg.model.lr_schedule:
+                scheduler.step()
             optimizer.step()
-
+            """
             for name, param in net.named_parameters():
                 if param.grad is not None:
                     print(f"{name}: {param.grad.norm()}")
-
+            """
             if tb:
                 tb.add_scalar("Train/Gradient-Norm", grad_norm, n_iter)
                 tb.add_scalar(

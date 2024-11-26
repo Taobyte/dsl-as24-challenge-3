@@ -12,7 +12,7 @@ event_shift_start: 5000
 
 # training
 batch_size: 256
-lr: 0.00001
+lr: 0.0002
 epochs: 100
 clipnorm: null
 
@@ -29,17 +29,7 @@ log_checkpoints: True
 checkpoint_freq: 10
 
 # learning rate scheduler
-lr_schedule: False
-decay_steps: 1920
-warmup_target: 0.1
-alpha: 0.0
-warmup_steps: 80
-
-# reduce learning rate plateau callback
-reduce_lr_plateau: True
-min_lr: 0.0001
-factor: 0.2
-plateau_patience: 3
+lr_schedule: True
 
 # 'stft' for spectogram loss only
 # 'mae' for L1 loss only

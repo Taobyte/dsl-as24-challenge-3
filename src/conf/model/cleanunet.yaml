@@ -1,6 +1,7 @@
 model_name: "CleanUNet"
 use_csv: True
 train_pytorch: True
+use_metrics: False
 use_baseline: False
 load_dummy: False
 seed: 123
@@ -11,8 +12,8 @@ snr_upper: 2.0
 event_shift_start: 5000
 
 # training
-batch_size: 16
-lr: 0.0002
+batch_size: 256
+lr: 0.00001
 epochs: 100
 clipnorm: null
 
@@ -24,9 +25,9 @@ log_checkpoints: True
 checkpoint_freq: 10
 
 # learning rate scheduler
-lr_schedule: False
-decay_steps: 1920
-warmup_target: 0.1
+lr_schedule: True
+decay_steps: 8000
+warmup_target: 0.0002
 alpha: 0.0
 warmup_steps: 80
 
@@ -36,9 +37,13 @@ min_lr: 0.0001
 factor: 0.2
 plateau_patience: 3
 
+# validation frequency
+val_freq: 1
+snrs: null
+# snrs: [0.1, 0.3, 0.5, 0.7, 1.0]
 
 # use 'stft' for multi-resolution stft loss otherwise L1 loss
-loss: 'mae'
+loss: 'clean_unet_loss'
 
 signal_length: 6120
 # frame_steps: [2, 4, 9]
