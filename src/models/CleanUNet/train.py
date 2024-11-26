@@ -25,7 +25,7 @@ from src.metrics import (
     cross_correlation_torch,
     p_wave_onset_difference_torch,
 )
-from src.utils import LinearWarmupCosineDecay
+from src.utils import LinearWarmupCosineDecay, log_gradient_stats
 
 
 logger = logging.getLogger()
@@ -208,6 +208,7 @@ def fit_clean_unet(cfg: omegaconf.DictConfig) -> keras.Model:
     return model
 
 
+
 def fit_clean_unet_pytorch(cfg: omegaconf.DictConfig):
 
     output_dir = pathlib.Path(
@@ -260,7 +261,7 @@ def fit_clean_unet_pytorch(cfg: omegaconf.DictConfig):
     return 0
 
 
-def train_model(net, optimizer, train_dataset, val_dataset, cfg, tb=None):
+def train_model(net, optimizer, train_dataset, val_dataset, cfg, tb=None, sc_lambda=None, mag_lambda=None, stft_lambda=None):
 
     output_dir = pathlib.Path(
         hydra.core.hydra_config.HydraConfig.get().runtime.output_dir
@@ -271,27 +272,29 @@ def train_model(net, optimizer, train_dataset, val_dataset, cfg, tb=None):
     )
 
     # loss function
-    def get_loss(denoised_audio, clean_audio):
+    def get_loss(denoised_audio, clean_audio, stft_lambda, sc_lambda, mag_lambda):
+
+        stft_lambda = stft_lambda if stft_lambda else cfg.model.stft_lambda
 
         time_domain_loss = torch.nn.L1Loss()
         stft_loss = MultiResolutionSTFTLoss(
             cfg.model.fft_sizes,
             cfg.model.frame_lengths,
             cfg.model.frame_steps,
-            sc_lambda=cfg.model.sc_lambda,
-            mag_lambda=cfg.model.mag_lambda,
+            sc_lambda= sc_lambda if sc_lambda else cfg.model.sc_lambda,
+            mag_lambda=mag_lambda if mag_lambda else cfg.model.mag_lambda,
             transform_stft=False if cfg.model.loss == "stft" else True
         ).to(device)
         if cfg.model.loss == "clean_unet_loss":
             loss = time_domain_loss(denoised_audio, clean_audio)
             spec_loss, mag_loss = stft_loss(denoised_audio, clean_audio)
-            loss += (spec_loss + mag_loss) * cfg.model.stft_lambda
+            loss += ((spec_loss + mag_loss) * cfg.model.stft_lambda)
         elif cfg.model.loss == "stft":
             denoised_audio = einops.rearrange(denoised_audio, "b repeat c t ->(b repeat) t c", repeat=3)
             denoised_audio = torch.clamp(denoised_audio, min=1e-7)
             clean_audio = einops.rearrange(clean_audio, "b repeat c t ->(b repeat) t c", repeat=3)
             spec_loss, mag_loss = stft_loss(denoised_audio, clean_audio)
-            loss = (spec_loss + mag_loss) * cfg.model.stft_lambda
+            loss = (spec_loss + mag_loss) * stft_lambda
             # loss = spec_loss * cfg.model.stft_lambda
         elif cfg.model.loss == "mae":
             loss = time_domain_loss(denoised_audio, clean_audio)
@@ -333,7 +336,7 @@ def train_model(net, optimizer, train_dataset, val_dataset, cfg, tb=None):
             optimizer.zero_grad()
 
             denoised_audio = net(noisy_audio)
-            loss = get_loss(denoised_audio, clean_audio)
+            loss = get_loss(denoised_audio, clean_audio, stft_lambda, sc_lambda, mag_lambda)
 
             loss.backward()
             reduced_loss = loss.item()
@@ -344,15 +347,11 @@ def train_model(net, optimizer, train_dataset, val_dataset, cfg, tb=None):
                 break
 
             c_loss += reduced_loss
-            grad_norm = torch.nn.utils.clip_grad_norm_(net.parameters(), 1e9)
+            grad_norm = torch.nn.utils.clip_grad_norm_(net.parameters(), cfg.model.clipnorm)
             if cfg.model.lr_schedule:
                 scheduler.step()
             optimizer.step()
-            """
-            for name, param in net.named_parameters():
-                if param.grad is not None:
-                    print(f"{name}: {param.grad.norm()}")
-            """
+
             if tb:
                 tb.add_scalar("Train/Gradient-Norm", grad_norm, n_iter)
                 tb.add_scalar(
@@ -364,7 +363,7 @@ def train_model(net, optimizer, train_dataset, val_dataset, cfg, tb=None):
             tb.add_scalar("Train/Train-Loss", c_loss, n_iter)
 
         # Validation
-        if n_iter > 0 and n_iter % cfg.model.val_freq == 0:
+        if n_iter % cfg.model.val_freq == 0:
             net.eval()
             with torch.no_grad():
                 if cfg.model.snrs:
@@ -392,9 +391,7 @@ def train_model(net, optimizer, train_dataset, val_dataset, cfg, tb=None):
                             shift = shift.to(device)
                             denoised_audio = net(noisy_audio)
                             # loss
-                            loss = get_loss(
-                                denoised_audio, clean_audio
-                            )
+                            loss = get_loss(denoised_audio, clean_audio, stft_lambda, sc_lambda, mag_lambda)
                             val_c_loss += loss.item()
                             # metrics
                             if cfg.model.use_metrics:
@@ -426,18 +423,43 @@ def train_model(net, optimizer, train_dataset, val_dataset, cfg, tb=None):
                             val_dataset, batch_size=cfg.model.batch_size
                         )
                     val_c_loss = 0
+                    max_amp_differences, cc, pw = [], [], []
                     for noisy_audio, clean_audio, shift in val_dl:
                         clean_audio = clean_audio.float().to(device)
                         noisy_audio = noisy_audio.float().to(device)
                         shift = shift.to(device)
                         denoised_audio = net(noisy_audio)
                         # loss
-                        loss = get_loss(
-                            denoised_audio, clean_audio
-                        )
+                        loss = get_loss(denoised_audio, clean_audio, stft_lambda, sc_lambda, mag_lambda)
                         val_c_loss += loss.item()
-            if tb:
-                if cfg.model.snrs:
+                        if cfg.model.use_metrics:
+                            max_amp_differences.append(
+                                max_amplitude_difference_torch(clean_audio, denoised_audio)
+                            )
+                            cc.append(cross_correlation_torch(clean_audio, denoised_audio))
+                            pw.append(
+                                p_wave_onset_difference_torch(
+                                    clean_audio, denoised_audio, shift
+                                )
+                            )
+                    if cfg.model.use_metrics:
+                        max_amp_differences = torch.concatenate(max_amp_differences, dim=0)
+                        ma_mean = max_amp_differences.mean()
+                        ma_std = max_amp_differences.std()
+
+                        cc = torch.concatenate(cc, dim=0)
+                        cc_mean = cc.mean()
+                        cc_std = cc.std()
+
+                        pw = torch.concatenate(pw, dim=0)
+                        pw_mean = pw.mean()
+                        pw_std = pw.std()
+
+                        metrics = {'ma_mean': ma_mean, 'ma_std': ma_std, 'cc_mean': cc_mean, 'cc_std': cc_std, 'pw_mean': pw_mean, 'pw_std': pw_std}
+            
+            if cfg.model.snrs:
+                mean_loss = torch.mean(torch.Tensor(val_losses)).item()
+                if tb:
                     for i, snr in enumerate(cfg.model.snrs):
                         tb.add_scalar(
                             f"Validation/Validation-Loss_{snr}", val_losses[i], n_iter
@@ -449,15 +471,15 @@ def train_model(net, optimizer, train_dataset, val_dataset, cfg, tb=None):
                             tb.add_scalar(f"Metrics/CC/Std_{snr}", cc_stds[i], n_iter)
                             tb.add_scalar(f"Metrics/PW/Mean_{snr}", pw_means[i], n_iter)
                             tb.add_scalar(f"Metrics/PW/Std_{snr}", pw_stds[i], n_iter)
-                    logger.info(f"validation_loss: {val_losses}")
-                    mean_loss = torch.mean(torch.Tensor(val_losses)).item()
-                else:
+                        logger.info(f"validation_loss: {val_losses}")
+            else:
+                mean_loss = val_c_loss
+                if tb:
                     tb.add_scalar(
                             f"Validation/Validation-Loss", val_c_loss, n_iter
                         )
                     logger.info(f"validation_loss: {val_c_loss}")
-                    mean_loss = val_c_loss
-            
+
             # Check for early stopping
             if mean_loss < best_val_loss:
                 best_val_loss = mean_loss
@@ -490,6 +512,10 @@ def train_model(net, optimizer, train_dataset, val_dataset, cfg, tb=None):
     if tb:
         tb.close()
 
-    torch.save(net.state_dict(), output_dir / "model.pth")
+    if cfg.model.save_model:
+        torch.save(net.state_dict(), output_dir / "model.pth")
 
-    return val_c_loss
+    if cfg.model.use_metrics:
+        return val_c_loss, metrics
+    else:
+        return val_c_loss

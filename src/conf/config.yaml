@@ -1,12 +1,12 @@
 defaults: 
   - _self_
-  - model: cleanunet2
+  - model: cleanunet
   - user: clemens
 
-tuner: False
-use_optuna: False
+tuner: True
+use_optuna: True
 n_trials: 100
-training: True
+training: False
 test: False
 plot:
   metrics: False

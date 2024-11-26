@@ -1,9 +1,11 @@
 model_name: "CleanUNet"
 use_csv: True
 train_pytorch: True
-use_metrics: False
+tune_stft: True
+use_metrics: True
 use_baseline: False
 load_dummy: False
+save_model: False
 seed: 123
 
 # data
@@ -14,8 +16,8 @@ event_shift_start: 5000
 # training
 batch_size: 256
 lr: 0.00001
-epochs: 100
-clipnorm: null
+epochs: 20
+clipnorm: 1e9
 
 # Early Stopping callback
 patience: 10

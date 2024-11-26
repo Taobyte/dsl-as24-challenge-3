@@ -1,5 +1,8 @@
+import logging
 
 from enum import Enum
+
+logger = logging.getLogger()
 
 class Mode(Enum):
     TRAIN = "train"
@@ -14,6 +17,16 @@ class Model(Enum):
     CleanUNet = "clean_unet"
     CleanSpecNet = "clean_specnet"
     CleanUNet2 = "clean_unet2"
+
+
+def log_gradient_stats(model):
+    total_grad_norm = 0
+    for param in model.parameters():
+        if param.grad is not None:
+            param_norm = param.grad.detach().norm(2)
+            total_grad_norm += param_norm.item()
+    
+    logger.info(f"Total Gradient Norm: {total_grad_norm}")
 
 
 
