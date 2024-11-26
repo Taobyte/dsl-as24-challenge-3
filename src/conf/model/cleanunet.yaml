@@ -11,8 +11,8 @@ snr_upper: 2.0
 event_shift_start: 5000
 
 # training
-batch_size: 256
-lr: 0.001
+batch_size: 16
+lr: 0.0002
 epochs: 100
 clipnorm: null
 
@@ -20,7 +20,7 @@ clipnorm: null
 patience: 10
 
 # Checkpoint Logger callback
-log_checkpoints: False
+log_checkpoints: True
 checkpoint_freq: 10
 
 # learning rate scheduler
@@ -51,25 +51,23 @@ stft_lambda: 1.0
 sc_lambda: 0.5
 mag_lambda: 0.5
 
-
 # encoder/decoder settings   
 channels_input: 3 
 channels_output: 3
 dropout: 0.0
 use_raglu: False        
-channels_H: 8
-encoder_n_layers: 8
+channels_H: 64
+encoder_n_layers: 5
 kernel_size: 4
 stride: 2
 max_H: 768
 kernel_sizes: [9, 9, 7, 7, 5, 5, 3, 3]
 
 # transformer settings
-tsfm_n_layers: 1
-tsfm_n_head: 4
-tsfm_d_model: 64
-tsfm_d_inner: 128
-
+tsfm_n_layers: 3
+tsfm_n_head: 8
+tsfm_d_model: 32
+tsfm_d_inner: 512
 
 # baseline
 channel_base: 8

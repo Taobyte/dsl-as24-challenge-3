@@ -98,9 +98,8 @@ def compute_metrics(cfg: omegaconf.DictConfig) -> pd.DataFrame:
 
     print(f"running predictions for snrs {cfg.snrs}")
     for snr in tqdm.tqdm(cfg.snrs, total=len(cfg.snrs)):
-
+        
         cross_correlations, max_amplitude_differences, p_wave_onset_differences = get_metrics(model, assoc, snr, cfg)
-
         # cross, SNR, max amplitude difference
         cross_correlation_mean = np.mean(cross_correlations)
         cross_correlation_std = np.std(cross_correlations)

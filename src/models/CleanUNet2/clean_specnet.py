@@ -11,7 +11,7 @@ class CleanSpecNet(nn.Module):
 
     def __init__(self, channels_input=1, channels_output=1,
                  channels_H=64, max_H=768,
-                 encoder_n_layers=8, kernel_size=4, stride=2,
+                 encoder_n_layers=8, kernel_size=4,
                  tsfm_n_layers=3, 
                  tsfm_n_head=8,
                  tsfm_d_model=512, 
@@ -44,7 +44,6 @@ class CleanSpecNet(nn.Module):
         self.max_H = max_H
         self.encoder_n_layers = encoder_n_layers
         self.kernel_size = kernel_size
-        self.stride = stride
 
         # Transformer parameters
         self.tsfm_n_layers = tsfm_n_layers
@@ -59,8 +58,6 @@ class CleanSpecNet(nn.Module):
         self.register_buffer("window", getattr(torch, window)(win_length))
 
         channels_input = int(channels_input * (fft_size // 2 + 1))
-
-        print(channels_input)
 
         self.initial_conv = nn.Conv1d(channels_input, channels_H, 1)
 
@@ -91,6 +88,8 @@ class CleanSpecNet(nn.Module):
         channels_output = int(channels_output * (fft_size // 2 + 1))
         self.output_conv = nn.Conv1d(channels_H, channels_output, kernel_size=1)
 
+        self.output_relu = nn.ReLU()
+
         # weight scaling initialization
         for layer in self.modules():
             if isinstance(layer, (nn.Conv1d, nn.ConvTranspose1d)):
@@ -106,11 +105,9 @@ class CleanSpecNet(nn.Module):
         x = einops.rearrange(x, "(repeat b) t c -> b (repeat c) t", repeat=self.channels_input)
     
         x = self.initial_conv(x)
-        print(x.shape)
         # encoder
         for encoder_block in self.encoder:
             x = encoder_block(x)
-            print(x.shape)
 
         # attention mask for causal inference; for non-causal, set attn_mask to None
         attn_mask = None
@@ -124,6 +121,7 @@ class CleanSpecNet(nn.Module):
 
         x = x[:, :, :L]
         x = einops.rearrange(x, "b (repeat c) t -> b repeat c t", repeat=self.channels_output)
-
+        x = self.output_relu(x) # ensures that outputs are non-negative
+        
         return x
 

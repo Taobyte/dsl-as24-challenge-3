@@ -9,6 +9,7 @@ from src.models.DeepDenoiser.validate import visualize_predictions_deep_denoiser
 from src.models.WaveDecompNet.validate import visualize_predictions_wave_decomp_net
 from src.models.ColdDiffusion.validate import visualize_predictions_cold_diffusion
 from src.models.CleanUNet.validate import visualize_predictions_clean_unet
+from src.models.CleanUNet2.validate import visualize_predictions_clean_specnet
 
 
 def visualize_predictions(cfg: omegaconf.DictConfig):
@@ -21,6 +22,8 @@ def visualize_predictions(cfg: omegaconf.DictConfig):
         visualize_predictions_cold_diffusion(cfg.user.model_path, cfg.user.data.signal_path, cfg.user.data.noise_path, cfg.model.signal_length, cfg.plot.n_examples, cfg.snrs)
     elif cfg.model.model_name == "CleanUNet":
         visualize_predictions_clean_unet(cfg.user.model_path, cfg.user.data.signal_path, cfg.user.data.noise_path, cfg.model.signal_length, cfg.plot.n_examples, cfg.snrs, cfg=cfg)
+    elif cfg.model.model_name == "CleanUNet2":
+        visualize_predictions_clean_specnet(cfg.user.model_path, cfg.user.data.signal_path, cfg.user.data.noise_path, cfg.model.signal_length, cfg.plot.n_examples, cfg.snrs, cfg=cfg)
     else:
         raise ValueError(f"{cfg.model.model_name} not visualization function or not implemented")
 

@@ -12,3 +12,5 @@ class Model(Enum):
     WaveDecompNet = "wave_decomp_net"
     ColdDiffusion = "cold_diffusion"
     CleanUNet = "clean_unet"
+    CleanSpecNet = "clean_specnet"
+    CleanUNet2 = "clean_unet2"

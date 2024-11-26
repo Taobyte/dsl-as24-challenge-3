@@ -77,6 +77,9 @@ class LogSTFTMagnitudeLoss(torch.nn.Module):
             Tensor: Log STFT magnitude loss value.
 
         """
+        # print("x_mag range:", x_mag.min().item(), x_mag.max().item())
+        # print("y_mag range:", y_mag.min().item(), y_mag.max().item())
+
         return F.l1_loss(torch.log(y_mag), torch.log(x_mag))
 
 
@@ -85,7 +88,7 @@ class STFTLoss(torch.nn.Module):
 
     def __init__(
         self, fft_size=1024, shift_size=120, win_length=600, window="hann_window", 
-        band="full"
+        band="full", transform_stft=True
     ):
         """Initialize STFT loss module."""
         super(STFTLoss, self).__init__()
@@ -93,6 +96,7 @@ class STFTLoss(torch.nn.Module):
         self.shift_size = shift_size
         self.win_length = win_length
         self.band = band 
+        self.transform_stft = transform_stft
 
         self.spectral_convergence_loss = SpectralConvergenceLoss()
         self.log_stft_magnitude_loss = LogSTFTMagnitudeLoss()
@@ -111,8 +115,12 @@ class STFTLoss(torch.nn.Module):
             Tensor: Log STFT magnitude loss value.
 
         """
-        x_mag = stft(x, self.fft_size, self.shift_size, self.win_length, self.window)
-        y_mag = stft(y, self.fft_size, self.shift_size, self.win_length, self.window)
+        if self.transform_stft:
+            x_mag = stft(x, self.fft_size, self.shift_size, self.win_length, self.window)
+            y_mag = stft(y, self.fft_size, self.shift_size, self.win_length, self.window)
+        else:
+            x_mag = x
+            y_mag = y
 
         if self.band == "high":
             freq_mask_ind = x_mag.shape[1] // 2  # only select high frequency bands
@@ -132,7 +140,7 @@ class MultiResolutionSTFTLoss(torch.nn.Module):
 
     def __init__(
         self, fft_sizes=[1024, 2048, 512], hop_sizes=[120, 240, 50], win_lengths=[600, 1200, 240],
-        window="hann_window", sc_lambda=0.1, mag_lambda=0.1, band="full"
+        window="hann_window", sc_lambda=0.1, mag_lambda=0.1, band="full", transform_stft=True
     ):
         """Initialize Multi resolution STFT loss module.
 
@@ -148,11 +156,12 @@ class MultiResolutionSTFTLoss(torch.nn.Module):
         super(MultiResolutionSTFTLoss, self).__init__()
         self.sc_lambda = sc_lambda
         self.mag_lambda = mag_lambda
+        self.transform_stft = transform_stft
 
         assert len(fft_sizes) == len(hop_sizes) == len(win_lengths)
         self.stft_losses = torch.nn.ModuleList()
         for fs, ss, wl in zip(fft_sizes, hop_sizes, win_lengths):
-            self.stft_losses += [STFTLoss(fs, ss, wl, window, band)]
+            self.stft_losses += [STFTLoss(fs, ss, wl, window, band, transform_stft)]
 
     def forward(self, x, y):
         """Calculate forward propagation.
@@ -166,9 +175,10 @@ class MultiResolutionSTFTLoss(torch.nn.Module):
             Tensor: Multi resolution log STFT magnitude loss value.
 
         """
-        if len(x.shape) == 3:
+        if self.transform_stft and len(x.shape) == 3:
             x = x.view(-1, x.size(2))  # (B, C, T) -> (B x C, T)
             y = y.view(-1, y.size(2))  # (B, C, T) -> (B x C, T)
+        
         sc_loss = 0.0
         mag_loss = 0.0
         for f in self.stft_losses:

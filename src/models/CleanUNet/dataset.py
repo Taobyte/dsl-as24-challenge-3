@@ -8,14 +8,11 @@ import pandas as pd
 import einops
 
 from src.utils import Mode
-
-def get_dataloaders(cfg: omegaconf.DictConfig):
-    pass
-
+from src.models.CleanUNet.stft_loss import stft
 
 class CleanUNetDataset(torch.utils.data.Dataset):
 
-    def __init__(self, signal_path: str, noise_path: str, signal_length: int, snr_lower: int=0.1, snr_upper: int=2.0, mode: Mode=Mode.TRAIN, random=True, data_format="channel_last"):
+    def __init__(self, signal_path: str, noise_path: str, signal_length: int, snr_lower: int=0.1, snr_upper: int=2.0, mode: Mode=Mode.TRAIN, random=True, data_format="channel_last", spectogram=False, fft_size=126, hop_size=24, win_length=100, window="hann_window"):
         
         self.signal_files = glob.glob(f"{signal_path}/**/*.npz", recursive=True) if random else sorted(glob.glob(f"{signal_path}/**/*.npz", recursive=True))
         self.noise_files = glob.glob(f"{noise_path}/**/*.npz", recursive=True) if random else sorted(glob.glob(f"{noise_path}/**/*.npz", recursive=True))
@@ -30,9 +27,13 @@ class CleanUNetDataset(torch.utils.data.Dataset):
 
         self.mode = mode
         self.data_format = data_format
+        self.spectogram = spectogram
+        self.fft_size = fft_size
+        self.hop_size = hop_size
+        self.win_length = win_length
+        self.window = getattr(torch, window)(win_length)
 
         self.random = random
-
         if not random:
             np.random.seed(123)
 
@@ -75,6 +76,13 @@ class CleanUNetDataset(torch.utils.data.Dataset):
         if self.data_format == "channel_first":
             noisy_eq = einops.rearrange(noisy_eq, "t c -> c t")
             eq_stacked = einops.rearrange(eq_stacked, "t c -> c t")
+            eq_stacked = torch.from_numpy(eq_stacked)
+            noisy_eq = torch.from_numpy(noisy_eq)
+        
+        if self.spectogram:
+            assert self.data_format == "channel_first"
+            eq_stacked = stft(eq_stacked, self.fft_size, self.hop_size, self.win_length, self.window) # (3*B, #frames, fft_size // 2 + 1)
+            eq_stacked = einops.rearrange(eq_stacked, "repeat t c -> repeat c t", repeat=3)
 
         if self.mode == Mode.TEST:
             return noisy_eq, eq_stacked, event_shift
@@ -84,7 +92,7 @@ class CleanUNetDataset(torch.utils.data.Dataset):
 
 class CleanUNetDatasetCSV(torch.utils.data.Dataset):
 
-    def __init__(self, path: str, signal_length: int, snr_lower: int=0.1, snr_upper: int=2.0, mode: Mode=Mode.TRAIN, data_format="channel_last"):
+    def __init__(self, path: str, signal_length: int, snr_lower: int=0.1, snr_upper: int=2.0, mode: Mode=Mode.TRAIN, data_format="channel_last", spectogram=False, fft_size=126, hop_size=24, win_length=100, window="hann_window"):
         
         print("start loading pickle files")
         
@@ -109,12 +117,16 @@ class CleanUNetDatasetCSV(torch.utils.data.Dataset):
 
         self.mode = mode
         self.data_format = data_format
+        self.spectogram = spectogram
+        self.fft_size = fft_size
+        self.hop_size = hop_size
+        self.win_length = win_length
+        self.window = getattr(torch, window)(win_length)
 
-    
     def __len__(self) -> int:
         return len(self.signal_df)
     
-    def __getitem__(self, idx, snr=None) -> tuple[ndarray, ndarray]:
+    def __getitem__(self, idx) -> tuple[ndarray, ndarray]:
         
         eq = self.signal_df.iloc[idx]
         random_noise_idx = np.random.randint(len(self.noise_df))
@@ -146,9 +158,19 @@ class CleanUNetDatasetCSV(torch.utils.data.Dataset):
         eq_stacked = eq_stacked * snr_random  # rescale event to desired SNR
         noisy_eq = eq_stacked + noise_stacked # recombine
 
+        # channel_first means we use the Pytorch model instead of the keras model
         if self.data_format == "channel_first":
             noisy_eq = einops.rearrange(noisy_eq, "t c -> c t")
             eq_stacked = einops.rearrange(eq_stacked, "t c -> c t")
+            # numpy array to torch tensor 
+            eq_stacked = torch.from_numpy(eq_stacked)
+            noisy_eq = torch.from_numpy(noisy_eq)
+        
+        if self.spectogram:
+            assert self.data_format == "channel_first"
+            # eq_stacked = einops.rearrange(eq_stacked, "c t -> (b c) t") 
+            eq_stacked = stft(eq_stacked, self.fft_size, self.hop_size, self.win_length, self.window) # (3*B, #frames, fft_size // 2 + 1)
+            eq_stacked = einops.rearrange(eq_stacked, "repeat t c -> repeat c t", repeat=3)
 
         if self.mode == Mode.TEST:
             return noisy_eq, eq_stacked, event_shift

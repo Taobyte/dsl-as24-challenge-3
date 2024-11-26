@@ -54,10 +54,7 @@ def main(cfg: omegaconf.DictConfig):
 
         if cfg.training:
             model = train_model(cfg)
-            model.save(
-                output_dir
-                / f"{cfg.model.model_name}_lr_{cfg.model.lr}_e{cfg.model.epochs}.keras"
-            )
+
         elif cfg.test:
             model_df, butterworth_df = compute_metrics(cfg)
             if cfg.plot.metrics:
