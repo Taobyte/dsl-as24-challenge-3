@@ -291,7 +291,7 @@ def train_model(net, optimizer, train_dataset, val_dataset, cfg, tb=None):
             clean_audio = einops.rearrange(clean_audio, "b repeat c t ->(b repeat) t c", repeat=3)
             spec_loss, mag_loss = stft_loss(denoised_audio, clean_audio)
             loss = (spec_loss + mag_loss) * cfg.model.stft_lambda
-            loss = spec_loss * cfg.model.stft_lambda
+            # loss = spec_loss * cfg.model.stft_lambda
         elif cfg.model.loss == "mae":
             loss = time_domain_loss(denoised_audio, clean_audio)
         else:
@@ -335,6 +335,10 @@ def train_model(net, optimizer, train_dataset, val_dataset, cfg, tb=None):
             grad_norm = torch.nn.utils.clip_grad_norm_(net.parameters(), 1e9)
             optimizer.step()
 
+            for name, param in net.named_parameters():
+                if param.grad is not None:
+                    print(f"{name}: {param.grad.norm()}")
+
             if tb:
                 tb.add_scalar("Train/Gradient-Norm", grad_norm, n_iter)
                 tb.add_scalar(
@@ -346,85 +350,107 @@ def train_model(net, optimizer, train_dataset, val_dataset, cfg, tb=None):
             tb.add_scalar("Train/Train-Loss", c_loss, n_iter)
 
         # Validation
-        net.eval()
-        val_losses = []
-        amp_means, amp_stds, cc_means, cc_stds, pw_means, pw_stds = (
-            [],
-            [],
-            [],
-            [],
-            [],
-            [],
-        )
-        with torch.no_grad():
-            for snr in cfg.snrs:
-
-                val_dataset.snr_upper, val_dataset.snr_lower = snr, snr
-                val_dl = torch.utils.data.DataLoader(
-                    val_dataset, batch_size=cfg.model.batch_size
-                )
-                val_c_loss = 0
-                max_amp_differences, cc, pw = [], [], []
-                for noisy_audio, clean_audio, shift in val_dl:
-
-                    clean_audio = clean_audio.float().to(device)
-                    noisy_audio = noisy_audio.float().to(device)
-                    shift = shift.to(device)
-                    denoised_audio = net(noisy_audio)
-                    # loss
-                    loss = get_loss(
-                        denoised_audio, clean_audio
+        if n_iter > 0 and n_iter % cfg.model.val_freq == 0:
+            net.eval()
+            with torch.no_grad():
+                if cfg.model.snrs:
+                    val_losses = []
+                    amp_means, amp_stds, cc_means, cc_stds, pw_means, pw_stds = (
+                        [],
+                        [],
+                        [],
+                        [],
+                        [],
+                        [],
                     )
-                    val_c_loss += loss.item()
-                    # metrics
-                    if cfg.model.use_metrics:
-                        max_amp_differences.append(
-                            max_amplitude_difference_torch(clean_audio, denoised_audio)
+                    for snr in cfg.model.snrs:
+
+                        val_dataset.snr_upper, val_dataset.snr_lower = snr, snr
+                        val_dl = torch.utils.data.DataLoader(
+                            val_dataset, batch_size=cfg.model.batch_size
                         )
-                        cc.append(cross_correlation_torch(clean_audio, denoised_audio))
-                        pw.append(
-                            p_wave_onset_difference_torch(
-                                clean_audio, denoised_audio, shift
+                        val_c_loss = 0
+                        max_amp_differences, cc, pw = [], [], []
+                        for noisy_audio, clean_audio, shift in val_dl:
+
+                            clean_audio = clean_audio.float().to(device)
+                            noisy_audio = noisy_audio.float().to(device)
+                            shift = shift.to(device)
+                            denoised_audio = net(noisy_audio)
+                            # loss
+                            loss = get_loss(
+                                denoised_audio, clean_audio
                             )
+                            val_c_loss += loss.item()
+                            # metrics
+                            if cfg.model.use_metrics:
+                                max_amp_differences.append(
+                                    max_amplitude_difference_torch(clean_audio, denoised_audio)
+                                )
+                                cc.append(cross_correlation_torch(clean_audio, denoised_audio))
+                                pw.append(
+                                    p_wave_onset_difference_torch(
+                                        clean_audio, denoised_audio, shift
+                                    )
+                                )
+                        if cfg.model.use_metrics:
+                            max_amp_differences = torch.concatenate(max_amp_differences, dim=0)
+                            amp_means.append(max_amp_differences.mean())
+                            amp_stds.append(max_amp_differences.std())
+
+                            cc = torch.concatenate(cc, dim=0)
+                            cc_means.append(cc.mean())
+                            cc_stds.append(cc.std())
+
+                            pw = torch.concatenate(pw, dim=0)
+                            pw_means.append(pw.mean())
+                            pw_stds.append(pw.std())
+
+                        val_losses.append(val_c_loss)
+                else:
+                    val_dl = torch.utils.data.DataLoader(
+                            val_dataset, batch_size=cfg.model.batch_size
                         )
-                if cfg.model.use_metrics:
-                    max_amp_differences = torch.concatenate(max_amp_differences, dim=0)
-                    amp_means.append(max_amp_differences.mean())
-                    amp_stds.append(max_amp_differences.std())
-
-                    cc = torch.concatenate(cc, dim=0)
-                    cc_means.append(cc.mean())
-                    cc_stds.append(cc.std())
-
-                    pw = torch.concatenate(pw, dim=0)
-                    pw_means.append(pw.mean())
-                    pw_stds.append(pw.std())
-
-                val_losses.append(val_c_loss)
-
-        if tb:
-            for i, snr in enumerate(cfg.snrs):
-                tb.add_scalar(
-                    f"Validation/Validation-Loss_{snr}", val_losses[i], n_iter
-                )
-                if cfg.model.use_metrics:
-                    tb.add_scalar(f"Metrics/Max_Amplitude/Mean_{snr}", amp_means[i], n_iter)
-                    tb.add_scalar(f"Metrics/Max_Amplitude/Std_{snr}", amp_stds[i], n_iter)
-                    tb.add_scalar(f"Metrics/CC/Mean_{snr}", cc_means[i], n_iter)
-                    tb.add_scalar(f"Metrics/CC/Std_{snr}", cc_stds[i], n_iter)
-                    tb.add_scalar(f"Metrics/PW/Mean_{snr}", pw_means[i], n_iter)
-                    tb.add_scalar(f"Metrics/PW/Std_{snr}", pw_stds[i], n_iter)
-        logger.info(f"validation_loss: {val_losses}")
-
-
-        mean_loss = torch.mean(torch.Tensor(val_losses)).item()
-        # Check for early stopping
-        if mean_loss < best_val_loss:
-            best_val_loss = mean_loss
-            best_epoch = n_iter
-        elif n_iter - best_epoch >= patience:
-            logger.info(f"Early stopping triggered at epoch: {n_iter}")
-            stop_training = True
+                    val_c_loss = 0
+                    for noisy_audio, clean_audio, shift in val_dl:
+                        clean_audio = clean_audio.float().to(device)
+                        noisy_audio = noisy_audio.float().to(device)
+                        shift = shift.to(device)
+                        denoised_audio = net(noisy_audio)
+                        # loss
+                        loss = get_loss(
+                            denoised_audio, clean_audio
+                        )
+                        val_c_loss += loss.item()
+            if tb:
+                if cfg.model.snrs:
+                    for i, snr in enumerate(cfg.model.snrs):
+                        tb.add_scalar(
+                            f"Validation/Validation-Loss_{snr}", val_losses[i], n_iter
+                        )
+                        if cfg.model.use_metrics:
+                            tb.add_scalar(f"Metrics/Max_Amplitude/Mean_{snr}", amp_means[i], n_iter)
+                            tb.add_scalar(f"Metrics/Max_Amplitude/Std_{snr}", amp_stds[i], n_iter)
+                            tb.add_scalar(f"Metrics/CC/Mean_{snr}", cc_means[i], n_iter)
+                            tb.add_scalar(f"Metrics/CC/Std_{snr}", cc_stds[i], n_iter)
+                            tb.add_scalar(f"Metrics/PW/Mean_{snr}", pw_means[i], n_iter)
+                            tb.add_scalar(f"Metrics/PW/Std_{snr}", pw_stds[i], n_iter)
+                    logger.info(f"validation_loss: {val_losses}")
+                    mean_loss = torch.mean(torch.Tensor(val_losses)).item()
+                else:
+                    tb.add_scalar(
+                            f"Validation/Validation-Loss", val_c_loss, n_iter
+                        )
+                    logger.info(f"validation_loss: {val_c_loss}")
+                    mean_loss = val_c_loss
+            
+            # Check for early stopping
+            if mean_loss < best_val_loss:
+                best_val_loss = mean_loss
+                best_epoch = n_iter
+            elif n_iter - best_epoch >= patience:
+                logger.info(f"Early stopping triggered at epoch: {n_iter}")
+                stop_training = True
 
         # save checkpoint
         if (

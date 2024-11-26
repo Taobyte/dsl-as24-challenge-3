@@ -88,8 +88,6 @@ class CleanSpecNet(nn.Module):
         channels_output = int(channels_output * (fft_size // 2 + 1))
         self.output_conv = nn.Conv1d(channels_H, channels_output, kernel_size=1)
 
-        self.output_relu = nn.ReLU()
-
         # weight scaling initialization
         for layer in self.modules():
             if isinstance(layer, (nn.Conv1d, nn.ConvTranspose1d)):
@@ -121,7 +119,7 @@ class CleanSpecNet(nn.Module):
 
         x = x[:, :, :L]
         x = einops.rearrange(x, "b (repeat c) t -> b repeat c t", repeat=self.channels_output)
-        x = self.output_relu(x) # ensures that outputs are non-negative
+        x = torch.abs(x)
         
         return x
 

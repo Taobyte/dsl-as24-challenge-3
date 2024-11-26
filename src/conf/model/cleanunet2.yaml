@@ -11,10 +11,15 @@ snr_upper: 2.0
 event_shift_start: 5000
 
 # training
-batch_size: 32
-lr: 0.001
+batch_size: 256
+lr: 0.00001
 epochs: 100
 clipnorm: null
+
+# Validation frequency
+val_freq: 1
+# snrs: [0.1, 0.3, 0.5, 0.7, 1.0]
+snrs: null
 
 # Early Stopping callback
 patience: 10
@@ -55,11 +60,11 @@ channels_output: 3
 dropout: 0.0        
 channels_H: 64
 encoder_n_layers: 5
-kernel_size: 4
+kernel_size: 5
 max_H: 768
 
 # transformer settings
-tsfm_n_layers: 3
+tsfm_n_layers: 1
 tsfm_n_head: 8
 tsfm_d_model: 32
-tsfm_d_inner: 512
+tsfm_d_inner: 128

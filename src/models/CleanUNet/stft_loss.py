@@ -80,7 +80,9 @@ class LogSTFTMagnitudeLoss(torch.nn.Module):
         # print("x_mag range:", x_mag.min().item(), x_mag.max().item())
         # print("y_mag range:", y_mag.min().item(), y_mag.max().item())
 
-        return F.l1_loss(torch.log(y_mag), torch.log(x_mag))
+        B, T, C = x_mag.shape
+
+        return F.l1_loss(torch.log(y_mag), torch.log(x_mag)) / T
 
 
 class STFTLoss(torch.nn.Module):

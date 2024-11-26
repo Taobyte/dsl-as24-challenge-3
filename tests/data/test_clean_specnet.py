@@ -1,6 +1,7 @@
 
 import pytest
 import torch 
+import matplotlib.pyplot as plt
 
 from hydra import initialize, compose
 from src.utils import Mode
@@ -32,6 +33,12 @@ def test_clean_specnet_dataset(cfg):
     dl = torch.utils.data.DataLoader(val_dataset, batch_size=1)
 
     noisy, eq, shift = next(iter(dl))
+    
+    """
+    fig, axs = plt.subplots(1, 3)
+    axs[0].plot(range(6120), noisy[0,0,:])
+    axs[1].imshow(eq)
+    """
 
     assert noisy.shape == (1, 3, 6120)
     assert eq.shape == (1, 3, 64, 256)
