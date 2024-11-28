@@ -1,4 +1,4 @@
-# Copyright (c) 2022 NVIDIA CORPORATION. 
+# Copyright (c) 2022 NVIDIA CORPORATION.
 #   Licensed under the MIT license.
 
 import numpy as np
@@ -8,6 +8,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from torch.utils.tensorboard import SummaryWriter
+
 
 def weight_scaling_init(layer):
     """
@@ -23,8 +24,9 @@ def weight_scaling_init(layer):
 # Original Copyright 2017 Victor Huang
 #  MIT License (https://opensource.org/licenses/MIT)
 
+
 class ScaledDotProductAttention(nn.Module):
-    ''' Scaled Dot-Product Attention '''
+    """Scaled Dot-Product Attention"""
 
     def __init__(self, temperature, attn_dropout=0.1):
         super().__init__()
@@ -32,7 +34,6 @@ class ScaledDotProductAttention(nn.Module):
         self.dropout = nn.Dropout(attn_dropout)
 
     def forward(self, q, k, v, mask=None):
-
         attn = torch.matmul(q / self.temperature, k.transpose(2, 3))
 
         if mask is not None:
@@ -45,7 +46,7 @@ class ScaledDotProductAttention(nn.Module):
 
 
 class MultiHeadAttention(nn.Module):
-    ''' Multi-Head Attention module '''
+    """Multi-Head Attention module"""
 
     def __init__(self, n_head, d_model, d_k, d_v, dropout=0.1):
         super().__init__()
@@ -59,14 +60,12 @@ class MultiHeadAttention(nn.Module):
         self.w_vs = nn.Linear(d_model, n_head * d_v, bias=False)
         self.fc = nn.Linear(n_head * d_v, d_model, bias=False)
 
-        self.attention = ScaledDotProductAttention(temperature=d_k ** 0.5)
+        self.attention = ScaledDotProductAttention(temperature=d_k**0.5)
 
         self.dropout = nn.Dropout(dropout)
         self.layer_norm = nn.LayerNorm(d_model, eps=1e-6)
 
-
     def forward(self, q, k, v, mask=None):
-
         d_k, d_v, n_head = self.d_k, self.d_v, self.n_head
         sz_b, len_q, len_k, len_v = q.size(0), q.size(1), k.size(1), v.size(1)
 
@@ -82,7 +81,7 @@ class MultiHeadAttention(nn.Module):
         q, k, v = q.transpose(1, 2), k.transpose(1, 2), v.transpose(1, 2)
 
         if mask is not None:
-            mask = mask.unsqueeze(1)   # For head axis broadcasting.
+            mask = mask.unsqueeze(1)  # For head axis broadcasting.
 
         q, attn = self.attention(q, k, v, mask=mask)
 
@@ -98,17 +97,16 @@ class MultiHeadAttention(nn.Module):
 
 
 class PositionwiseFeedForward(nn.Module):
-    ''' A two-feed-forward-layer module '''
+    """A two-feed-forward-layer module"""
 
     def __init__(self, d_in, d_hid, dropout=0.1):
         super().__init__()
-        self.w_1 = nn.Linear(d_in, d_hid) # position-wise
-        self.w_2 = nn.Linear(d_hid, d_in) # position-wise
+        self.w_1 = nn.Linear(d_in, d_hid)  # position-wise
+        self.w_2 = nn.Linear(d_hid, d_in)  # position-wise
         self.layer_norm = nn.LayerNorm(d_in, eps=1e-6)
         self.dropout = nn.Dropout(dropout)
 
     def forward(self, x):
-
         residual = x
 
         x = self.w_2(F.relu(self.w_1(x)))
@@ -121,40 +119,47 @@ class PositionwiseFeedForward(nn.Module):
 
 
 def get_subsequent_mask(seq):
-    ''' For masking out the subsequent info. '''
+    """For masking out the subsequent info."""
     sz_b, len_s = seq.size()
-    subsequent_mask = (1 - torch.triu(
-        torch.ones((1, len_s, len_s), device=seq.device), diagonal=1)).bool()
+    subsequent_mask = (
+        1 - torch.triu(torch.ones((1, len_s, len_s), device=seq.device), diagonal=1)
+    ).bool()
     return subsequent_mask
 
 
 class PositionalEncoding(nn.Module):
-
     def __init__(self, d_hid, n_position=200):
         super(PositionalEncoding, self).__init__()
 
         # Not a parameter
-        self.register_buffer('pos_table', self._get_sinusoid_encoding_table(n_position, d_hid))
+        self.register_buffer(
+            "pos_table", self._get_sinusoid_encoding_table(n_position, d_hid)
+        )
 
     def _get_sinusoid_encoding_table(self, n_position, d_hid):
-        ''' Sinusoid position encoding table '''
+        """Sinusoid position encoding table"""
         # TODO: make it with torch instead of numpy
 
         def get_position_angle_vec(position):
-            return [position / np.power(10000, 2 * (hid_j // 2) / d_hid) for hid_j in range(d_hid)]
+            return [
+                position / np.power(10000, 2 * (hid_j // 2) / d_hid)
+                for hid_j in range(d_hid)
+            ]
 
-        sinusoid_table = np.array([get_position_angle_vec(pos_i) for pos_i in range(n_position)])
+        sinusoid_table = np.array(
+            [get_position_angle_vec(pos_i) for pos_i in range(n_position)]
+        )
         sinusoid_table[:, 0::2] = np.sin(sinusoid_table[:, 0::2])  # dim 2i
         sinusoid_table[:, 1::2] = np.cos(sinusoid_table[:, 1::2])  # dim 2i+1
 
         return torch.FloatTensor(sinusoid_table).unsqueeze(0)
 
     def forward(self, x):
-        return x + self.pos_table[:, :x.size(1)].clone().detach()
+        return x + self.pos_table[:, : x.size(1)].clone().detach()
 
 
 class EncoderLayer(nn.Module):
-    ''' Compose with two layers '''
+    """Compose with two layers"""
 
     def __init__(self, d_model, d_inner, n_head, d_k, d_v, dropout=0.0):
         super(EncoderLayer, self).__init__()
@@ -163,18 +168,28 @@ class EncoderLayer(nn.Module):
 
     def forward(self, enc_input, slf_attn_mask=None):
         enc_output, enc_slf_attn = self.slf_attn(
-            enc_input, enc_input, enc_input, mask=slf_attn_mask)
+            enc_input, enc_input, enc_input, mask=slf_attn_mask
+        )
         enc_output = self.pos_ffn(enc_output)
         return enc_output, enc_slf_attn
 
 
 class TransformerEncoder(nn.Module):
-    ''' A encoder model with self attention mechanism. '''
+    """A encoder model with self attention mechanism."""
 
     def __init__(
-            self, d_word_vec=512, n_layers=2, n_head=8, d_k=64, d_v=64,
-            d_model=512, d_inner=2048, dropout=0.1, n_position=624, scale_emb=False):
-
+        self,
+        d_word_vec=512,
+        n_layers=2,
+        n_head=8,
+        d_k=64,
+        d_v=64,
+        d_model=512,
+        d_inner=2048,
+        dropout=0.1,
+        n_position=624,
+        scale_emb=False,
+    ):
         super().__init__()
 
         # self.src_word_emb = nn.Embedding(n_src_vocab, d_word_vec, padding_idx=pad_idx)
@@ -183,22 +198,24 @@ class TransformerEncoder(nn.Module):
         else:
             self.position_enc = lambda x: x
         self.dropout = nn.Dropout(p=dropout)
-        self.layer_stack = nn.ModuleList([
-            EncoderLayer(d_model, d_inner, n_head, d_k, d_v, dropout=dropout)
-            for _ in range(n_layers)])
+        self.layer_stack = nn.ModuleList(
+            [
+                EncoderLayer(d_model, d_inner, n_head, d_k, d_v, dropout=dropout)
+                for _ in range(n_layers)
+            ]
+        )
         self.layer_norm = nn.LayerNorm(d_model, eps=1e-6)
         self.scale_emb = scale_emb
         self.d_model = d_model
 
     def forward(self, src_seq, src_mask, return_attns=False):
-
         enc_slf_attn_list = []
 
         # -- Forward
         # enc_output = self.src_word_emb(src_seq)
         enc_output = src_seq
         if self.scale_emb:
-            enc_output *= self.d_model ** 0.5
+            enc_output *= self.d_model**0.5
         enc_output = self.dropout(self.position_enc(enc_output))
         enc_output = self.layer_norm(enc_output)
 
@@ -223,23 +240,29 @@ def padding(x, D, K, S):
 
     for _ in range(D):
         L = (L - 1) * S + K
-    
+
     L = int(L)
     x = F.pad(x, (0, L - x.shape[-1]))
     return x
 
 
 class CleanUNetPytorch(nn.Module):
-    """ CleanUNet architecture. """
+    """CleanUNet architecture."""
 
-    def __init__(self, channels_input=1, channels_output=1,
-                 channels_H=64, max_H=768,
-                 encoder_n_layers=8, kernel_size=4, stride=2,
-                 tsfm_n_layers=3, 
-                 tsfm_n_head=8,
-                 tsfm_d_model=512, 
-                 tsfm_d_inner=2048):
-        
+    def __init__(
+        self,
+        channels_input=1,
+        channels_output=1,
+        channels_H=64,
+        max_H=768,
+        encoder_n_layers=8,
+        kernel_size=4,
+        stride=2,
+        tsfm_n_layers=3,
+        tsfm_n_head=8,
+        tsfm_d_model=512,
+        tsfm_d_inner=2048,
+    ):
         """
         Parameters:
         channels_input (int):   input channels
@@ -275,46 +298,59 @@ class CleanUNetPytorch(nn.Module):
         self.decoder = nn.ModuleList()
 
         for i in range(encoder_n_layers):
-            self.encoder.append(nn.Sequential(
-                nn.Conv1d(channels_input, channels_H, kernel_size, stride),
-                nn.ReLU(inplace=False),
-                nn.Conv1d(channels_H, channels_H * 2, 1), 
-                nn.GLU(dim=1)
-            ))
+            self.encoder.append(
+                nn.Sequential(
+                    nn.Conv1d(channels_input, channels_H, kernel_size, stride),
+                    nn.ReLU(inplace=False),
+                    nn.Conv1d(channels_H, channels_H * 2, 1),
+                    nn.GLU(dim=1),
+                )
+            )
             channels_input = channels_H
 
             if i == 0:
                 # no relu at end
-                self.decoder.append(nn.Sequential(
-                    nn.Conv1d(channels_H, channels_H * 2, 1), 
-                    nn.GLU(dim=1),
-                    nn.ConvTranspose1d(channels_H, channels_output, kernel_size, stride)
-                ))
+                self.decoder.append(
+                    nn.Sequential(
+                        nn.Conv1d(channels_H, channels_H * 2, 1),
+                        nn.GLU(dim=1),
+                        nn.ConvTranspose1d(
+                            channels_H, channels_output, kernel_size, stride
+                        ),
+                    )
+                )
             else:
-                self.decoder.insert(0, nn.Sequential(
-                    nn.Conv1d(channels_H, channels_H * 2, 1), 
-                    nn.GLU(dim=1),
-                    nn.ConvTranspose1d(channels_H, channels_output, kernel_size, stride),
-                    nn.ReLU(inplace=False)
-                ))
+                self.decoder.insert(
+                    0,
+                    nn.Sequential(
+                        nn.Conv1d(channels_H, channels_H * 2, 1),
+                        nn.GLU(dim=1),
+                        nn.ConvTranspose1d(
+                            channels_H, channels_output, kernel_size, stride
+                        ),
+                        nn.ReLU(inplace=False),
+                    ),
+                )
             channels_output = channels_H
-            
+
             # double H but keep below max_H
             channels_H *= 2
             channels_H = min(channels_H, max_H)
-        
+
         # self attention block
         self.tsfm_conv1 = nn.Conv1d(channels_output, tsfm_d_model, kernel_size=1)
-        self.tsfm_encoder = TransformerEncoder(d_word_vec=tsfm_d_model, 
-                                               n_layers=tsfm_n_layers, 
-                                               n_head=tsfm_n_head, 
-                                               d_k=tsfm_d_model // tsfm_n_head, 
-                                               d_v=tsfm_d_model // tsfm_n_head, 
-                                               d_model=tsfm_d_model, 
-                                               d_inner=tsfm_d_inner, 
-                                               dropout=0.0, 
-                                               n_position=0, 
-                                               scale_emb=False)
+        self.tsfm_encoder = TransformerEncoder(
+            d_word_vec=tsfm_d_model,
+            n_layers=tsfm_n_layers,
+            n_head=tsfm_n_head,
+            d_k=tsfm_d_model // tsfm_n_head,
+            d_v=tsfm_d_model // tsfm_n_head,
+            d_model=tsfm_d_model,
+            d_inner=tsfm_d_inner,
+            dropout=0.0,
+            n_position=0,
+            scale_emb=False,
+        )
         self.tsfm_conv2 = nn.Conv1d(tsfm_d_model, channels_output, kernel_size=1)
 
         # weight scaling initialization
@@ -325,6 +361,9 @@ class CleanUNetPytorch(nn.Module):
     def forward(self, noisy_audio):
         B, C, L = noisy_audio.shape
         x = padding(noisy_audio, self.encoder_n_layers, self.kernel_size, self.stride)
+
+        std = noisy_audio.std(dim=2, keepdim=True) + 1e-3
+        # noisy_audio /= std
 
         # encoder
         skip_connections = []
@@ -345,10 +384,9 @@ class CleanUNetPytorch(nn.Module):
         # decoder
         for i, upsampling_block in enumerate(self.decoder):
             skip_i = skip_connections[i]
-            x = x + skip_i[:, :, :x.shape[-1]]
+            x = x + skip_i[:, :, : x.shape[-1]]
             x = upsampling_block(x)
 
         x = x[:, :, :L]
 
         return x
-

@@ -1,32 +1,29 @@
-import pathlib
 import logging
+import pathlib
 import time
-import hydra
-import omegaconf
 
-import torch
-import numpy as np
-import keras
 import einops
-
-from src.utils import Mode
-from src.callbacks import VisualizeCallback
-from src.models.CleanUNet.clean_unet_model import CleanUNet
-from src.models.CleanUNet.utils import CleanUNetLoss
-from src.models.CleanUNet.dataset import CleanUNetDataset, CleanUNetDatasetCSV
-from src.models.CleanUNet.validate import visualize_predictions_clean_unet
-from src.models.CleanUNet.clean_unet2_model import baseline_model, baseline_unet
-
+import hydra
+import keras
+import numpy as np
+import omegaconf
+import torch
 from torch.utils.tensorboard import SummaryWriter
-from src.models.CleanUNet.clean_unet_pytorch import CleanUNetPytorch
-from src.models.CleanUNet.stft_loss import MultiResolutionSTFTLoss
+
+from src.callbacks import VisualizeCallback
 from src.metrics import (
-    max_amplitude_difference_torch,
     cross_correlation_torch,
+    max_amplitude_difference_torch,
     p_wave_onset_difference_torch,
 )
-from src.utils import LinearWarmupCosineDecay, log_gradient_stats
-
+from src.models.CleanUNet.clean_unet2_model import baseline_model, baseline_unet
+from src.models.CleanUNet.clean_unet_model import CleanUNet
+from src.models.CleanUNet.clean_unet_pytorch import CleanUNetPytorch
+from src.models.CleanUNet.dataset import CleanUNetDataset, CleanUNetDatasetCSV
+from src.models.CleanUNet.stft_loss import MultiResolutionSTFTLoss
+from src.models.CleanUNet.utils import CleanUNetLoss
+from src.models.CleanUNet.validate import visualize_predictions_clean_unet
+from src.utils import LinearWarmupCosineDecay, Mode, log_gradient_stats
 
 logger = logging.getLogger()
 
@@ -34,13 +31,11 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 
 def fit_clean_unet(cfg: omegaconf.DictConfig) -> keras.Model:
-
     output_dir = pathlib.Path(
         hydra.core.hydra_config.HydraConfig.get().runtime.output_dir
     )
 
     if not cfg.model.use_baseline:
-
         model = CleanUNet(
             cfg.model.channels_input,
             cfg.model.channels_output,
@@ -208,9 +203,7 @@ def fit_clean_unet(cfg: omegaconf.DictConfig) -> keras.Model:
     return model
 
 
-
 def fit_clean_unet_pytorch(cfg: omegaconf.DictConfig):
-
     output_dir = pathlib.Path(
         hydra.core.hydra_config.HydraConfig.get().runtime.output_dir
     )
@@ -261,8 +254,17 @@ def fit_clean_unet_pytorch(cfg: omegaconf.DictConfig):
     return 0
 
 
-def train_model(net, optimizer, train_dataset, val_dataset, cfg, tb=None, sc_lambda=None, mag_lambda=None, stft_lambda=None):
-
+def train_model(
+    net,
+    optimizer,
+    train_dataset,
+    val_dataset,
+    cfg,
+    tb=None,
+    sc_lambda=None,
+    mag_lambda=None,
+    stft_lambda=None,
+):
     output_dir = pathlib.Path(
         hydra.core.hydra_config.HydraConfig.get().runtime.output_dir
     )
@@ -273,7 +275,6 @@ def train_model(net, optimizer, train_dataset, val_dataset, cfg, tb=None, sc_lam
 
     # loss function
     def get_loss(denoised_audio, clean_audio, stft_lambda, sc_lambda, mag_lambda):
-
         stft_lambda = stft_lambda if stft_lambda else cfg.model.stft_lambda
 
         time_domain_loss = torch.nn.L1Loss()
@@ -281,18 +282,22 @@ def train_model(net, optimizer, train_dataset, val_dataset, cfg, tb=None, sc_lam
             cfg.model.fft_sizes,
             cfg.model.frame_lengths,
             cfg.model.frame_steps,
-            sc_lambda= sc_lambda if sc_lambda else cfg.model.sc_lambda,
+            sc_lambda=sc_lambda if sc_lambda else cfg.model.sc_lambda,
             mag_lambda=mag_lambda if mag_lambda else cfg.model.mag_lambda,
-            transform_stft=False if cfg.model.loss == "stft" else True
+            transform_stft=False if cfg.model.loss == "stft" else True,
         ).to(device)
         if cfg.model.loss == "clean_unet_loss":
             loss = time_domain_loss(denoised_audio, clean_audio)
             spec_loss, mag_loss = stft_loss(denoised_audio, clean_audio)
-            loss += ((spec_loss + mag_loss) * cfg.model.stft_lambda)
+            loss += (spec_loss + mag_loss) * cfg.model.stft_lambda
         elif cfg.model.loss == "stft":
-            denoised_audio = einops.rearrange(denoised_audio, "b repeat c t ->(b repeat) t c", repeat=3)
+            denoised_audio = einops.rearrange(
+                denoised_audio, "b repeat c t ->(b repeat) t c", repeat=3
+            )
             denoised_audio = torch.clamp(denoised_audio, min=1e-7)
-            clean_audio = einops.rearrange(clean_audio, "b repeat c t ->(b repeat) t c", repeat=3)
+            clean_audio = einops.rearrange(
+                clean_audio, "b repeat c t ->(b repeat) t c", repeat=3
+            )
             spec_loss, mag_loss = stft_loss(denoised_audio, clean_audio)
             loss = (spec_loss + mag_loss) * stft_lambda
             # loss = spec_loss * cfg.model.stft_lambda
@@ -311,14 +316,14 @@ def train_model(net, optimizer, train_dataset, val_dataset, cfg, tb=None, sc_lam
 
     if cfg.model.lr_schedule:
         scheduler = LinearWarmupCosineDecay(
-                        optimizer,
-                        lr_max=cfg.model.lr,
-                        n_iter=int((20600 // cfg.model.batch_size) * cfg.model.epochs),
-                        iteration=0,
-                        divider=25,
-                        warmup_proportion=0.05,
-                        phase=('linear', 'cosine'),
-                    )
+            optimizer,
+            lr_max=cfg.model.lr,
+            n_iter=int((20600 // cfg.model.batch_size) * cfg.model.epochs),
+            iteration=0,
+            divider=25,
+            warmup_proportion=0.05,
+            phase=("linear", "cosine"),
+        )
 
     time0 = time.time()
     n_iter = 0
@@ -329,25 +334,28 @@ def train_model(net, optimizer, train_dataset, val_dataset, cfg, tb=None, sc_lam
             logger.info(f"Epoch {n_iter}")
         c_loss = 0
         for noisy_audio, clean_audio in train_dl:
-
             clean_audio = clean_audio.float().to(device)
             noisy_audio = noisy_audio.float().to(device)
 
             optimizer.zero_grad()
 
             denoised_audio = net(noisy_audio)
-            loss = get_loss(denoised_audio, clean_audio, stft_lambda, sc_lambda, mag_lambda)
+            loss = get_loss(
+                denoised_audio, clean_audio, stft_lambda, sc_lambda, mag_lambda
+            )
 
             loss.backward()
             reduced_loss = loss.item()
 
             if torch.isnan(loss) or torch.isinf(loss):
                 logger.info("Terminated on NaN/INF triggered.")
-                stop_training=True
+                stop_training = True
                 break
 
             c_loss += reduced_loss
-            grad_norm = torch.nn.utils.clip_grad_norm_(net.parameters(), cfg.model.clipnorm)
+            grad_norm = torch.nn.utils.clip_grad_norm_(
+                net.parameters(), cfg.model.clipnorm
+            )
             if cfg.model.lr_schedule:
                 scheduler.step()
             optimizer.step()
@@ -377,7 +385,6 @@ def train_model(net, optimizer, train_dataset, val_dataset, cfg, tb=None, sc_lam
                         [],
                     )
                     for snr in cfg.model.snrs:
-
                         val_dataset.snr_upper, val_dataset.snr_lower = snr, snr
                         val_dl = torch.utils.data.DataLoader(
                             val_dataset, batch_size=cfg.model.batch_size
@@ -385,27 +392,38 @@ def train_model(net, optimizer, train_dataset, val_dataset, cfg, tb=None, sc_lam
                         val_c_loss = 0
                         max_amp_differences, cc, pw = [], [], []
                         for noisy_audio, clean_audio, shift in val_dl:
-
                             clean_audio = clean_audio.float().to(device)
                             noisy_audio = noisy_audio.float().to(device)
                             shift = shift.to(device)
                             denoised_audio = net(noisy_audio)
                             # loss
-                            loss = get_loss(denoised_audio, clean_audio, stft_lambda, sc_lambda, mag_lambda)
+                            loss = get_loss(
+                                denoised_audio,
+                                clean_audio,
+                                stft_lambda,
+                                sc_lambda,
+                                mag_lambda,
+                            )
                             val_c_loss += loss.item()
                             # metrics
                             if cfg.model.use_metrics:
                                 max_amp_differences.append(
-                                    max_amplitude_difference_torch(clean_audio, denoised_audio)
+                                    max_amplitude_difference_torch(
+                                        clean_audio, denoised_audio
+                                    )
                                 )
-                                cc.append(cross_correlation_torch(clean_audio, denoised_audio))
+                                cc.append(
+                                    cross_correlation_torch(clean_audio, denoised_audio)
+                                )
                                 pw.append(
                                     p_wave_onset_difference_torch(
                                         clean_audio, denoised_audio, shift
                                     )
                                 )
                         if cfg.model.use_metrics:
-                            max_amp_differences = torch.concatenate(max_amp_differences, dim=0)
+                            max_amp_differences = torch.concatenate(
+                                max_amp_differences, dim=0
+                            )
                             amp_means.append(max_amp_differences.mean())
                             amp_stds.append(max_amp_differences.std())
 
@@ -420,8 +438,8 @@ def train_model(net, optimizer, train_dataset, val_dataset, cfg, tb=None, sc_lam
                         val_losses.append(val_c_loss)
                 else:
                     val_dl = torch.utils.data.DataLoader(
-                            val_dataset, batch_size=cfg.model.batch_size
-                        )
+                        val_dataset, batch_size=cfg.model.batch_size
+                    )
                     val_c_loss = 0
                     max_amp_differences, cc, pw = [], [], []
                     for noisy_audio, clean_audio, shift in val_dl:
@@ -430,20 +448,32 @@ def train_model(net, optimizer, train_dataset, val_dataset, cfg, tb=None, sc_lam
                         shift = shift.to(device)
                         denoised_audio = net(noisy_audio)
                         # loss
-                        loss = get_loss(denoised_audio, clean_audio, stft_lambda, sc_lambda, mag_lambda)
+                        loss = get_loss(
+                            denoised_audio,
+                            clean_audio,
+                            stft_lambda,
+                            sc_lambda,
+                            mag_lambda,
+                        )
                         val_c_loss += loss.item()
                         if cfg.model.use_metrics:
                             max_amp_differences.append(
-                                max_amplitude_difference_torch(clean_audio, denoised_audio)
+                                max_amplitude_difference_torch(
+                                    clean_audio, denoised_audio
+                                )
                             )
-                            cc.append(cross_correlation_torch(clean_audio, denoised_audio))
+                            cc.append(
+                                cross_correlation_torch(clean_audio, denoised_audio)
+                            )
                             pw.append(
                                 p_wave_onset_difference_torch(
                                     clean_audio, denoised_audio, shift
                                 )
                             )
                     if cfg.model.use_metrics:
-                        max_amp_differences = torch.concatenate(max_amp_differences, dim=0)
+                        max_amp_differences = torch.concatenate(
+                            max_amp_differences, dim=0
+                        )
                         ma_mean = max_amp_differences.mean()
                         ma_std = max_amp_differences.std()
 
@@ -455,8 +485,15 @@ def train_model(net, optimizer, train_dataset, val_dataset, cfg, tb=None, sc_lam
                         pw_mean = pw.mean()
                         pw_std = pw.std()
 
-                        metrics = {'ma_mean': ma_mean, 'ma_std': ma_std, 'cc_mean': cc_mean, 'cc_std': cc_std, 'pw_mean': pw_mean, 'pw_std': pw_std}
-            
+                        metrics = {
+                            "ma_mean": ma_mean,
+                            "ma_std": ma_std,
+                            "cc_mean": cc_mean,
+                            "cc_std": cc_std,
+                            "pw_mean": pw_mean,
+                            "pw_std": pw_std,
+                        }
+
             if cfg.model.snrs:
                 mean_loss = torch.mean(torch.Tensor(val_losses)).item()
                 if tb:
@@ -465,8 +502,14 @@ def train_model(net, optimizer, train_dataset, val_dataset, cfg, tb=None, sc_lam
                             f"Validation/Validation-Loss_{snr}", val_losses[i], n_iter
                         )
                         if cfg.model.use_metrics:
-                            tb.add_scalar(f"Metrics/Max_Amplitude/Mean_{snr}", amp_means[i], n_iter)
-                            tb.add_scalar(f"Metrics/Max_Amplitude/Std_{snr}", amp_stds[i], n_iter)
+                            tb.add_scalar(
+                                f"Metrics/Max_Amplitude/Mean_{snr}",
+                                amp_means[i],
+                                n_iter,
+                            )
+                            tb.add_scalar(
+                                f"Metrics/Max_Amplitude/Std_{snr}", amp_stds[i], n_iter
+                            )
                             tb.add_scalar(f"Metrics/CC/Mean_{snr}", cc_means[i], n_iter)
                             tb.add_scalar(f"Metrics/CC/Std_{snr}", cc_stds[i], n_iter)
                             tb.add_scalar(f"Metrics/PW/Mean_{snr}", pw_means[i], n_iter)
@@ -475,9 +518,14 @@ def train_model(net, optimizer, train_dataset, val_dataset, cfg, tb=None, sc_lam
             else:
                 mean_loss = val_c_loss
                 if tb:
-                    tb.add_scalar(
-                            f"Validation/Validation-Loss", val_c_loss, n_iter
-                        )
+                    tb.add_scalar("Validation/Validation-Loss", val_c_loss, n_iter)
+                    if cfg.model.use_metrics:
+                        tb.add_scalar("Metrics/Max_Amplitude/Mean", ma_mean, n_iter)
+                        tb.add_scalar("Metrics/Max_Amplitude/Std", ma_std, n_iter)
+                        tb.add_scalar("Metrics/CC/Mean", cc_mean, n_iter)
+                        tb.add_scalar("Metrics/CC/Std", cc_std, n_iter)
+                        tb.add_scalar("Metrics/PW/Mean", pw_mean, n_iter)
+                        tb.add_scalar("Metrics/PW/Std", pw_std, n_iter)
                     logger.info(f"validation_loss: {val_c_loss}")
 
             # Check for early stopping

@@ -5,7 +5,7 @@ tune_stft: True
 use_metrics: True
 use_baseline: False
 load_dummy: False
-save_model: False
+save_model: True
 seed: 123
 
 # data
@@ -15,8 +15,8 @@ event_shift_start: 5000
 
 # training
 batch_size: 256
-lr: 0.00001
-epochs: 20
+lr: 0.0002
+epochs: 200
 clipnorm: 1e9
 
 # Early Stopping callback
@@ -44,7 +44,7 @@ val_freq: 1
 snrs: null
 # snrs: [0.1, 0.3, 0.5, 0.7, 1.0]
 
-# use 'stft' for multi-resolution stft loss otherwise L1 loss
+# 'clean_unet_loss' for mae + STFT loss 
 loss: 'clean_unet_loss'
 
 signal_length: 6120

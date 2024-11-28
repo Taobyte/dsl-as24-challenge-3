@@ -3,14 +3,14 @@ defaults:
   - model: cleanunet
   - user: clemens
 
-tuner: True
-use_optuna: True
+tuner: False
+use_optuna: False
 n_trials: 100
 training: False
 test: False
 plot:
   metrics: False
-  visualization: False
+  visualization: True
   vis_freq: 5
   n_examples: 5
 
