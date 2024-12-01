@@ -1,6 +1,7 @@
 import logging
 import pathlib
 import time
+import copy
 
 import einops
 import hydra
@@ -8,6 +9,10 @@ import keras
 import numpy as np
 import omegaconf
 import torch
+import matplotlib.pyplot as plt
+from PIL import Image
+from io import BytesIO
+
 from torch.utils.tensorboard import SummaryWriter
 
 from src.callbacks import VisualizeCallback
@@ -16,14 +21,14 @@ from src.metrics import (
     max_amplitude_difference_torch,
     p_wave_onset_difference_torch,
 )
-from src.models.CleanUNet.clean_unet2_model import baseline_model, baseline_unet
+from src.models.CleanUNet.clean_unet2_model import baseline_unet
 from src.models.CleanUNet.clean_unet_model import CleanUNet
 from src.models.CleanUNet.clean_unet_pytorch import CleanUNetPytorch
 from src.models.CleanUNet.dataset import CleanUNetDataset, CleanUNetDatasetCSV
 from src.models.CleanUNet.stft_loss import MultiResolutionSTFTLoss
 from src.models.CleanUNet.utils import CleanUNetLoss
 from src.models.CleanUNet.validate import visualize_predictions_clean_unet
-from src.utils import LinearWarmupCosineDecay, Mode, log_gradient_stats
+from src.utils import LinearWarmupCosineDecay, Mode
 
 logger = logging.getLogger()
 
@@ -203,6 +208,40 @@ def fit_clean_unet(cfg: omegaconf.DictConfig) -> keras.Model:
     return model
 
 
+def plot_dataset_tensorboard(cfg, tb, dataset, name):
+    fig, ax = plt.subplots(nrows=cfg.model.subset, ncols=2)
+    for i in range(len(dataset)):
+        noisy, clean = dataset[i]
+        ax[i, 0].plot(
+            range(cfg.model.signal_length),
+            noisy[0, :],
+            label=f"Input {i+1}",
+        )
+        ax[i, 1].plot(
+            range(cfg.model.signal_length),
+            clean[0, :],
+            label=f"Input {i+1}",
+        )
+
+    buf = BytesIO()
+    plt.savefig(buf, format="png")
+    plt.close(fig)
+    image = np.array(Image.open(buf))
+    image = np.transpose(image, (2, 0, 1))
+
+    tb.add_image(name, image, global_step=0)
+
+
+def log_gpu_memory(tag=""):
+    if torch.cuda.is_available():
+        logger.info(
+            f"Allocated memory: {torch.cuda.memory_allocated() / 1024**2:.2f} MB"
+        )
+        logger.info(
+            f"[{tag}] Cached memory: {torch.cuda.memory_reserved() / 1024**2:.2f} MB"
+        )
+
+
 def fit_clean_unet_pytorch(cfg: omegaconf.DictConfig):
     output_dir = pathlib.Path(
         hydra.core.hydra_config.HydraConfig.get().runtime.output_dir
@@ -219,6 +258,7 @@ def fit_clean_unet_pytorch(cfg: omegaconf.DictConfig):
             cfg.model.snr_upper,
             Mode.TRAIN,
             data_format="channel_first",
+            random=cfg.model.random,
         )
         val_dataset = CleanUNetDatasetCSV(
             cfg.user.data.csv_path,
@@ -227,7 +267,17 @@ def fit_clean_unet_pytorch(cfg: omegaconf.DictConfig):
             cfg.model.snr_upper,
             Mode.TEST,
             data_format="channel_first",
+            random=cfg.model.random,
         )
+
+        if cfg.model.subset:
+            train_dataset = torch.utils.data.Subset(
+                train_dataset, indices=range(cfg.model.subset)
+            )
+            val_dataset = train_dataset
+
+            plot_dataset_tensorboard(cfg, tb, train_dataset, "Inputs")
+
     else:
         inps = torch.randn((32, 3, 6120))
         tgts = torch.randn((32, 3, 6120))
@@ -270,7 +320,7 @@ def train_model(
     )
 
     train_dl = torch.utils.data.DataLoader(
-        train_dataset, batch_size=cfg.model.batch_size
+        train_dataset, batch_size=cfg.model.batch_size, shuffle=True, num_workers=4
     )
 
     # loss function
@@ -314,16 +364,20 @@ def train_model(
     patience = cfg.model.patience  # Number of epochs to wait for improvement
     stop_training = False
 
+    n_obs = cfg.model.subset if cfg.model.subset else 20600
+
     if cfg.model.lr_schedule:
         scheduler = LinearWarmupCosineDecay(
             optimizer,
             lr_max=cfg.model.lr,
-            n_iter=int((20600 // cfg.model.batch_size) * cfg.model.epochs),
+            n_iter=int((n_obs // cfg.model.batch_size) * cfg.model.epochs),
             iteration=0,
             divider=25,
             warmup_proportion=0.05,
             phase=("linear", "cosine"),
         )
+
+    log_gpu_memory("Before training")
 
     time0 = time.time()
     n_iter = 0
@@ -339,12 +393,23 @@ def train_model(
 
             optimizer.zero_grad()
 
+            #             with torch.profiler.profile(
+            #                 activities=[
+            #                     torch.profiler.ProfilerActivity.CPU,
+            #                     torch.profiler.ProfilerActivity.CUDA,
+            #                 ],
+            #                 on_trace_ready=torch.profiler.tensorboard_trace_handler(output_dir),
+            #             ) as prof:
             denoised_audio = net(noisy_audio)
+            log_gpu_memory("After forward pass")
             loss = get_loss(
                 denoised_audio, clean_audio, stft_lambda, sc_lambda, mag_lambda
             )
 
             loss.backward()
+            log_gpu_memory("After backward pass")
+            # print(prof.key_averages().table(sort_by="cuda_time_total"))
+
             reduced_loss = loss.item()
 
             if torch.isnan(loss) or torch.isinf(loss):
@@ -366,12 +431,15 @@ def train_model(
                     "Train/learning-rate", optimizer.param_groups[0]["lr"], n_iter
                 )
 
+        time1 = time.time()
         if tb:
-            logger.info(f"train_loss: {c_loss}")
+            logger.info(f"train_loss: {c_loss} | time: {time1-time0}")
             tb.add_scalar("Train/Train-Loss", c_loss, n_iter)
 
+        log_gpu_memory("After epoch")
+
         # Validation
-        if n_iter % cfg.model.val_freq == 0:
+        if n_iter > 0 and n_iter % cfg.model.val_freq == 0:
             net.eval()
             with torch.no_grad():
                 if cfg.model.snrs:
@@ -456,6 +524,7 @@ def train_model(
                             mag_lambda,
                         )
                         val_c_loss += loss.item()
+
                         if cfg.model.use_metrics:
                             max_amp_differences.append(
                                 max_amplitude_difference_torch(
@@ -532,7 +601,7 @@ def train_model(
             if mean_loss < best_val_loss:
                 best_val_loss = mean_loss
                 best_epoch = n_iter
-            elif n_iter - best_epoch >= patience:
+            elif patience and n_iter - best_epoch >= patience:
                 logger.info(f"Early stopping triggered at epoch: {n_iter}")
                 stop_training = True
 
@@ -555,6 +624,22 @@ def train_model(
             logger.info("model at iteration %s is saved" % n_iter)
 
         n_iter += 1
+
+    if cfg.model.subset and cfg.plot.visualization:
+        predictions = []
+        ground_truth = []
+        net.eval()
+        with torch.no_grad():
+            for noisy, clean in train_dataset:
+                noisy = noisy.unsqueeze(0).float().to(device)
+                clean = clean.float().to(device)
+                pred = net(noisy)
+                predictions.append(pred.squeeze(0).cpu())
+                ground_truth.append(clean.cpu())
+
+        plot_dataset_tensorboard(
+            cfg, tb, list(zip(predictions, ground_truth)), "Predictions"
+        )
 
     # After training, close TensorBoard.
     if tb:

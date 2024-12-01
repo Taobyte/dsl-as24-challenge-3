@@ -146,6 +146,7 @@ class CleanUNetDatasetCSV(torch.utils.data.Dataset):
         hop_size=24,
         win_length=100,
         window="hann_window",
+        random=True,
     ):
         print("start loading pickle files")
 
@@ -176,16 +177,24 @@ class CleanUNetDatasetCSV(torch.utils.data.Dataset):
         self.win_length = win_length
         self.window = getattr(torch, window)(win_length)
 
+        self.random = random
+
     def __len__(self) -> int:
         return len(self.signal_df)
 
     def __getitem__(self, idx) -> tuple[ndarray, ndarray]:
         eq = self.signal_df.iloc[idx]
-        random_noise_idx = np.random.randint(len(self.noise_df))
+        random_noise_idx = np.random.randint(len(self.noise_df)) if self.random else idx
         noise = self.noise_df.iloc[random_noise_idx]
         assert self.snr_lower <= self.snr_upper
-        snr_random = np.random.uniform(self.snr_lower, self.snr_upper)
-        event_shift = np.random.randint(6000 - self.signal_length + 500, 6000)
+        snr_random = (
+            np.random.uniform(self.snr_lower, self.snr_upper) if self.random else 1.0
+        )
+        event_shift = (
+            np.random.randint(6000 - self.signal_length + 500, 6000)
+            if self.random
+            else 3000
+        )
 
         Z_eq = eq["Z"][event_shift : event_shift + self.signal_length]
         N_eq = eq["N"][event_shift : event_shift + self.signal_length]

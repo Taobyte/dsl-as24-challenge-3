@@ -1,8 +1,8 @@
 model_name: "CleanUNet"
 use_csv: True
 train_pytorch: True
-tune_stft: True
-use_metrics: True
+tune_stft: False
+use_metrics: False
 use_baseline: False
 load_dummy: False
 save_model: True
@@ -12,19 +12,21 @@ seed: 123
 snr_lower: 0.1
 snr_upper: 2.0
 event_shift_start: 5000
+random: True
+subset: null
 
 # training
 batch_size: 256
 lr: 0.0002
-epochs: 200
+epochs: 50000
 clipnorm: 1e9
 
 # Early Stopping callback
-patience: 10
+patience: null
 
 # Checkpoint Logger callback
 log_checkpoints: True
-checkpoint_freq: 10
+checkpoint_freq: 500
 
 # learning rate scheduler
 lr_schedule: True
@@ -34,13 +36,13 @@ alpha: 0.0
 warmup_steps: 80
 
 # reduce learning rate plateau callback
-reduce_lr_plateau: True
+reduce_lr_plateau: False
 min_lr: 0.0001
 factor: 0.2
 plateau_patience: 3
 
 # validation frequency
-val_freq: 1
+val_freq: 1e9
 snrs: null
 # snrs: [0.1, 0.3, 0.5, 0.7, 1.0]
 
@@ -73,8 +75,8 @@ kernel_sizes: [9, 9, 7, 7, 5, 5, 3, 3]
 # transformer settings
 tsfm_n_layers: 3
 tsfm_n_head: 8
-tsfm_d_model: 32
-tsfm_d_inner: 512
+tsfm_d_model: 512
+tsfm_d_inner: 1024
 
 # baseline
 channel_base: 8

@@ -6,7 +6,7 @@ defaults:
 tuner: False
 use_optuna: False
 n_trials: 100
-training: False
+training: True
 test: False
 plot:
   metrics: False
