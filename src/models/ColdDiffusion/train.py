@@ -62,9 +62,9 @@ def fit_cold_diffusion(cfg: omegaconf.DictConfig) -> keras.Model:
         # run_eagerly=True,
     )
     # build model
-    time = keras.random.randint((cfg.model.batch_size,), 0, cfg.model.T)
+    # time = keras.random.randint((cfg.model.batch_size,), 0, cfg.model.T)
     x = keras.random.normal((cfg.model.batch_size, 3, cfg.model.signal_length))
-    model(x, time)
+    model(x)#, None)
 
     callbacks = [
         keras.callbacks.ModelCheckpoint(
