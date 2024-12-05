@@ -25,7 +25,7 @@ log = logging.getLogger(__name__)
 @hydra.main(version_base=None, config_path="conf", config_name="config")
 def main(cfg: omegaconf.DictConfig):
 
-    print(omegaconf.OmegaConf.to_yaml(cfg))
+    # print(omegaconf.OmegaConf.to_yaml(cfg))
     log.info(omegaconf.OmegaConf.to_yaml(cfg))
 
     # Set see (default: 123)
