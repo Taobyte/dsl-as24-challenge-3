@@ -3,6 +3,7 @@ src/tests.ipynb
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
+*.out
 
 # C extensions
 *.so
