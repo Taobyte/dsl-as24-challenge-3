@@ -6,10 +6,10 @@ defaults:
 tuner: False
 use_optuna: False
 n_trials: 50
-training: False
-test: True
+training: True
+test: False
 plot:
-  metrics: True
+  metrics: False
   visualization: False
   n_examples: 5
 

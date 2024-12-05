@@ -4,6 +4,7 @@ from functools import partial
 import keras
 import torch
 import einops
+import wandb
 
 from torchviz import make_dot
 
@@ -406,7 +407,9 @@ class ColdDiffusion(keras.models.Model):
         new_x_noisy = generate_degraded_sample(denoised_eq, noise, new_t, T)
         new_denoised_eq = self(new_x_noisy, new_t)
         
-        loss = self.compute_loss(y=eq, y_pred=denoised_eq) + self.penalty*self.compute_loss(y=eq, y_pred=new_denoised_eq)
+        loss1 = self.compute_loss(y=eq, y_pred=denoised_eq)
+        loss2 = self.compute_loss(y=eq, y_pred=new_denoised_eq)
+        loss = loss1 + self.penalty*loss2
         loss.backward()
 
         trainable_weights = [v for v in self.trainable_weights]
@@ -417,6 +420,9 @@ class ColdDiffusion(keras.models.Model):
         
         for metric in self.metrics:
             if metric.name == "loss":
+                wandb.log({"loss": loss})
+                wandb.log({"loss_p1": loss1})
+                wandb.log({"loss_p2": loss2})
                 metric.update_state(loss)
             elif metric.name == "Part1":
                 metric.update_state(eq, denoised_eq)
@@ -441,9 +447,14 @@ class ColdDiffusion(keras.models.Model):
         new_x_noisy = generate_degraded_sample(denoised_eq, noise, new_t, T)
         new_denoised_eq = self(new_x_noisy, new_t, training=False)
         
-        loss = self.compute_loss(y=eq, y_pred=denoised_eq) + self.penalty*self.compute_loss(y=eq, y_pred=new_denoised_eq)
+        loss1 = self.compute_loss(y=eq, y_pred=denoised_eq)
+        loss2 = self.compute_loss(y=eq, y_pred=new_denoised_eq)
+        loss = loss1 + self.penalty*loss2
         for metric in self.metrics:
             if metric.name == "loss":
+                wandb.log({"val_loss": loss})
+                wandb.log({"val_loss_p1": loss1})
+                wandb.log({"val_loss_p2": loss2})
                 metric.update_state(loss)
             # elif metric.name == "Part1":
             #     metric.update_state(eq, denoised_eq)

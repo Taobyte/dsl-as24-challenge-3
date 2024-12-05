@@ -33,7 +33,7 @@ def fit_cold_diffusion(cfg: omegaconf.DictConfig) -> keras.Model:
                 "num_workers": cfg.model.num_workers,
             },
         )
-        wandb.run.name = "{}".format(os.getcwd().split('outputs/')[-1])
+        wandb.run.name = "{}".format(str(output_dir).split('outputs/')[-1])
 
     model = ColdDiffusion(
         dim=int(cfg.model.dim), 
@@ -47,9 +47,16 @@ def fit_cold_diffusion(cfg: omegaconf.DictConfig) -> keras.Model:
     if cfg.model.continue_from_pretrained:
         model = keras.saving.load_model(cfg.model.pretrained_path, custom_objects={"ColdDiffusion": model})
 
+    keras.config.disable_interactive_logging()
+    learning_rate_fn = keras.optimizers.schedules.CosineDecay(
+        initial_learning_rate=cfg.model.lr / 5,
+        decay_steps=cfg.model.epochs - cfg.model.epochs // 10,
+        warmup_steps=cfg.model.epochs // 10,
+        warmup_target=cfg.model.lr,
+    )
     model.compile(
-        loss=keras.losses.MeanSquaredError(),
-        optimizer=keras.optimizers.AdamW(learning_rate=cfg.model.lr),
+        loss=keras.losses.Huber(),
+        optimizer=keras.optimizers.AdamW(learning_rate=learning_rate_fn),
         # metrics=[keras.metrics.MeanSquaredError(name="Part1"),
         #          ],
         # run_eagerly=True,
@@ -63,11 +70,15 @@ def fit_cold_diffusion(cfg: omegaconf.DictConfig) -> keras.Model:
         keras.callbacks.ModelCheckpoint(
             filepath=output_dir / "checkpoints/model_at_epoch_{epoch}.keras"
         ),
-        keras.callbacks.EarlyStopping(monitor="val_loss", patience=2),
+        keras.callbacks.EarlyStopping(monitor="val_loss", patience=10),
     ]
     if cfg.user.wandb:
         wandb_callbacks = [wandb.integration.keras.WandbMetricsLogger(log_freq="batch")]
         callbacks = callbacks.extend(wandb_callbacks)
+        # tensorboard_callback = keras.callbacks.TensorBoard(
+        #     log_dir=output_dir / "logs",
+        # )
+        # callbacks.append(tensorboard_callback)
     
     train_dataset = ColdDiffusionDataset(cfg.user.data.train_file, shape=(20230, 6, cfg.model.signal_length))
     val_dataset = ColdDiffusionDataset(cfg.user.data.val_file, shape=(4681, 6, cfg.model.signal_length))
