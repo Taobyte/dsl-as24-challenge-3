@@ -8,7 +8,7 @@ data:
 # testing
 outside_repo: True
 model_path: '/home/tim/Documents/Data-Science_MSc/DSLab/models/DeepDenoiser_l5_e3.keras'
-test_model_path: '/home/tim/Documents/Data-Science_MSc/DSLab/models/ColdDiffusion_lr_0.0005_e3.keras'
+test_model_path: '/home/tim/Documents/Data-Science_MSc/DSLab/models/ColdDiffusion_lr_0.01_e70.keras'
 
 # model dir
 model_dir: '/home/tim/Documents/Data-Science_MSc/DSLab/models/'

@@ -122,7 +122,7 @@ class ResNetBlock(keras.layers.Layer):
         self.kernel_size = kernel_size
         self.n_groups = n_groups
 
-        # self.mlp = keras.layers.Dense(out_filters*2, activation=keras.activations.silu) if time_emb_dim else None
+        self.mlp = keras.layers.Dense(out_filters*2, activation=keras.activations.silu) if time_emb_dim else None
 
         self.conv1 = keras.layers.Conv1D(self.out_filters, self.kernel_size, padding="same", data_format="channels_first", activation=None)
         self.conv2 = keras.layers.Conv1D(self.out_filters, self.kernel_size, padding="same", data_format="channels_first", activation=None)
@@ -143,22 +143,22 @@ class ResNetBlock(keras.layers.Layer):
         else:
             self.residual_projection = keras.layers.Identity()
 
-    def call(self, x): #, time_embedding=None):
+    def call(self, x, time_embedding=None):
 
         assert x.shape[1] == self.in_filters, "Custom Flag, got unexpected number of input filters"
         scale_shift = None
-        # if (time_embedding is not None) and (self.mlp is not None):
-        #     assert time_embedding.shape[-1] == self.time_emb_dim, "Custom Flag: time embeddings has unexpected dimension"
-        #     time_embedding = self.mlp(time_embedding)
-        #     time_embedding = einops.rearrange(time_embedding, "b c -> b c 1")
-        #     scale_shift = keras.ops.split(time_embedding, 2, axis=1) # returns tuple
+        if (time_embedding is not None) and (self.mlp is not None):
+            assert time_embedding.shape[-1] == self.time_emb_dim, "Custom Flag: time embeddings has unexpected dimension"
+            time_embedding = self.mlp(time_embedding)
+            time_embedding = einops.rearrange(time_embedding, "b c -> b c 1")
+            scale_shift = keras.ops.split(time_embedding, 2, axis=1) # returns tuple
 
         h = self.conv1(x)
         h = self.norm1(h)
         # potential time shifting
-        # if scale_shift is not None:
-        #     scale, shift = scale_shift
-        #     h = h * (1+scale) + shift
+        if scale_shift is not None:
+            scale, shift = scale_shift
+            h = h * (1+scale) + shift
 
         h = self.act1(h)
 
@@ -331,7 +331,7 @@ class ColdDiffusion(keras.models.Model):
         self.loss_fn = keras.losses.MeanSquaredError()
 
 
-    def call(self, x): #, t=None):
+    def call(self, x, t=None):
         
         x = self.init_conv(x)
         r = keras.ops.copy(x)
@@ -367,7 +367,7 @@ class ColdDiffusion(keras.models.Model):
 
         x = keras.ops.concatenate([x, r], axis=1)
 
-        x = self.final_resnet(x)#, t)
+        x = self.final_resnet(x, t)
         x = self.final_conv(x)
         return x
 

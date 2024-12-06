@@ -11,6 +11,7 @@ from tqdm import tqdm
 from metrics import cross_correlation, max_amplitude_difference, p_wave_onset_difference
 from utils import Mode
 from models.ColdDiffusion.dataset import ColdDiffusionDataset, TestColdDiffusionDataset
+from models.ColdDiffusion.ColdDiffusion_keras import ColdDiffusion
 
 def get_metrics_cold_diffusion(
     model: keras.Model, snr: int, cfg: omegaconf.DictConfig, idx: int = 0,
@@ -84,7 +85,19 @@ def visualize_predictions_cold_diffusion(cfg):
         test_dl = torch.utils.data.DataLoader(
             test_dataset, cfg.model.test_batch_size, shuffle=False
         )
-        model = keras.saving.load_model(cfg.user.test_model_path)
+        cd = ColdDiffusion(
+        dim=int(cfg.model.dim), 
+        dim_multiples=list(cfg.model.dim_multiples),
+        in_dim=3,
+        out_dim=3,
+        attn_dim_head=int(cfg.model.attn_dim_head),
+        attn_heads=int(cfg.model.attn_heads),
+        resnet_norm_groups=int(cfg.model.resnet_norm_groups),
+        )
+        time = keras.random.randint((cfg.model.batch_size,), 0, cfg.model.T)
+        x = keras.random.normal((cfg.model.batch_size, 3, cfg.model.signal_length))
+        cd(x, time, training=False)
+        model = keras.saving.load_model(cfg.user.test_model_path, custom_objects={"ColdDiffusion": cd})
         eq, noise, _ = next(iter(test_dl))
         print("shapes ", eq.shape, noise.shape)
         noisy = eq*snr + noise
