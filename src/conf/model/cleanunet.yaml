@@ -1,0 +1,90 @@
+model_name: "CleanUNet"
+use_csv: True
+train_pytorch: True
+tune_stft: False
+use_metrics: False
+use_baseline: False
+load_dummy: False
+save_model: True
+seed: 123
+
+# data
+snr_lower: 0.1
+snr_upper: 2.0
+event_shift_start: 5000
+random: True
+subset: null
+
+# training
+batch_size: 384
+lr: 0.0002
+epochs: 1000
+clipnorm: 1e9
+# checkpoint_model: '/cluster/scratch/ckeusch/dsl-as24-challenge-3/outputs/2024-12-01/12-02-44/model.pth'
+checkpoint_model: null
+
+# Early Stopping callback
+patience: null
+
+# Checkpoint Logger callback
+log_checkpoints: True
+checkpoint_freq: 500
+
+# learning rate scheduler
+lr_schedule: True
+decay_steps: 8000
+warmup_target: 0.0002
+alpha: 0.0
+warmup_steps: 80
+
+# reduce learning rate plateau callback
+reduce_lr_plateau: False
+min_lr: 0.0001
+factor: 0.2
+plateau_patience: 3
+
+# validation frequency
+val_freq: 1e9
+snrs: null
+# snrs: [0.1, 0.3, 0.5, 0.7, 1.0]
+
+# 'clean_unet_loss' for mae + STFT loss 
+loss: 'clean_unet_loss'
+use_log_norm: False
+
+signal_length: 6120
+frame_steps: [2, 4, 9]
+frame_lengths: [9, 23, 46]
+fft_sizes: [19, 40, 78]
+# frame_lengths: [100]
+# frame_steps: [24]
+# fft_sizes: [126]
+stft_lambda: 1.0
+sc_lambda: 0.5
+mag_lambda: 0.5
+
+# encoder/decoder settings   
+channels_input: 3 
+channels_output: 3
+dropout: 0.0
+use_raglu: False        
+channels_H: 8
+encoder_n_layers: 6
+kernel_size: 4
+stride: 2
+max_H: 768
+kernel_sizes: [9, 9, 7, 7, 5, 5, 3, 3]
+
+# transformer settings
+tsfm_n_layers: 5
+tsfm_n_head: 4
+tsfm_d_model: 32
+tsfm_d_inner: 128
+
+# baseline
+channel_base: 8
+channel_dims: [1,2,4,8]
+
+# choices: 'lstm', 'transformer', null
+bottleneck: 'lstm'
+
