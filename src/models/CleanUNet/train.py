@@ -284,6 +284,8 @@ def fit_clean_unet_pytorch(cfg: omegaconf.DictConfig):
         train_dataset = torch.utils.data.TensorDataset(inps, tgts)
         val_dataset = train_dataset
 
+    from torch.nn import DataParallel
+
     # predefine model
     net = CleanUNetPytorch(
         channels_input=3,
@@ -294,7 +296,15 @@ def fit_clean_unet_pytorch(cfg: omegaconf.DictConfig):
         tsfm_n_head=cfg.model.tsfm_n_head,
         tsfm_d_model=cfg.model.tsfm_d_model,
         tsfm_d_inner=cfg.model.tsfm_d_inner,
-    ).to(device)
+    )
+
+    if torch.cuda.device_count() > 1:
+        logger.info(
+            f"Multiple GPUs {torch.cuda.device_count()} detected. Using Pytorch DataParallel."
+        )
+        net = DataParallel(net)
+
+    net.to(device)
 
     if cfg.model.checkpoint_model:
         checkpoint = torch.load(cfg.model.checkpoint_model, map_location="cpu")
@@ -384,10 +394,10 @@ def train_model(
 
     # log_gpu_memory("Before training")
 
-    time0 = time.time()
     n_iter = 0
     while n_iter < cfg.model.epochs and not stop_training:
-        net.train(True)
+        time0 = time.time()
+        net.train()
         # for each epoch
         if tb:
             logger.info(f"Epoch {n_iter}")

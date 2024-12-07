@@ -21,8 +21,10 @@ from models.ColdDiffusion.validate import get_metrics_cold_diffusion
 from metrics import cross_correlation, p_wave_onset_difference, max_amplitude_difference
 from models.CleanUNet.clean_unet_pytorch import CleanUNetPytorch
 
-def get_metrics(model: keras.Model, assoc: list, snr:int, cfg: omegaconf.DictConfig) -> tuple[ndarray, ndarray, ndarray]:
 
+def get_metrics(
+    model: keras.Model, assoc: list, snr: int, cfg: omegaconf.DictConfig
+) -> tuple[ndarray, ndarray, ndarray]:
     if cfg.model.model_name == "DeepDenoiser":
         cross_correlations, max_amplitude_differences, p_wave_onset_differences = (
             get_metrics_deepdenoiser(model, assoc, snr, cfg, idx=0)
@@ -36,18 +38,18 @@ def get_metrics(model: keras.Model, assoc: list, snr:int, cfg: omegaconf.DictCon
             get_metrics_cold_diffusion(model, snr, cfg, idx=0)
         )
     elif cfg.model.model_name == "CleanUNet":
-         cross_correlations, max_amplitude_differences, p_wave_onset_differences = (
-            get_metrics_clean_unet(model,cfg, snr, idx=0)
+        cross_correlations, max_amplitude_differences, p_wave_onset_differences = (
+            get_metrics_clean_unet(model, cfg, snr, idx=0)
         )
     else:
-       raise NotImplementedError(f"{cfg.model.model_name} get_metrics function not implemented")
-    
+        raise NotImplementedError(
+            f"{cfg.model.model_name} get_metrics function not implemented"
+        )
+
     return cross_correlations, max_amplitude_differences, p_wave_onset_differences
-        
 
 
 def compute_metrics(cfg: omegaconf.DictConfig) -> pd.DataFrame:
-
     assoc = get_signal_noise_assoc(
         cfg.user.data.signal_path, cfg.user.data.noise_path, Mode.TEST, cfg.size_testset
     )
@@ -78,7 +80,7 @@ def compute_metrics(cfg: omegaconf.DictConfig) -> pd.DataFrame:
     else:
     """
     if not cfg.model.train_pytorch:
-        model = keras.saving.load_model(cfg.user.model_path) 
+        model = keras.saving.load_model(cfg.user.model_path)
     else:
         device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         model = CleanUNetPytorch(
@@ -92,14 +94,18 @@ def compute_metrics(cfg: omegaconf.DictConfig) -> pd.DataFrame:
             tsfm_d_inner=cfg.model.tsfm_d_inner,
         ).to(device)
 
-        checkpoint = torch.load(cfg.user.model_path, map_location=torch.device('cpu'))
-        model.load_state_dict(checkpoint['model_state_dict'])
+        checkpoint = torch.load(cfg.user.model_path, map_location=torch.device("cpu"))
+        if "model_state_dict" in checkpoint.keys():
+            model.load_state_dict(checkpoint["model_state_dict"])
+        else:
+            model.load_state_dict(checkpoint)
         model.eval()
 
     print(f"running predictions for snrs {cfg.snrs}")
     for snr in tqdm.tqdm(cfg.snrs, total=len(cfg.snrs)):
-        
-        cross_correlations, max_amplitude_differences, p_wave_onset_differences = get_metrics(model, assoc, snr, cfg)
+        cross_correlations, max_amplitude_differences, p_wave_onset_differences = (
+            get_metrics(model, assoc, snr, cfg)
+        )
         # cross, SNR, max amplitude difference
         cross_correlation_mean = np.mean(cross_correlations)
         cross_correlation_std = np.std(cross_correlations)

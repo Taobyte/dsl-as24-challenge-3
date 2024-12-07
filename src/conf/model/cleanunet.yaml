@@ -53,12 +53,12 @@ loss: 'clean_unet_loss'
 use_log_norm: False
 
 signal_length: 6120
-frame_steps: [2, 4, 9]
-frame_lengths: [9, 23, 46]
-fft_sizes: [19, 40, 78]
-# frame_lengths: [100]
-# frame_steps: [24]
-# fft_sizes: [126]
+# frame_steps: [2, 4, 9]
+# frame_lengths: [9, 23, 46]
+# fft_sizes: [19, 40, 78]
+frame_lengths: [100]
+frame_steps: [24]
+fft_sizes: [126]
 stft_lambda: 1.0
 sc_lambda: 0.5
 mag_lambda: 0.5
@@ -68,18 +68,18 @@ channels_input: 3
 channels_output: 3
 dropout: 0.0
 use_raglu: False        
-channels_H: 8
-encoder_n_layers: 6
+channels_H: 64
+encoder_n_layers: 5
 kernel_size: 4
 stride: 2
 max_H: 768
 kernel_sizes: [9, 9, 7, 7, 5, 5, 3, 3]
 
 # transformer settings
-tsfm_n_layers: 5
-tsfm_n_head: 4
-tsfm_d_model: 32
-tsfm_d_inner: 128
+tsfm_n_layers: 3
+tsfm_n_head: 8
+tsfm_d_model: 512
+tsfm_d_inner: 1024
 
 # baseline
 channel_base: 8
