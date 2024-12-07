@@ -14,7 +14,7 @@ class CDiffDataset(torch.utils.data.Dataset):
 
     def __init__(self, filename):
         self.file = np.load(filename, allow_pickle=True)
-        self.file = self.file[:80]
+        self.file = self.file
         print(f"Loaded dataset with shape {self.file.shape}")
 
     def __getitem__(self, index):
@@ -41,8 +41,8 @@ class TestColdDiffusionDataset(torch.utils.data.Dataset):
     def __init__(self, filename):
         # self.memmap_file = np.load(filename, allow_pickle=True)
         self.assoc = np.load(filename + "tst_eq_001_assoc.npy", allow_pickle=True)
-        self.file_noise = np.load(filename + "tst_noise_001.npy", allow_pickle=True)[:80]
-        self.file_eq = np.load(filename + "tst_eq_001.npy", allow_pickle=True)[:80]
+        self.file_noise = np.load(filename + "tst_noise_001.npy", allow_pickle=True)
+        self.file_eq = np.load(filename + "tst_eq_001.npy", allow_pickle=True)
         assert self.file_eq.shape == self.file_noise.shape
         # print(f"Loaded dataset with shape {self.file_noise.shape}")
 

@@ -122,6 +122,9 @@ def train_one_epoch(model, optimizer, tr_dl, tr_dl_noise, cfg, device):
         sum_train_loss += loss.item()
         loss.backward()
         optimizer.step()
+        # with torch.no_grad():
+        #     if cfg.user.wandb:
+        #         wandb.log({"Train Loss Batch": loss.item()})
     curr_train_loss = sum_train_loss / len(tr_dl)
     return curr_train_loss
 
@@ -194,8 +197,8 @@ def train_model(cfg, tr_dl, tr_dl_noise, val_dl, val_dl_noise):
             min_loss = val_loss
             save_path = f'{output_dir}/chkpt_epoch_{epoch}_{cfg.model.T}_{cfg.model.scheduler_type}_cold_diffusion.pth' 
             torch.save(model.state_dict(), save_path)
-            if cfg.user.wandb:
-                wandb.save(save_path)  # Log the model checkpoint to wandb
+            # if cfg.user.wandb:
+            #     wandb.save(save_path)  # Log the model checkpoint to wandb
             print(f"Best Epoch (so far): {epoch+1}")
     if cfg.user.wandb:
         wandb.finish()  # End the wandb run after training is complete

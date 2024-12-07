@@ -3,6 +3,7 @@ data:
   noise_path: '/work/courses/dsl/team3/earthquake_data/noise'
   train_file: '/work/courses/dsl/team3/earthquake_data/dataset_train_001.dat'
   val_file: '/work/courses/dsl/team3/earthquake_data/dataset_val_001.dat'
+  datapath: '/work/courses/dsl/team3/earthquake_data/'
 
 # testing
 outside_repo: True

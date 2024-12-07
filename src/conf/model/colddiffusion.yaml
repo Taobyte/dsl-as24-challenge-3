@@ -18,7 +18,7 @@ pretrained_path: "/home/tlauner/DSLab/dsl-as24-challenge-3/outputs/2024-11-21/14
 batch_size: 8 
 num_workers: 2
 lr: 0.001
-epochs: 70
+epochs: 150
 seed: 123
 
 # testing
