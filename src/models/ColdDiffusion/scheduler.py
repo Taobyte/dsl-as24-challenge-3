@@ -4,7 +4,7 @@ import random
 import torch
 from tqdm.auto import tqdm
 import torch.nn.functional as F
-import utils.utils_diff as u
+import models.ColdDiffusion.utils.utils_diff as u
 
 # Set the device to GPU if available, otherwise use CPU
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -26,7 +26,7 @@ def get_index_from_list(vals, t, x_shape):
     out = vals.gather(-1, t.cpu())
     return out.reshape(batch_size, *((1,) * (len(x_shape) - 1))).to(t.device)
 
-def compute_beta_schedule(args):
+def compute_beta_schedule(cfg):
     """
     Computes the beta schedule based on the specified scheduler type.
     
@@ -53,10 +53,10 @@ def compute_beta_schedule(args):
         return beta_t
 
     # Select the beta schedule based on the scheduler type
-    if args.scheduler_type == 'linear':
-        betas = linear_beta_schedule(args.T)
-    elif args.scheduler_type == 'cosine':
-        betas = cosine_beta_schedule(args.T, args.s)
+    if cfg.model.scheduler_type == 'linear':
+        betas = linear_beta_schedule(cfg.model.T)
+    elif cfg.model.scheduler_type == 'cosine':
+        betas = cosine_beta_schedule(cfg.model.T, cfg.model.s)
     else:
         raise ValueError("Unsupported scheduler type. Choose 'linear' or 'cosine'.")
 

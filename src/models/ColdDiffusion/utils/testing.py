@@ -71,12 +71,13 @@ def direct_denoising(model,img,t):
 def sample(model,img,t,batch_size = 4):
 
     model.eval()
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
  
     while (t):
         xt = img
-        step = torch.full((batch_size,), t - 1, dtype=torch.long).cuda() # Prendo T
-        x1_bar = model(img,step) # Model mean da inserire qui 
-        x2_bar = get_x2_bar_from_xt(x1_bar, img, step) # vedi sotto
+        step = torch.full((batch_size,), t - 1, dtype=torch.long).to(device)
+        x1_bar = model(img,step)
+        x2_bar = get_x2_bar_from_xt(x1_bar, img, step) # new corrupted noise
 
         xt_bar = x1_bar 
         if t != 0:
@@ -85,18 +86,16 @@ def sample(model,img,t,batch_size = 4):
         
         xt_sub1_bar = x1_bar
 
-        # Questa è la parte vitale dove riaggiung D(x,s-1)
+        # here we apply D(x,s-1)
         if t - 1 != 0:
-            step2 = torch.full((batch_size,), t - 2, dtype = torch.long).cuda()
+            step2 = torch.full((batch_size,), t - 2, dtype = torch.long).to(device)
             xt_sub1_bar = forward_diffusion_sample(x_start = xt_sub1_bar, x_end = x2_bar, t = step2)
 
         x = img - xt_bar + xt_sub1_bar
         img = x
         t = t - 1
         
-    return xt, img
-
-### Bisogna trovare il modo di fare entrare quello anche qua dentro 
+    return xt #, img
 
 def get_x2_bar_from_xt(x1_bar, xt, t):
         return ((xt - (get_index_from_list(sqrt_alphas_cumprod, t, x1_bar.shape) * x1_bar) - (get_index_from_list(sqrt_one_minus_alphas_cumprod, t, x1_bar.shape)*x1_bar)) /

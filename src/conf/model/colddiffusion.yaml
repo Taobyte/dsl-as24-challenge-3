@@ -7,19 +7,26 @@ attn_dim_head: 32
 attn_heads: 4
 resnet_norm_groups: 8
 
-T: 50
+# T: 50
 
 # data
-signal_length: 6144
+signal_length: 4096
 
 # training 
 continue_from_pretrained: False
 pretrained_path: "/home/tlauner/DSLab/dsl-as24-challenge-3/outputs/2024-11-21/14-38-30/ColdDiffusion_lr_0.0005_e3.keras"
 batch_size: 8 
 num_workers: 2
-lr: 0.01
+lr: 0.001
 epochs: 70
 seed: 123
 
 # testing
 test_batch_size: 32
+
+# new
+channels: 3
+T: 20
+scheduler_type: 'cosine'
+s: 0.008
+penalization: 3.0

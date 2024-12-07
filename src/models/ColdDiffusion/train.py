@@ -11,8 +11,43 @@ import wandb
 from utils import Mode
 from models.ColdDiffusion.ColdDiffusion_keras import ColdDiffusion
 from models.ColdDiffusion.dataset import ColdDiffusionDataset
+from models.ColdDiffusion.utils.utils_diff import create_dataloader
+from models.ColdDiffusion.train_validate import train_model
 
-def fit_cold_diffusion(cfg: omegaconf.DictConfig) -> keras.Model:
+def fit_cold_diffusion(cfg: omegaconf.DictConfig):
+
+    output_dir = pathlib.Path(
+        hydra.core.hydra_config.HydraConfig.get().runtime.output_dir
+    )
+    if cfg.user.wandb:
+        wandb.init(
+            # set the wandb project where this run will be logged
+            project="earthquake denoising",
+            # track hyperparameters and run metadata
+            config={
+                "learning_rate": cfg.model.lr,
+                "architecture": "ColdDiffusion",
+                "dataset": "SED dataset",
+                "epochs": cfg.model.epochs,
+                "batch_size": cfg.model.batch_size,
+                "dim": cfg.model.dim,
+                "dim_multiples": cfg.model.dim_multiples,
+                "num_workers": cfg.model.num_workers,
+            },
+        )
+        wandb.run.name = "{}".format(str(output_dir).split('outputs/')[-1])
+
+    # create the dataloaders
+    tr_dl, val_dl = create_dataloader(cfg, is_noise=False)
+    tr_dl_noise, val_dl_noise = create_dataloader(cfg, is_noise=True)
+
+    min_loss = train_model(cfg, tr_dl, tr_dl_noise, val_dl, val_dl_noise)
+
+    return min_loss
+
+
+
+def fit_cold_diffusion2(cfg: omegaconf.DictConfig) -> keras.Model:
 
     output_dir = pathlib.Path(
         hydra.core.hydra_config.HydraConfig.get().runtime.output_dir
@@ -100,34 +135,3 @@ def fit_cold_diffusion(cfg: omegaconf.DictConfig) -> keras.Model:
     )
 
     return model
-
-
-def custom_metric(loss):
-    return loss
-
-
-class ColdDiffusionLoss(keras.losses.Loss):
-    def __init__(self, penalty: float=0.5, loss_type: str = "MSE"):
-        super().__init__()
-        self.penalty = penalty
-        self.loss_type = loss_type
-        if loss_type == "MSE":
-            self.fct = keras.losses.MeanSquaredError()
-        else:
-            raise Exception("CustomLossException --> not a valid loss_type")
-
-    def call(self, eq, denoised_eqs):
-        print(denoised_eqs.shape)
-        assert denoised_eqs.shape[1] == 6, "Custom Assertion: Dimensions do not match in loss"
-        l1 = self.fct(eq, denoised_eqs[:,:3,:])
-        l2 = self.fct(eq, denoised_eqs[:,3:,:])
-
-        return l1 + self.penalty*l2
-
-    def get_config(self):
-        config = super().get_config()
-        config.update({
-                "penalty": self.penalty,
-                "loss_type": self.loss_type,
-        })
-        return config

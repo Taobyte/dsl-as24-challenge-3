@@ -71,7 +71,7 @@ def get_signal_noise_assoc(signal_path: str, noise_path: str, mode: Mode, size_t
     for i in range(len(signal_files)):
         n = np.random.randint(0, len(noise_files))
         snr_random = snr()
-        event_shift = np.random.randint(1000,6000)
+        event_shift = np.random.randint(2500,6000)
         assoc.append((signal_files[i], noise_files[n], snr_random, event_shift))
 
     return assoc
