@@ -24,8 +24,8 @@ def create_model_and_optimizer(cfg):
         optimizer (Adam): The instantiated optimizer.
     '''
     model = Unet1D(
-        dim = 8,
-        dim_mults = (1, 2, 4, 8),
+        dim = cfg.model.dim,
+        dim_mults = cfg.model.dim_multiples,
         channels = cfg.model.channels
     )
     optimizer = Adam(model.parameters(), lr= cfg.model.lr)
