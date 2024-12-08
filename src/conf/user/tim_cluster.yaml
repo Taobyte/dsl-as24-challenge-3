@@ -4,13 +4,17 @@ data:
   train_file: '/work/courses/dsl/team3/earthquake_data/dataset_train_001.dat'
   val_file: '/work/courses/dsl/team3/earthquake_data/dataset_val_001.dat'
   datapath: '/work/courses/dsl/team3/earthquake_data/'
+  test_data_file: '/work/courses/dsl/team3/earthquake_data/'
 
 # testing
 outside_repo: True
 model_path: '/home/tim/Documents/Data-Science_MSc/DSLab/models/DeepDenoiser_l5_e3.keras'
 test_model_path: "some"
+path_model: '/home/tlauner/DSLab/dsl-as24-challenge-3/outputs/2024-12-07/17-35-15/chkpt_epoch_70_20_cosine_cold_diffusion.pth'
 
 # model dir
 model_dir: '/home/tim/Documents/Data-Science_MSc/DSLab/models/'
 
 wandb: True
+plot_n: 5
+plot_channel: 0

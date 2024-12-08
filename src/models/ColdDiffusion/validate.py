@@ -16,7 +16,7 @@ import models.ColdDiffusion.utils.testing as testing
 from models.ColdDiffusion.train_validate import load_model_and_weights
 
 def get_metrics_cold_diffusion(
-    model: keras.Model, snr: int, cfg: omegaconf.DictConfig, idx: int = 0,
+    model, snr: int, cfg: omegaconf.DictConfig, idx: int = 0,
 ):
     """compute metrics for colddiffusion model
 
@@ -50,8 +50,8 @@ def get_metrics_cold_diffusion(
     onsets= []
 
     def compute_metrs(eq_batch, prediction, shifts):
-        eq_batch = eq_batch.numpy()
-        prediction = np.array(prediction)
+        eq_batch = eq_batch.cpu().numpy()
+        prediction = np.array(prediction.cpu())
         corr = [
             cross_correlation(a, b)
             for a, b in zip(eq_batch[:, idx, :], prediction[:, idx, :])
@@ -131,7 +131,7 @@ def visualize_predictions_cold_diffusion(cfg):
             ground_truth = eq
             t = torch.Tensor([cfg.model.T - 1]).long().to(device)
             
-            restored_dir = testing.direct_denoising(model, noisy.to(device).float(), t)
+            restored_dir = testing.direct_denoising(model, noisy.to(device).float(), t).cpu()
 
             t = cfg.model.T - 1
             restored_sample = testing.sample(
@@ -139,7 +139,7 @@ def visualize_predictions_cold_diffusion(cfg):
                                             noisy.float(),
                                             t,
                                             batch_size=noisy.shape[0]
-                                            )
+                                            ).cpu()
             
             # take one
             if cfg.model.sampling:

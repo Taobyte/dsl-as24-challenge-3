@@ -75,12 +75,7 @@ def compute_metrics(cfg: omegaconf.DictConfig) -> pd.DataFrame:
     """
 
     if cfg.model.model_name == "ColdDiffusion":
-        CDiff = ColdDiffusion(
-            dim=cfg.model.dim,
-            dim_multiples=cfg.model.dim_multiples,
-            # resnet_norm_groups=cfg.model.resnet_norm_groups,
-        )
-        model = keras.saving.load_model(cfg.user.test_model_path, custom_objects={"ColdDiffusion": CDiff})
+        model = None
     else:
         model = keras.saving.load_model(cfg.user.model_path)
     print(f"running predictions for snrs {cfg.snrs}")
