@@ -28,6 +28,9 @@ def create_model_and_optimizer(cfg):
         dim_mults = cfg.model.dim_multiples,
         channels = cfg.model.channels
     )
+    if cfg.model.continue_from_pretrained:
+        model.load_state_dict(torch.load(cfg.model.pretrained_path, map_location=device, weights_only=True))
+
     optimizer = Adam(model.parameters(), lr= cfg.model.lr)
     return model, optimizer
 
@@ -41,7 +44,7 @@ def load_model_and_weights(path_model):
     Returns:
         model (Unet1D): The model with loaded weights.
     '''
-    model = Unet1D(dim=8, dim_mults=(1, 2, 4, 8), channels=3)
+    model = Unet1D(dim=cfg.model.dim, dim_mults=cfg.model.dim_multiples, channels=3)
     model.load_state_dict(torch.load(path_model, map_location=device, weights_only=True))
     return model
 

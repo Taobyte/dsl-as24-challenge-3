@@ -15,10 +15,10 @@ signal_length: 4096
 # training 
 continue_from_pretrained: False
 pretrained_path: "/home/tlauner/DSLab/dsl-as24-challenge-3/outputs/2024-11-21/14-38-30/ColdDiffusion_lr_0.0005_e3.keras"
-batch_size: 8 
+batch_size: 32 
 num_workers: 2
-lr: 0.001
-epochs: 150
+lr: 0.003
+epochs: 27
 seed: 123
 
 # testing
