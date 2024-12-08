@@ -23,6 +23,7 @@ seed: 123
 
 # testing
 test_batch_size: 32
+sampling: True
 
 # new
 channels: 3

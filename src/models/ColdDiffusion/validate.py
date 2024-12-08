@@ -98,8 +98,11 @@ def get_metrics_cold_diffusion(
             ccs.extend(corr)
             amplitudes.extend(max_amplitude_differences)
             onsets.extend(onset)
-
-    return np.array(ccs_sample), np.array(amplitudes_sample), np.array(onsets_sample)
+    
+    if cfg.model.sampling:
+        return np.array(ccs_sample), np.array(amplitudes_sample), np.array(onsets_sample)
+    else:
+        return np.array(ccs), np.array(amplitudes), np.array(onsets)
 
 
 def visualize_predictions_cold_diffusion(cfg):
@@ -139,7 +142,10 @@ def visualize_predictions_cold_diffusion(cfg):
                                             )
             
             # take one
-            predictions = restored_dir
+            if cfg.model.sampling:
+                predictions = restored_sample
+            else:
+                predictions = restored_dir
 
             _, axs = plt.subplots(n_examples, 3,  figsize=(15, n_examples * 3))
             time = range(signal_length)

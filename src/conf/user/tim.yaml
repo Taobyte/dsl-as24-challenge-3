@@ -10,7 +10,7 @@ data:
 outside_repo: True
 model_path: '/home/tim/Documents/Data-Science_MSc/DSLab/models/DeepDenoiser_l5_e3.keras'
 test_model_path: '/home/tim/Documents/Data-Science_MSc/DSLab/models/ColdDiffusion_lr_0.01_e70.keras'
-path_model: '/home/tim/Documents/Data-Science_MSc/DSLab/models/epoch_4_20_cosine_cold_diffusion'
+path_model: '/home/tim/Documents/Data-Science_MSc/DSLab/models/chkpt_epoch_70_20_cosine_cold_diffusion.pth'
 
 # model dir
 model_dir: '/home/tim/Documents/Data-Science_MSc/DSLab/models/'
