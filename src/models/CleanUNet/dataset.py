@@ -185,9 +185,33 @@ class CleanUNetDatasetCSV(torch.utils.data.Dataset):
         return len(self.signal_df)
 
     def __getitem__(self, idx) -> tuple[ndarray, ndarray]:
-        eq = self.signal_df.iloc[idx]
+        # load noise signal
         random_noise_idx = np.random.randint(len(self.noise_df)) if self.random else idx
         noise = self.noise_df.iloc[random_noise_idx]
+
+        random_noise_crop = (
+            np.random.randint(len(noise["Z"]) - self.signal_length)
+            if self.random
+            else 0
+        )
+
+        Z_noise = noise["Z"][random_noise_crop : random_noise_crop + self.signal_length]
+        N_noise = noise["N"][random_noise_crop : random_noise_crop + self.signal_length]
+        E_noise = noise["E"][random_noise_crop : random_noise_crop + self.signal_length]
+        noise_stacked = np.stack([Z_noise, N_noise, E_noise], axis=1)
+
+        if self.pure_noise and np.random.rand() < 0.1:
+            assert not self.spectogram
+            if self.data_format == "channel_first":
+                return einops.rearrange(noise_stacked, "t c -> c t"), torch.zeros(
+                    (3, self.signal_length)
+                )
+            else:
+                return noise_stacked, torch.zeros((self.signal_length, 3))
+
+        # load earthquake signal
+        eq = self.signal_df.iloc[idx]
+
         assert self.snr_lower <= self.snr_upper
         snr_random = (
             np.random.uniform(self.snr_lower, self.snr_upper) if self.random else 1.0
@@ -202,11 +226,6 @@ class CleanUNetDatasetCSV(torch.utils.data.Dataset):
         N_eq = eq["N"][event_shift : event_shift + self.signal_length]
         E_eq = eq["E"][event_shift : event_shift + self.signal_length]
         eq_stacked = np.stack([Z_eq, N_eq, E_eq], axis=1)
-
-        Z_noise = noise["Z"][: self.signal_length]
-        N_noise = noise["N"][: self.signal_length]
-        E_noise = noise["E"][: self.signal_length]
-        noise_stacked = np.stack([Z_noise, N_noise, E_noise], axis=1)
 
         max_val = max(np.max(np.abs(noise_stacked)), np.max(np.abs(eq_stacked))) + 1e-10
         eq_stacked = eq_stacked / max_val
