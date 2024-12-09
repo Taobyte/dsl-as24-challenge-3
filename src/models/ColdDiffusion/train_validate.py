@@ -34,7 +34,7 @@ def create_model_and_optimizer(cfg):
     optimizer = Adam(model.parameters(), lr= cfg.model.lr)
     return model, optimizer
 
-def load_model_and_weights(path_model):
+def load_model_and_weights(path_model, cfg):
     '''
     Loads the Unet1D model and its weights from the specified path.
     

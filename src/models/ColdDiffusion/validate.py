@@ -39,7 +39,7 @@ def get_metrics_cold_diffusion(
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     testing.initialize_parameters(cfg.model.T)
-    model = load_model_and_weights(cfg.user.path_model)
+    model = load_model_and_weights(cfg.user.path_model, cfg)
     model = model.to(device)
 
     ccs_sample = []
@@ -117,7 +117,7 @@ def visualize_predictions_cold_diffusion(cfg):
     )
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     testing.initialize_parameters(cfg.model.T)
-    model = load_model_and_weights(cfg.user.path_model)
+    model = load_model_and_weights(cfg.user.path_model, cfg)
     model = model.to(device)
 
     with torch.no_grad():

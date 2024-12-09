@@ -57,17 +57,17 @@ def compute_train_dataset(signal_length, mode, memmap):
     signal_path = "/home/tim/Documents/Data-Science_MSc/DSLab/earthquake_data/event"
     noise_path = "/home/tim/Documents/Data-Science_MSc/DSLab/earthquake_data/noise"
     if mode == Mode.TRAIN:
-        dataset_eq_name = "/home/tim/Documents/Data-Science_MSc/DSLab/earthquake_data/train_eq_001.dat"
-        dataset_noise_name = "/home/tim/Documents/Data-Science_MSc/DSLab/earthquake_data/train_noise_001.dat"
+        dataset_eq_name = "/home/tim/Documents/Data-Science_MSc/DSLab/earthquake_data/train_eq_003"
+        dataset_noise_name = "/home/tim/Documents/Data-Science_MSc/DSLab/earthquake_data/train_noise_003"
     elif mode == Mode.TEST:
-        dataset_eq_name = "/home/tim/Documents/Data-Science_MSc/DSLab/earthquake_data/tst_eq_001.dat"
-        dataset_noise_name = "/home/tim/Documents/Data-Science_MSc/DSLab/earthquake_data/tst_noise_001.dat"
+        dataset_eq_name = "/home/tim/Documents/Data-Science_MSc/DSLab/earthquake_data/tst_eq_003"
+        dataset_noise_name = "/home/tim/Documents/Data-Science_MSc/DSLab/earthquake_data/tst_noise_003"
     else:
-        dataset_eq_name = "/home/tim/Documents/Data-Science_MSc/DSLab/earthquake_data/val_eq_001.dat"
-        dataset_noise_name = "/home/tim/Documents/Data-Science_MSc/DSLab/earthquake_data/val_noise_001.dat"
+        dataset_eq_name = "/home/tim/Documents/Data-Science_MSc/DSLab/earthquake_data/val_eq_003"
+        dataset_noise_name = "/home/tim/Documents/Data-Science_MSc/DSLab/earthquake_data/val_noise_003"
     if not mode == Mode.TEST:
         assoc = get_signal_noise_assoc(signal_path, noise_path, mode, size_testset=1000,
-                                   snr=lambda : np.random.uniform(0.2, 1.9))
+                                   snr=lambda : np.random.uniform(0.1, 1.5))
     else: 
         assoc = get_signal_noise_assoc(signal_path, noise_path, mode, size_testset=1000,
                                     snr=lambda : 1.0)
@@ -89,10 +89,14 @@ def compute_train_dataset(signal_length, mode, memmap):
         E_noise = noise["noise_waveform_E"][:signal_length]
         noise_stacked = np.stack([Z_noise, N_noise, E_noise], axis=1)
 
-        max_val = np.max(np.abs(eq_stacked)) + 1e-10
-        eq_stacked = eq_stacked / max_val
         max_val = np.max(np.abs(noise_stacked)) + 1e-10
         noise_stacked = noise_stacked / max_val
+        if event_shift < 6000-signal_length:
+            earthquakes.append(eq_stacked)
+            noises.append(noise_stacked)
+            continue
+        max_val = np.max(np.abs(eq_stacked)) + 1e-10
+        eq_stacked = eq_stacked / max_val
 
         signal_std = np.std(eq_stacked[6000-event_shift:6500-event_shift, :], axis=0) 
         noise_std = np.std(noise_stacked[6000-event_shift:6500-event_shift,:], axis=0)        
