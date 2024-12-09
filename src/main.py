@@ -2,7 +2,6 @@ import random
 import logging
 import pathlib
 
-import jax
 import hydra
 import omegaconf
 import numpy as np
@@ -16,20 +15,20 @@ from plot import compare_model_and_baselines, visualize_predictions
 
 
 def setup_logging(cfg: omegaconf.DictConfig):
-    output_dir = pathlib.Path(hydra.core.hydra_config.HydraConfig.get().runtime.output_dir)
-    log_file = output_dir / "main.log"
-    
-    logging.basicConfig(
-        filename=log_file,
-        level=logging.INFO,
-        format='%(asctime)s - %(message)s'
+    output_dir = pathlib.Path(
+        hydra.core.hydra_config.HydraConfig.get().runtime.output_dir
     )
+    log_file = output_dir / "main.log"
+
+    logging.basicConfig(
+        filename=log_file, level=logging.INFO, format="%(asctime)s - %(message)s"
+    )
+
 
 @hydra.main(version_base=None, config_path="conf", config_name="config")
 def main(cfg: omegaconf.DictConfig):
-
     setup_logging(cfg)
-    logging.info(omegaconf.OmegaConf.to_yaml(cfg))
+    # logging.info(omegaconf.OmegaConf.to_yaml(cfg))
 
     # Set see (default: 123)
     seed = cfg.model.seed
@@ -44,14 +43,12 @@ def main(cfg: omegaconf.DictConfig):
     )
 
     if cfg.tuner:
-
         if cfg.use_optuna:
             best_params = tune_model_optuna(cfg)
         else:
             best_hypers = tune_model(cfg)
 
     else:
-
         if cfg.training:
             model = train_model(cfg)
 
@@ -59,13 +56,13 @@ def main(cfg: omegaconf.DictConfig):
             model_df, butterworth_df = compute_metrics(cfg)
             if cfg.plot.metrics:
                 compare_model_and_baselines(
-                output_dir / "metrics_model.csv",
-                output_dir / "metrics_butterworth.csv",
-                cfg.user.metrics_deepdenoiser_path,
-                label1=cfg.model.model_name,
-                label2="Butterworth",
-                label3="DeepDenoiser"
-            )
+                    output_dir / "metrics_model.csv",
+                    output_dir / "metrics_butterworth.csv",
+                    cfg.user.metrics_deepdenoiser_path,
+                    label1=cfg.model.model_name,
+                    label2="Butterworth",
+                    label3="DeepDenoiser",
+                )
         elif cfg.plot.metrics:
             compare_model_and_baselines(
                 cfg.user.metrics_model_path,
@@ -73,7 +70,7 @@ def main(cfg: omegaconf.DictConfig):
                 cfg.user.metrics_deepdenoiser_path,
                 label1=cfg.model.model_name,
                 label2="Butterworth",
-                label3="DeepDenoiser"
+                label3="DeepDenoiser",
             )
         elif cfg.plot.visualization:
             visualize_predictions(cfg)

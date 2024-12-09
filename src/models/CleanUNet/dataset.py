@@ -147,6 +147,7 @@ class CleanUNetDatasetCSV(torch.utils.data.Dataset):
         win_length=100,
         window="hann_window",
         random=True,
+        pure_noise=False,
     ):
         print("start loading pickle files")
 
@@ -178,6 +179,7 @@ class CleanUNetDatasetCSV(torch.utils.data.Dataset):
         self.window = getattr(torch, window)(win_length)
 
         self.random = random
+        self.pure_noise = pure_noise
 
     def __len__(self) -> int:
         return len(self.signal_df)

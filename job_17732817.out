@@ -1,0 +1,2786 @@
+[2024-12-08 10:04:03,388][root][INFO] - tuner: false
+use_optuna: false
+n_trials: 100
+training: true
+multi_gpu: accelerate
+test: false
+plot:
+  metrics: false
+  visualization: false
+  n_examples: 10
+  vis_freq: 5
+snrs:
+- 0.1
+- 0.3
+- 0.5
+- 0.7
+- 1.0
+- 1.2
+- 1.5
+- 1.8
+- 2.0
+- 2.5
+- 3.5
+size_testset: 500
+model:
+  model_name: CleanUNet
+  use_csv: true
+  train_pytorch: true
+  tune_stft: false
+  use_metrics: false
+  use_baseline: false
+  load_dummy: false
+  save_model: true
+  seed: 123
+  snr_lower: 0.1
+  snr_upper: 2.0
+  event_shift_start: 5000
+  random: true
+  subset: null
+  batch_size: 384
+  lr: 0.0002
+  epochs: 5000
+  clipnorm: 1000000000.0
+  checkpoint_model: null
+  patience: null
+  log_checkpoints: true
+  checkpoint_freq: 500
+  lr_schedule: true
+  decay_steps: 8000
+  warmup_target: 0.0002
+  alpha: 0.0
+  warmup_steps: 80
+  reduce_lr_plateau: false
+  min_lr: 0.0001
+  factor: 0.2
+  plateau_patience: 3
+  val_freq: 1000000000.0
+  snrs: null
+  loss: clean_unet_loss
+  use_log_norm: false
+  signal_length: 6120
+  frame_lengths:
+  - 100
+  frame_steps:
+  - 24
+  fft_sizes:
+  - 126
+  stft_lambda: 1.0
+  sc_lambda: 0.5
+  mag_lambda: 0.5
+  channels_input: 3
+  channels_output: 3
+  dropout: 0.0
+  use_raglu: false
+  channels_H: 64
+  encoder_n_layers: 5
+  kernel_size: 4
+  stride: 2
+  max_H: 768
+  kernel_sizes:
+  - 9
+  - 9
+  - 7
+  - 7
+  - 5
+  - 5
+  - 3
+  - 3
+  tsfm_n_layers: 3
+  tsfm_n_head: 8
+  tsfm_d_model: 512
+  tsfm_d_inner: 1024
+  channel_base: 8
+  channel_dims:
+  - 1
+  - 2
+  - 4
+  - 8
+  bottleneck: lstm
+user:
+  data:
+    signal_path: /cluster/scratch/ckeusch/data/signal/
+    noise_path: /cluster/scratch/ckeusch/data/noise/
+    csv_path: /cluster/scratch/ckeusch/dsl-as24-challenge-3/data/
+  model_path: /cluster/scratch/ckeusch/dsl-as24-challenge-3/outputs/2024-12-08/08-31-53/model.pth/model.safetensors
+  metrics_model_path: /cluster/scratch/ckeusch/dsl-as24-challenge-3/outputs/2024-12-06/11-02-09/metrics_model.csv
+  metrics_butterworth_path: /cluster/scratch/ckeusch/dsl-as24-challenge-3/outputs/2024-12-03/10-59-47/metrics_butterworth.csv
+  metrics_deepdenoiser_path: /cluster/scratch/ckeusch/dsl-as24-challenge-3/outputs/2024-11-08/DeepDenoiser
+    Metrics/metrics_model.csv
+  wandb: false
+
+[2024-12-08 10:04:03,393][root][INFO] - tuner: false
+use_optuna: false
+n_trials: 100
+training: true
+multi_gpu: accelerate
+test: false
+plot:
+  metrics: false
+  visualization: false
+  n_examples: 10
+  vis_freq: 5
+snrs:
+- 0.1
+- 0.3
+- 0.5
+- 0.7
+- 1.0
+- 1.2
+- 1.5
+- 1.8
+- 2.0
+- 2.5
+- 3.5
+size_testset: 500
+model:
+  model_name: CleanUNet
+  use_csv: true
+  train_pytorch: true
+  tune_stft: false
+  use_metrics: false
+  use_baseline: false
+  load_dummy: false
+  save_model: true
+  seed: 123
+  snr_lower: 0.1
+  snr_upper: 2.0
+  event_shift_start: 5000
+  random: true
+  subset: null
+  batch_size: 384
+  lr: 0.0002
+  epochs: 5000
+  clipnorm: 1000000000.0
+  checkpoint_model: null
+  patience: null
+  log_checkpoints: true
+  checkpoint_freq: 500
+  lr_schedule: true
+  decay_steps: 8000
+  warmup_target: 0.0002
+  alpha: 0.0
+  warmup_steps: 80
+  reduce_lr_plateau: false
+  min_lr: 0.0001
+  factor: 0.2
+  plateau_patience: 3
+  val_freq: 1000000000.0
+  snrs: null
+  loss: clean_unet_loss
+  use_log_norm: false
+  signal_length: 6120
+  frame_lengths:
+  - 100
+  frame_steps:
+  - 24
+  fft_sizes:
+  - 126
+  stft_lambda: 1.0
+  sc_lambda: 0.5
+  mag_lambda: 0.5
+  channels_input: 3
+  channels_output: 3
+  dropout: 0.0
+  use_raglu: false
+  channels_H: 64
+  encoder_n_layers: 5
+  kernel_size: 4
+  stride: 2
+  max_H: 768
+  kernel_sizes:
+  - 9
+  - 9
+  - 7
+  - 7
+  - 5
+  - 5
+  - 3
+  - 3
+  tsfm_n_layers: 3
+  tsfm_n_head: 8
+  tsfm_d_model: 512
+  tsfm_d_inner: 1024
+  channel_base: 8
+  channel_dims:
+  - 1
+  - 2
+  - 4
+  - 8
+  bottleneck: lstm
+user:
+  data:
+    signal_path: /cluster/scratch/ckeusch/data/signal/
+    noise_path: /cluster/scratch/ckeusch/data/noise/
+    csv_path: /cluster/scratch/ckeusch/dsl-as24-challenge-3/data/
+  model_path: /cluster/scratch/ckeusch/dsl-as24-challenge-3/outputs/2024-12-08/08-31-53/model.pth/model.safetensors
+  metrics_model_path: /cluster/scratch/ckeusch/dsl-as24-challenge-3/outputs/2024-12-06/11-02-09/metrics_model.csv
+  metrics_butterworth_path: /cluster/scratch/ckeusch/dsl-as24-challenge-3/outputs/2024-12-03/10-59-47/metrics_butterworth.csv
+  metrics_deepdenoiser_path: /cluster/scratch/ckeusch/dsl-as24-challenge-3/outputs/2024-11-08/DeepDenoiser
+    Metrics/metrics_model.csv
+  wandb: false
+
+[2024-12-08 10:04:03,393][root][INFO] - tuner: false
+use_optuna: false
+n_trials: 100
+training: true
+multi_gpu: accelerate
+test: false
+plot:
+  metrics: false
+  visualization: false
+  n_examples: 10
+  vis_freq: 5
+snrs:
+- 0.1
+- 0.3
+- 0.5
+- 0.7
+- 1.0
+- 1.2
+- 1.5
+- 1.8
+- 2.0
+- 2.5
+- 3.5
+size_testset: 500
+model:
+  model_name: CleanUNet
+  use_csv: true
+  train_pytorch: true
+  tune_stft: false
+  use_metrics: false
+  use_baseline: false
+  load_dummy: false
+  save_model: true
+  seed: 123
+  snr_lower: 0.1
+  snr_upper: 2.0
+  event_shift_start: 5000
+  random: true
+  subset: null
+  batch_size: 384
+  lr: 0.0002
+  epochs: 5000
+  clipnorm: 1000000000.0
+  checkpoint_model: null
+  patience: null
+  log_checkpoints: true
+  checkpoint_freq: 500
+  lr_schedule: true
+  decay_steps: 8000
+  warmup_target: 0.0002
+  alpha: 0.0
+  warmup_steps: 80
+  reduce_lr_plateau: false
+  min_lr: 0.0001
+  factor: 0.2
+  plateau_patience: 3
+  val_freq: 1000000000.0
+  snrs: null
+  loss: clean_unet_loss
+  use_log_norm: false
+  signal_length: 6120
+  frame_lengths:
+  - 100
+  frame_steps:
+  - 24
+  fft_sizes:
+  - 126
+  stft_lambda: 1.0
+  sc_lambda: 0.5
+  mag_lambda: 0.5
+  channels_input: 3
+  channels_output: 3
+  dropout: 0.0
+  use_raglu: false
+  channels_H: 64
+  encoder_n_layers: 5
+  kernel_size: 4
+  stride: 2
+  max_H: 768
+  kernel_sizes:
+  - 9
+  - 9
+  - 7
+  - 7
+  - 5
+  - 5
+  - 3
+  - 3
+  tsfm_n_layers: 3
+  tsfm_n_head: 8
+  tsfm_d_model: 512
+  tsfm_d_inner: 1024
+  channel_base: 8
+  channel_dims:
+  - 1
+  - 2
+  - 4
+  - 8
+  bottleneck: lstm
+user:
+  data:
+    signal_path: /cluster/scratch/ckeusch/data/signal/
+    noise_path: /cluster/scratch/ckeusch/data/noise/
+    csv_path: /cluster/scratch/ckeusch/dsl-as24-challenge-3/data/
+  model_path: /cluster/scratch/ckeusch/dsl-as24-challenge-3/outputs/2024-12-08/08-31-53/model.pth/model.safetensors
+  metrics_model_path: /cluster/scratch/ckeusch/dsl-as24-challenge-3/outputs/2024-12-06/11-02-09/metrics_model.csv
+  metrics_butterworth_path: /cluster/scratch/ckeusch/dsl-as24-challenge-3/outputs/2024-12-03/10-59-47/metrics_butterworth.csv
+  metrics_deepdenoiser_path: /cluster/scratch/ckeusch/dsl-as24-challenge-3/outputs/2024-11-08/DeepDenoiser
+    Metrics/metrics_model.csv
+  wandb: false
+
+[2024-12-08 10:04:03,393][root][INFO] - tuner: false
+use_optuna: false
+n_trials: 100
+training: true
+multi_gpu: accelerate
+test: false
+plot:
+  metrics: false
+  visualization: false
+  n_examples: 10
+  vis_freq: 5
+snrs:
+- 0.1
+- 0.3
+- 0.5
+- 0.7
+- 1.0
+- 1.2
+- 1.5
+- 1.8
+- 2.0
+- 2.5
+- 3.5
+size_testset: 500
+model:
+  model_name: CleanUNet
+  use_csv: true
+  train_pytorch: true
+  tune_stft: false
+  use_metrics: false
+  use_baseline: false
+  load_dummy: false
+  save_model: true
+  seed: 123
+  snr_lower: 0.1
+  snr_upper: 2.0
+  event_shift_start: 5000
+  random: true
+  subset: null
+  batch_size: 384
+  lr: 0.0002
+  epochs: 5000
+  clipnorm: 1000000000.0
+  checkpoint_model: null
+  patience: null
+  log_checkpoints: true
+  checkpoint_freq: 500
+  lr_schedule: true
+  decay_steps: 8000
+  warmup_target: 0.0002
+  alpha: 0.0
+  warmup_steps: 80
+  reduce_lr_plateau: false
+  min_lr: 0.0001
+  factor: 0.2
+  plateau_patience: 3
+  val_freq: 1000000000.0
+  snrs: null
+  loss: clean_unet_loss
+  use_log_norm: false
+  signal_length: 6120
+  frame_lengths:
+  - 100
+  frame_steps:
+  - 24
+  fft_sizes:
+  - 126
+  stft_lambda: 1.0
+  sc_lambda: 0.5
+  mag_lambda: 0.5
+  channels_input: 3
+  channels_output: 3
+  dropout: 0.0
+  use_raglu: false
+  channels_H: 64
+  encoder_n_layers: 5
+  kernel_size: 4
+  stride: 2
+  max_H: 768
+  kernel_sizes:
+  - 9
+  - 9
+  - 7
+  - 7
+  - 5
+  - 5
+  - 3
+  - 3
+  tsfm_n_layers: 3
+  tsfm_n_head: 8
+  tsfm_d_model: 512
+  tsfm_d_inner: 1024
+  channel_base: 8
+  channel_dims:
+  - 1
+  - 2
+  - 4
+  - 8
+  bottleneck: lstm
+user:
+  data:
+    signal_path: /cluster/scratch/ckeusch/data/signal/
+    noise_path: /cluster/scratch/ckeusch/data/noise/
+    csv_path: /cluster/scratch/ckeusch/dsl-as24-challenge-3/data/
+  model_path: /cluster/scratch/ckeusch/dsl-as24-challenge-3/outputs/2024-12-08/08-31-53/model.pth/model.safetensors
+  metrics_model_path: /cluster/scratch/ckeusch/dsl-as24-challenge-3/outputs/2024-12-06/11-02-09/metrics_model.csv
+  metrics_butterworth_path: /cluster/scratch/ckeusch/dsl-as24-challenge-3/outputs/2024-12-03/10-59-47/metrics_butterworth.csv
+  metrics_deepdenoiser_path: /cluster/scratch/ckeusch/dsl-as24-challenge-3/outputs/2024-11-08/DeepDenoiser
+    Metrics/metrics_model.csv
+  wandb: false
+
+start loading pickle files
+start loading pickle files
+start loading pickle files
+start loading pickle files
+finished loading pickle files
+start loading pickle files
+finished loading pickle files
+start loading pickle files
+finished loading pickle files
+start loading pickle files
+finished loading pickle files
+start loading pickle files
+finished loading pickle files
+finished loading pickle files
+finished loading pickle files
+finished loading pickle files
+[2024-12-08 10:04:22,222][root][INFO] - Epoch 0
+[2024-12-08 10:04:31,847][root][INFO] - train_loss: 76.47872018814087 | time: 9.625614881515503
+[2024-12-08 10:04:31,848][root][INFO] - Epoch 1
+[2024-12-08 10:04:40,702][root][INFO] - train_loss: 71.53291511535645 | time: 8.854761123657227
+[2024-12-08 10:04:40,703][root][INFO] - Epoch 2
+[2024-12-08 10:04:49,517][root][INFO] - train_loss: 67.42535877227783 | time: 8.814521312713623
+[2024-12-08 10:04:49,518][root][INFO] - Epoch 3
+[2024-12-08 10:04:58,373][root][INFO] - train_loss: 64.96679067611694 | time: 8.855485916137695
+[2024-12-08 10:04:58,374][root][INFO] - Epoch 4
+[2024-12-08 10:05:07,199][root][INFO] - train_loss: 62.772005558013916 | time: 8.826045274734497
+[2024-12-08 10:05:07,200][root][INFO] - Epoch 5
+[2024-12-08 10:05:16,115][root][INFO] - train_loss: 61.03678274154663 | time: 8.915547132492065
+[2024-12-08 10:05:16,117][root][INFO] - Epoch 6
+[2024-12-08 10:05:25,043][root][INFO] - train_loss: 59.77120590209961 | time: 8.927026987075806
+[2024-12-08 10:05:25,044][root][INFO] - Epoch 7
+[2024-12-08 10:05:34,075][root][INFO] - train_loss: 57.92779016494751 | time: 9.031810522079468
+[2024-12-08 10:05:34,076][root][INFO] - Epoch 8
+[2024-12-08 10:05:43,017][root][INFO] - train_loss: 56.77930188179016 | time: 8.941074848175049
+[2024-12-08 10:05:43,018][root][INFO] - Epoch 9
+[2024-12-08 10:05:52,040][root][INFO] - train_loss: 54.66494584083557 | time: 9.022679805755615
+[2024-12-08 10:05:52,044][root][INFO] - Epoch 10
+[2024-12-08 10:06:01,054][root][INFO] - train_loss: 52.6465106010437 | time: 9.011468648910522
+[2024-12-08 10:06:01,056][root][INFO] - Epoch 11
+[2024-12-08 10:06:10,091][root][INFO] - train_loss: 49.20565223693848 | time: 9.036160707473755
+[2024-12-08 10:06:10,092][root][INFO] - Epoch 12
+[2024-12-08 10:06:19,118][root][INFO] - train_loss: 46.08809566497803 | time: 9.026506423950195
+[2024-12-08 10:06:19,120][root][INFO] - Epoch 13
+[2024-12-08 10:06:28,166][root][INFO] - train_loss: 41.22451663017273 | time: 9.047495365142822
+[2024-12-08 10:06:28,171][root][INFO] - Epoch 14
+[2024-12-08 10:06:37,113][root][INFO] - train_loss: 36.54235363006592 | time: 8.943504810333252
+[2024-12-08 10:06:37,117][root][INFO] - Epoch 15
+[2024-12-08 10:06:46,129][root][INFO] - train_loss: 34.4028160572052 | time: 9.013450145721436
+[2024-12-08 10:06:46,131][root][INFO] - Epoch 16
+[2024-12-08 10:06:55,233][root][INFO] - train_loss: 33.745994091033936 | time: 9.10307765007019
+[2024-12-08 10:06:55,235][root][INFO] - Epoch 17
+[2024-12-08 10:07:04,255][root][INFO] - train_loss: 32.6023530960083 | time: 9.021515369415283
+[2024-12-08 10:07:04,257][root][INFO] - Epoch 18
+[2024-12-08 10:07:13,440][root][INFO] - train_loss: 32.56643748283386 | time: 9.184147357940674
+[2024-12-08 10:07:13,442][root][INFO] - Epoch 19
+[2024-12-08 10:07:22,514][root][INFO] - train_loss: 31.894815683364868 | time: 9.073519468307495
+[2024-12-08 10:07:22,516][root][INFO] - Epoch 20
+[2024-12-08 10:07:31,608][root][INFO] - train_loss: 31.48059916496277 | time: 9.092906475067139
+[2024-12-08 10:07:31,610][root][INFO] - Epoch 21
+[2024-12-08 10:07:40,668][root][INFO] - train_loss: 31.407655954360962 | time: 9.059458017349243
+[2024-12-08 10:07:40,670][root][INFO] - Epoch 22
+[2024-12-08 10:07:49,735][root][INFO] - train_loss: 31.08577537536621 | time: 9.066423177719116
+[2024-12-08 10:07:49,737][root][INFO] - Epoch 23
+[2024-12-08 10:07:58,760][root][INFO] - train_loss: 31.219998598098755 | time: 9.024910926818848
+[2024-12-08 10:07:58,762][root][INFO] - Epoch 24
+[2024-12-08 10:08:07,686][root][INFO] - train_loss: 31.250514268875122 | time: 8.925073862075806
+[2024-12-08 10:08:07,687][root][INFO] - Epoch 25
+[2024-12-08 10:08:16,900][root][INFO] - train_loss: 31.03440809249878 | time: 9.21331238746643
+[2024-12-08 10:08:16,902][root][INFO] - Epoch 26
+[2024-12-08 10:08:25,981][root][INFO] - train_loss: 30.928553342819214 | time: 9.080146551132202
+[2024-12-08 10:08:25,982][root][INFO] - Epoch 27
+[2024-12-08 10:08:35,068][root][INFO] - train_loss: 30.719141483306885 | time: 9.08626103401184
+[2024-12-08 10:08:35,069][root][INFO] - Epoch 28
+[2024-12-08 10:08:44,237][root][INFO] - train_loss: 30.413572311401367 | time: 9.169177293777466
+[2024-12-08 10:08:44,239][root][INFO] - Epoch 29
+[2024-12-08 10:08:53,285][root][INFO] - train_loss: 30.40625309944153 | time: 9.047087669372559
+[2024-12-08 10:08:53,287][root][INFO] - Epoch 30
+[2024-12-08 10:09:02,342][root][INFO] - train_loss: 30.160337686538696 | time: 9.05670690536499
+[2024-12-08 10:09:02,345][root][INFO] - Epoch 31
+[2024-12-08 10:09:11,399][root][INFO] - train_loss: 31.199191331863403 | time: 9.05508279800415
+[2024-12-08 10:09:11,401][root][INFO] - Epoch 32
+[2024-12-08 10:09:20,515][root][INFO] - train_loss: 30.043745279312134 | time: 9.115045547485352
+[2024-12-08 10:09:20,517][root][INFO] - Epoch 33
+[2024-12-08 10:09:29,427][root][INFO] - train_loss: 29.695836067199707 | time: 8.91089391708374
+[2024-12-08 10:09:29,428][root][INFO] - Epoch 34
+[2024-12-08 10:09:38,474][root][INFO] - train_loss: 29.76970148086548 | time: 9.04711103439331
+[2024-12-08 10:09:38,477][root][INFO] - Epoch 35
+[2024-12-08 10:09:47,707][root][INFO] - train_loss: 29.79406714439392 | time: 9.231901407241821
+[2024-12-08 10:09:47,709][root][INFO] - Epoch 36
+[2024-12-08 10:09:56,956][root][INFO] - train_loss: 29.66352677345276 | time: 9.247981786727905
+[2024-12-08 10:09:56,957][root][INFO] - Epoch 37
+[2024-12-08 10:10:06,028][root][INFO] - train_loss: 29.673966884613037 | time: 9.071625709533691
+[2024-12-08 10:10:06,030][root][INFO] - Epoch 38
+[2024-12-08 10:10:15,127][root][INFO] - train_loss: 29.739932775497437 | time: 9.097993612289429
+[2024-12-08 10:10:15,129][root][INFO] - Epoch 39
+[2024-12-08 10:10:24,313][root][INFO] - train_loss: 29.574212551116943 | time: 9.185311794281006
+[2024-12-08 10:10:24,315][root][INFO] - Epoch 40
+[2024-12-08 10:10:33,440][root][INFO] - train_loss: 29.405482530593872 | time: 9.126494407653809
+[2024-12-08 10:10:33,442][root][INFO] - Epoch 41
+[2024-12-08 10:10:42,571][root][INFO] - train_loss: 29.36109757423401 | time: 9.130494832992554
+[2024-12-08 10:10:42,574][root][INFO] - Epoch 42
+[2024-12-08 10:10:51,688][root][INFO] - train_loss: 29.28865623474121 | time: 9.115430116653442
+[2024-12-08 10:10:51,690][root][INFO] - Epoch 43
+[2024-12-08 10:11:00,854][root][INFO] - train_loss: 29.163997650146484 | time: 9.16584849357605
+[2024-12-08 10:11:00,856][root][INFO] - Epoch 44
+[2024-12-08 10:11:10,000][root][INFO] - train_loss: 29.07879900932312 | time: 9.144755601882935
+[2024-12-08 10:11:10,001][root][INFO] - Epoch 45
+[2024-12-08 10:11:19,043][root][INFO] - train_loss: 29.29660129547119 | time: 9.043191909790039
+[2024-12-08 10:11:19,047][root][INFO] - Epoch 46
+[2024-12-08 10:11:27,983][root][INFO] - train_loss: 29.00548267364502 | time: 8.93772029876709
+[2024-12-08 10:11:27,984][root][INFO] - Epoch 47
+[2024-12-08 10:11:36,909][root][INFO] - train_loss: 29.20732593536377 | time: 8.926156520843506
+[2024-12-08 10:11:36,911][root][INFO] - Epoch 48
+[2024-12-08 10:11:45,879][root][INFO] - train_loss: 29.091623663902283 | time: 8.968339443206787
+[2024-12-08 10:11:45,880][root][INFO] - Epoch 49
+[2024-12-08 10:11:54,896][root][INFO] - train_loss: 28.89488708972931 | time: 9.016538143157959
+[2024-12-08 10:11:54,898][root][INFO] - Epoch 50
+[2024-12-08 10:12:03,939][root][INFO] - train_loss: 28.961418628692627 | time: 9.042338371276855
+[2024-12-08 10:12:03,941][root][INFO] - Epoch 51
+[2024-12-08 10:12:12,924][root][INFO] - train_loss: 28.73423659801483 | time: 8.984192848205566
+[2024-12-08 10:12:12,927][root][INFO] - Epoch 52
+[2024-12-08 10:12:21,984][root][INFO] - train_loss: 28.52240490913391 | time: 9.058168172836304
+[2024-12-08 10:12:21,986][root][INFO] - Epoch 53
+[2024-12-08 10:12:30,992][root][INFO] - train_loss: 28.412339568138123 | time: 9.00724720954895
+[2024-12-08 10:12:30,995][root][INFO] - Epoch 54
+[2024-12-08 10:12:39,993][root][INFO] - train_loss: 28.474978923797607 | time: 8.999042749404907
+[2024-12-08 10:12:39,996][root][INFO] - Epoch 55
+[2024-12-08 10:12:49,068][root][INFO] - train_loss: 28.28654408454895 | time: 9.073450088500977
+[2024-12-08 10:12:49,070][root][INFO] - Epoch 56
+[2024-12-08 10:12:58,051][root][INFO] - train_loss: 28.442903757095337 | time: 8.98181438446045
+[2024-12-08 10:12:58,052][root][INFO] - Epoch 57
+[2024-12-08 10:13:07,071][root][INFO] - train_loss: 28.45522129535675 | time: 9.019889116287231
+[2024-12-08 10:13:07,076][root][INFO] - Epoch 58
+[2024-12-08 10:13:16,095][root][INFO] - train_loss: 28.137527108192444 | time: 9.02042269706726
+[2024-12-08 10:13:16,097][root][INFO] - Epoch 59
+[2024-12-08 10:13:25,115][root][INFO] - train_loss: 28.40168845653534 | time: 9.020267009735107
+[2024-12-08 10:13:25,118][root][INFO] - Epoch 60
+[2024-12-08 10:13:34,122][root][INFO] - train_loss: 28.369327306747437 | time: 9.006109476089478
+[2024-12-08 10:13:34,126][root][INFO] - Epoch 61
+[2024-12-08 10:13:43,119][root][INFO] - train_loss: 28.21873140335083 | time: 8.995189905166626
+[2024-12-08 10:13:43,123][root][INFO] - Epoch 62
+[2024-12-08 10:13:52,174][root][INFO] - train_loss: 28.128478169441223 | time: 9.052504301071167
+[2024-12-08 10:13:52,176][root][INFO] - Epoch 63
+[2024-12-08 10:14:01,320][root][INFO] - train_loss: 28.083818316459656 | time: 9.145653247833252
+[2024-12-08 10:14:01,324][root][INFO] - Epoch 64
+[2024-12-08 10:14:10,352][root][INFO] - train_loss: 27.96933925151825 | time: 9.029547214508057
+[2024-12-08 10:14:10,354][root][INFO] - Epoch 65
+[2024-12-08 10:14:19,372][root][INFO] - train_loss: 27.872243523597717 | time: 9.018782615661621
+[2024-12-08 10:14:19,375][root][INFO] - Epoch 66
+[2024-12-08 10:14:28,441][root][INFO] - train_loss: 27.700791001319885 | time: 9.067875146865845
+[2024-12-08 10:14:28,445][root][INFO] - Epoch 67
+[2024-12-08 10:14:37,495][root][INFO] - train_loss: 27.711702346801758 | time: 9.051629066467285
+[2024-12-08 10:14:37,499][root][INFO] - Epoch 68
+[2024-12-08 10:14:46,364][root][INFO] - train_loss: 27.484745621681213 | time: 8.866780519485474
+[2024-12-08 10:14:46,368][root][INFO] - Epoch 69
+[2024-12-08 10:14:55,266][root][INFO] - train_loss: 27.803794622421265 | time: 8.898686408996582
+[2024-12-08 10:14:55,269][root][INFO] - Epoch 70
+[2024-12-08 10:15:04,224][root][INFO] - train_loss: 27.602285027503967 | time: 8.955897092819214
+[2024-12-08 10:15:04,227][root][INFO] - Epoch 71
+[2024-12-08 10:15:13,178][root][INFO] - train_loss: 27.44919776916504 | time: 8.952504873275757
+[2024-12-08 10:15:13,180][root][INFO] - Epoch 72
+[2024-12-08 10:15:22,074][root][INFO] - train_loss: 27.63571059703827 | time: 8.895724296569824
+[2024-12-08 10:15:22,076][root][INFO] - Epoch 73
+[2024-12-08 10:15:31,034][root][INFO] - train_loss: 27.30105686187744 | time: 8.959014654159546
+[2024-12-08 10:15:31,036][root][INFO] - Epoch 74
+[2024-12-08 10:15:39,787][root][INFO] - train_loss: 27.41043746471405 | time: 8.753337383270264
+[2024-12-08 10:15:39,790][root][INFO] - Epoch 75
+[2024-12-08 10:15:48,447][root][INFO] - train_loss: 27.36545217037201 | time: 8.65743350982666
+[2024-12-08 10:15:48,450][root][INFO] - Epoch 76
+[2024-12-08 10:15:57,103][root][INFO] - train_loss: 27.235209345817566 | time: 8.655180931091309
+[2024-12-08 10:15:57,104][root][INFO] - Epoch 77
+[2024-12-08 10:16:05,765][root][INFO] - train_loss: 27.17417812347412 | time: 8.662117719650269
+[2024-12-08 10:16:05,769][root][INFO] - Epoch 78
+[2024-12-08 10:16:14,628][root][INFO] - train_loss: 27.190334677696228 | time: 8.862563133239746
+[2024-12-08 10:16:14,631][root][INFO] - Epoch 79
+[2024-12-08 10:16:23,314][root][INFO] - train_loss: 27.156736254692078 | time: 8.683802366256714
+[2024-12-08 10:16:23,318][root][INFO] - Epoch 80
+[2024-12-08 10:16:32,195][root][INFO] - train_loss: 27.148326754570007 | time: 8.878361463546753
+[2024-12-08 10:16:32,197][root][INFO] - Epoch 81
+[2024-12-08 10:16:41,076][root][INFO] - train_loss: 27.079265236854553 | time: 8.879819631576538
+[2024-12-08 10:16:41,077][root][INFO] - Epoch 82
+[2024-12-08 10:16:49,970][root][INFO] - train_loss: 27.279284358024597 | time: 8.893947124481201
+[2024-12-08 10:16:49,973][root][INFO] - Epoch 83
+[2024-12-08 10:16:58,854][root][INFO] - train_loss: 27.466368794441223 | time: 8.882538318634033
+[2024-12-08 10:16:58,856][root][INFO] - Epoch 84
+[2024-12-08 10:17:07,712][root][INFO] - train_loss: 27.666704535484314 | time: 8.856520175933838
+[2024-12-08 10:17:07,713][root][INFO] - Epoch 85
+[2024-12-08 10:17:16,415][root][INFO] - train_loss: 27.058793544769287 | time: 8.702904462814331
+[2024-12-08 10:17:16,416][root][INFO] - Epoch 86
+[2024-12-08 10:17:25,112][root][INFO] - train_loss: 27.31900930404663 | time: 8.69673204421997
+[2024-12-08 10:17:25,115][root][INFO] - Epoch 87
+[2024-12-08 10:17:33,774][root][INFO] - train_loss: 26.95336425304413 | time: 8.660223960876465
+[2024-12-08 10:17:33,777][root][INFO] - Epoch 88
+[2024-12-08 10:17:42,756][root][INFO] - train_loss: 26.996813535690308 | time: 8.980664491653442
+[2024-12-08 10:17:42,757][root][INFO] - Epoch 89
+[2024-12-08 10:17:51,608][root][INFO] - train_loss: 26.928749561309814 | time: 8.851352453231812
+[2024-12-08 10:17:51,610][root][INFO] - Epoch 90
+[2024-12-08 10:18:00,531][root][INFO] - train_loss: 26.871039986610413 | time: 8.923174381256104
+[2024-12-08 10:18:00,536][root][INFO] - Epoch 91
+[2024-12-08 10:18:09,431][root][INFO] - train_loss: 26.98373782634735 | time: 8.896120548248291
+[2024-12-08 10:18:09,432][root][INFO] - Epoch 92
+[2024-12-08 10:18:18,364][root][INFO] - train_loss: 26.622953176498413 | time: 8.932944059371948
+[2024-12-08 10:18:18,367][root][INFO] - Epoch 93
+[2024-12-08 10:18:27,424][root][INFO] - train_loss: 26.839667797088623 | time: 9.059609651565552
+[2024-12-08 10:18:27,426][root][INFO] - Epoch 94
+[2024-12-08 10:18:36,574][root][INFO] - train_loss: 27.04082226753235 | time: 9.149379968643188
+[2024-12-08 10:18:36,578][root][INFO] - Epoch 95
+[2024-12-08 10:18:45,678][root][INFO] - train_loss: 26.6731538772583 | time: 9.100914239883423
+[2024-12-08 10:18:45,682][root][INFO] - Epoch 96
+[2024-12-08 10:18:54,596][root][INFO] - train_loss: 26.627845764160156 | time: 8.915437459945679
+[2024-12-08 10:18:54,598][root][INFO] - Epoch 97
+[2024-12-08 10:19:03,521][root][INFO] - train_loss: 26.54279601573944 | time: 8.92428708076477
+[2024-12-08 10:19:03,522][root][INFO] - Epoch 98
+[2024-12-08 10:19:12,521][root][INFO] - train_loss: 26.656298637390137 | time: 8.999042749404907
+[2024-12-08 10:19:12,523][root][INFO] - Epoch 99
+[2024-12-08 10:19:21,539][root][INFO] - train_loss: 26.43846344947815 | time: 9.017257452011108
+[2024-12-08 10:19:21,542][root][INFO] - Epoch 100
+[2024-12-08 10:19:30,460][root][INFO] - train_loss: 26.366556525230408 | time: 8.919355630874634
+[2024-12-08 10:19:30,463][root][INFO] - Epoch 101
+[2024-12-08 10:19:39,464][root][INFO] - train_loss: 26.438450694084167 | time: 9.003126621246338
+[2024-12-08 10:19:39,466][root][INFO] - Epoch 102
+[2024-12-08 10:19:48,559][root][INFO] - train_loss: 26.41186821460724 | time: 9.094465255737305
+[2024-12-08 10:19:48,561][root][INFO] - Epoch 103
+[2024-12-08 10:19:57,505][root][INFO] - train_loss: 26.574612498283386 | time: 8.945397853851318
+[2024-12-08 10:19:57,510][root][INFO] - Epoch 104
+[2024-12-08 10:20:06,544][root][INFO] - train_loss: 26.326393485069275 | time: 9.035483837127686
+[2024-12-08 10:20:06,546][root][INFO] - Epoch 105
+[2024-12-08 10:20:15,529][root][INFO] - train_loss: 26.369741201400757 | time: 8.98438835144043
+[2024-12-08 10:20:15,534][root][INFO] - Epoch 106
+[2024-12-08 10:20:24,515][root][INFO] - train_loss: 26.26906681060791 | time: 8.9820077419281
+[2024-12-08 10:20:24,517][root][INFO] - Epoch 107
+[2024-12-08 10:20:33,562][root][INFO] - train_loss: 26.05805218219757 | time: 9.047071695327759
+[2024-12-08 10:20:33,564][root][INFO] - Epoch 108
+[2024-12-08 10:20:42,588][root][INFO] - train_loss: 25.923744201660156 | time: 9.025000810623169
+[2024-12-08 10:20:42,590][root][INFO] - Epoch 109
+[2024-12-08 10:20:51,520][root][INFO] - train_loss: 26.123980045318604 | time: 8.93154525756836
+[2024-12-08 10:20:51,522][root][INFO] - Epoch 110
+[2024-12-08 10:21:00,872][root][INFO] - train_loss: 26.334182620048523 | time: 9.350983381271362
+[2024-12-08 10:21:00,875][root][INFO] - Epoch 111
+[2024-12-08 10:21:09,756][root][INFO] - train_loss: 25.806065678596497 | time: 8.881742715835571
+[2024-12-08 10:21:09,759][root][INFO] - Epoch 112
+[2024-12-08 10:21:18,985][root][INFO] - train_loss: 25.808217525482178 | time: 9.228269338607788
+[2024-12-08 10:21:18,987][root][INFO] - Epoch 113
+[2024-12-08 10:21:28,106][root][INFO] - train_loss: 25.918283939361572 | time: 9.11977505683899
+[2024-12-08 10:21:28,107][root][INFO] - Epoch 114
+[2024-12-08 10:21:37,197][root][INFO] - train_loss: 25.90557610988617 | time: 9.090945959091187
+[2024-12-08 10:21:37,204][root][INFO] - Epoch 115
+[2024-12-08 10:21:46,279][root][INFO] - train_loss: 25.975857138633728 | time: 9.077494382858276
+[2024-12-08 10:21:46,281][root][INFO] - Epoch 116
+[2024-12-08 10:21:55,282][root][INFO] - train_loss: 25.73020112514496 | time: 9.001499891281128
+[2024-12-08 10:21:55,286][root][INFO] - Epoch 117
+[2024-12-08 10:22:04,310][root][INFO] - train_loss: 26.28779113292694 | time: 9.026321649551392
+[2024-12-08 10:22:04,314][root][INFO] - Epoch 118
+[2024-12-08 10:22:13,262][root][INFO] - train_loss: 25.802143096923828 | time: 8.949045419692993
+[2024-12-08 10:22:13,266][root][INFO] - Epoch 119
+[2024-12-08 10:22:22,281][root][INFO] - train_loss: 25.571608543395996 | time: 9.01617980003357
+[2024-12-08 10:22:22,282][root][INFO] - Epoch 120
+[2024-12-08 10:22:31,353][root][INFO] - train_loss: 25.42799139022827 | time: 9.071292877197266
+[2024-12-08 10:22:31,355][root][INFO] - Epoch 121
+[2024-12-08 10:22:40,354][root][INFO] - train_loss: 25.48541557788849 | time: 9.000327825546265
+[2024-12-08 10:22:40,355][root][INFO] - Epoch 122
+[2024-12-08 10:22:49,343][root][INFO] - train_loss: 25.402897357940674 | time: 8.989076137542725
+[2024-12-08 10:22:49,349][root][INFO] - Epoch 123
+[2024-12-08 10:22:58,415][root][INFO] - train_loss: 25.86724042892456 | time: 9.067476272583008
+[2024-12-08 10:22:58,416][root][INFO] - Epoch 124
+[2024-12-08 10:23:07,437][root][INFO] - train_loss: 25.605226635932922 | time: 9.021713972091675
+[2024-12-08 10:23:07,439][root][INFO] - Epoch 125
+[2024-12-08 10:23:16,391][root][INFO] - train_loss: 25.36415946483612 | time: 8.953906774520874
+[2024-12-08 10:23:16,393][root][INFO] - Epoch 126
+[2024-12-08 10:23:25,383][root][INFO] - train_loss: 25.471522569656372 | time: 8.990906715393066
+[2024-12-08 10:23:25,387][root][INFO] - Epoch 127
+[2024-12-08 10:23:34,601][root][INFO] - train_loss: 25.341203331947327 | time: 9.215137481689453
+[2024-12-08 10:23:34,605][root][INFO] - Epoch 128
+[2024-12-08 10:23:43,597][root][INFO] - train_loss: 25.018624186515808 | time: 8.993727207183838
+[2024-12-08 10:23:43,599][root][INFO] - Epoch 129
+[2024-12-08 10:23:52,593][root][INFO] - train_loss: 25.380693316459656 | time: 8.995158672332764
+[2024-12-08 10:23:52,597][root][INFO] - Epoch 130
+[2024-12-08 10:24:01,524][root][INFO] - train_loss: 25.20434045791626 | time: 8.927806377410889
+[2024-12-08 10:24:01,526][root][INFO] - Epoch 131
+[2024-12-08 10:24:10,506][root][INFO] - train_loss: 25.154439687728882 | time: 8.981695652008057
+[2024-12-08 10:24:10,510][root][INFO] - Epoch 132
+[2024-12-08 10:24:19,548][root][INFO] - train_loss: 25.173256397247314 | time: 9.038761854171753
+[2024-12-08 10:24:19,549][root][INFO] - Epoch 133
+[2024-12-08 10:24:28,514][root][INFO] - train_loss: 25.303285121917725 | time: 8.966299772262573
+[2024-12-08 10:24:28,522][root][INFO] - Epoch 134
+[2024-12-08 10:24:37,542][root][INFO] - train_loss: 25.34461998939514 | time: 9.021787405014038
+[2024-12-08 10:24:37,549][root][INFO] - Epoch 135
+[2024-12-08 10:24:46,535][root][INFO] - train_loss: 25.02563214302063 | time: 8.987678527832031
+[2024-12-08 10:24:46,536][root][INFO] - Epoch 136
+[2024-12-08 10:24:55,602][root][INFO] - train_loss: 24.91349697113037 | time: 9.066894054412842
+[2024-12-08 10:24:55,606][root][INFO] - Epoch 137
+[2024-12-08 10:25:04,528][root][INFO] - train_loss: 25.113540053367615 | time: 8.922789335250854
+[2024-12-08 10:25:04,534][root][INFO] - Epoch 138
+[2024-12-08 10:25:13,422][root][INFO] - train_loss: 25.18666636943817 | time: 8.88994312286377
+[2024-12-08 10:25:13,424][root][INFO] - Epoch 139
+[2024-12-08 10:25:22,264][root][INFO] - train_loss: 25.047844171524048 | time: 8.841223955154419
+[2024-12-08 10:25:22,265][root][INFO] - Epoch 140
+[2024-12-08 10:25:31,225][root][INFO] - train_loss: 24.894686937332153 | time: 8.96049690246582
+[2024-12-08 10:25:31,226][root][INFO] - Epoch 141
+[2024-12-08 10:25:40,139][root][INFO] - train_loss: 25.00592541694641 | time: 8.913825273513794
+[2024-12-08 10:25:40,151][root][INFO] - Epoch 142
+[2024-12-08 10:25:49,052][root][INFO] - train_loss: 24.763662695884705 | time: 8.902906894683838
+[2024-12-08 10:25:49,054][root][INFO] - Epoch 143
+[2024-12-08 10:25:57,965][root][INFO] - train_loss: 24.407068967819214 | time: 8.912265062332153
+[2024-12-08 10:25:57,966][root][INFO] - Epoch 144
+[2024-12-08 10:26:06,790][root][INFO] - train_loss: 23.984860062599182 | time: 8.824476480484009
+[2024-12-08 10:26:06,791][root][INFO] - Epoch 145
+[2024-12-08 10:26:15,645][root][INFO] - train_loss: 23.173118233680725 | time: 8.85485315322876
+[2024-12-08 10:26:15,646][root][INFO] - Epoch 146
+[2024-12-08 10:26:24,320][root][INFO] - train_loss: 22.85473394393921 | time: 8.675034046173096
+[2024-12-08 10:26:24,322][root][INFO] - Epoch 147
+[2024-12-08 10:26:32,981][root][INFO] - train_loss: 23.141995072364807 | time: 8.660473823547363
+[2024-12-08 10:26:32,982][root][INFO] - Epoch 148
+[2024-12-08 10:26:41,655][root][INFO] - train_loss: 23.166695833206177 | time: 8.67296314239502
+[2024-12-08 10:26:41,656][root][INFO] - Epoch 149
+[2024-12-08 10:26:50,391][root][INFO] - train_loss: 22.774920225143433 | time: 8.736256837844849
+[2024-12-08 10:26:50,395][root][INFO] - Epoch 150
+[2024-12-08 10:26:59,144][root][INFO] - train_loss: 22.69592249393463 | time: 8.749302387237549
+[2024-12-08 10:26:59,145][root][INFO] - Epoch 151
+[2024-12-08 10:27:07,929][root][INFO] - train_loss: 22.7738995552063 | time: 8.784743070602417
+[2024-12-08 10:27:07,930][root][INFO] - Epoch 152
+[2024-12-08 10:27:16,698][root][INFO] - train_loss: 23.053380608558655 | time: 8.768378734588623
+[2024-12-08 10:27:16,699][root][INFO] - Epoch 153
+[2024-12-08 10:27:25,511][root][INFO] - train_loss: 23.001972198486328 | time: 8.81337308883667
+[2024-12-08 10:27:25,513][root][INFO] - Epoch 154
+[2024-12-08 10:27:34,285][root][INFO] - train_loss: 22.728604555130005 | time: 8.773615598678589
+[2024-12-08 10:27:34,287][root][INFO] - Epoch 155
+[2024-12-08 10:27:43,033][root][INFO] - train_loss: 22.575958371162415 | time: 8.747162342071533
+[2024-12-08 10:27:43,034][root][INFO] - Epoch 156
+[2024-12-08 10:27:51,882][root][INFO] - train_loss: 22.27170217037201 | time: 8.848116397857666
+[2024-12-08 10:27:51,883][root][INFO] - Epoch 157
+[2024-12-08 10:28:00,581][root][INFO] - train_loss: 22.61613965034485 | time: 8.699323415756226
+[2024-12-08 10:28:00,582][root][INFO] - Epoch 158
+[2024-12-08 10:28:09,319][root][INFO] - train_loss: 22.48427653312683 | time: 8.737686395645142
+[2024-12-08 10:28:09,321][root][INFO] - Epoch 159
+[2024-12-08 10:28:18,099][root][INFO] - train_loss: 22.258557438850403 | time: 8.778992176055908
+[2024-12-08 10:28:18,100][root][INFO] - Epoch 160
+[2024-12-08 10:28:27,340][root][INFO] - train_loss: 22.36440396308899 | time: 9.240518808364868
+[2024-12-08 10:28:27,342][root][INFO] - Epoch 161
+[2024-12-08 10:28:36,462][root][INFO] - train_loss: 22.69458508491516 | time: 9.120978355407715
+[2024-12-08 10:28:36,463][root][INFO] - Epoch 162
+[2024-12-08 10:28:45,637][root][INFO] - train_loss: 22.514086961746216 | time: 9.175424814224243
+[2024-12-08 10:28:45,641][root][INFO] - Epoch 163
+[2024-12-08 10:28:54,778][root][INFO] - train_loss: 22.685535430908203 | time: 9.138609409332275
+[2024-12-08 10:28:54,780][root][INFO] - Epoch 164
+[2024-12-08 10:29:03,907][root][INFO] - train_loss: 22.879934668540955 | time: 9.12910270690918
+[2024-12-08 10:29:03,915][root][INFO] - Epoch 165
+[2024-12-08 10:29:12,907][root][INFO] - train_loss: 22.457890272140503 | time: 8.993703365325928
+[2024-12-08 10:29:12,909][root][INFO] - Epoch 166
+[2024-12-08 10:29:22,067][root][INFO] - train_loss: 22.529497504234314 | time: 9.159032583236694
+[2024-12-08 10:29:22,069][root][INFO] - Epoch 167
+[2024-12-08 10:29:31,243][root][INFO] - train_loss: 22.428797841072083 | time: 9.176011323928833
+[2024-12-08 10:29:31,246][root][INFO] - Epoch 168
+[2024-12-08 10:29:40,411][root][INFO] - train_loss: 22.23679006099701 | time: 9.1659677028656
+[2024-12-08 10:29:40,413][root][INFO] - Epoch 169
+[2024-12-08 10:29:49,636][root][INFO] - train_loss: 22.03890323638916 | time: 9.223805665969849
+[2024-12-08 10:29:49,638][root][INFO] - Epoch 170
+[2024-12-08 10:29:58,804][root][INFO] - train_loss: 22.219608187675476 | time: 9.167693614959717
+[2024-12-08 10:29:58,807][root][INFO] - Epoch 171
+[2024-12-08 10:30:07,578][root][INFO] - train_loss: 22.154688954353333 | time: 8.773402690887451
+[2024-12-08 10:30:07,581][root][INFO] - Epoch 172
+[2024-12-08 10:30:16,375][root][INFO] - train_loss: 22.024659872055054 | time: 8.795607566833496
+[2024-12-08 10:30:16,378][root][INFO] - Epoch 173
+[2024-12-08 10:30:25,237][root][INFO] - train_loss: 22.046478033065796 | time: 8.859574556350708
+[2024-12-08 10:30:25,239][root][INFO] - Epoch 174
+[2024-12-08 10:30:34,107][root][INFO] - train_loss: 22.10731327533722 | time: 8.869347095489502
+[2024-12-08 10:30:34,109][root][INFO] - Epoch 175
+[2024-12-08 10:30:43,152][root][INFO] - train_loss: 22.131510853767395 | time: 9.044236898422241
+[2024-12-08 10:30:43,153][root][INFO] - Epoch 176
+[2024-12-08 10:30:52,203][root][INFO] - train_loss: 22.18300175666809 | time: 9.050742387771606
+[2024-12-08 10:30:52,206][root][INFO] - Epoch 177
+[2024-12-08 10:31:01,437][root][INFO] - train_loss: 21.73019003868103 | time: 9.231853723526001
+[2024-12-08 10:31:01,440][root][INFO] - Epoch 178
+[2024-12-08 10:31:10,711][root][INFO] - train_loss: 21.584974765777588 | time: 9.272628784179688
+[2024-12-08 10:31:10,713][root][INFO] - Epoch 179
+[2024-12-08 10:31:19,912][root][INFO] - train_loss: 21.944081664085388 | time: 9.199899673461914
+[2024-12-08 10:31:19,914][root][INFO] - Epoch 180
+[2024-12-08 10:31:29,213][root][INFO] - train_loss: 22.45249330997467 | time: 9.299821853637695
+[2024-12-08 10:31:29,215][root][INFO] - Epoch 181
+[2024-12-08 10:31:38,512][root][INFO] - train_loss: 22.286467790603638 | time: 9.298980712890625
+[2024-12-08 10:31:38,515][root][INFO] - Epoch 182
+[2024-12-08 10:31:47,750][root][INFO] - train_loss: 21.657042860984802 | time: 9.235532283782959
+[2024-12-08 10:31:47,752][root][INFO] - Epoch 183
+[2024-12-08 10:31:57,032][root][INFO] - train_loss: 21.782956957817078 | time: 9.280617952346802
+[2024-12-08 10:31:57,033][root][INFO] - Epoch 184
+[2024-12-08 10:32:06,303][root][INFO] - train_loss: 22.113656044006348 | time: 9.270411491394043
+[2024-12-08 10:32:06,304][root][INFO] - Epoch 185
+[2024-12-08 10:32:15,590][root][INFO] - train_loss: 22.20585584640503 | time: 9.286386251449585
+[2024-12-08 10:32:15,591][root][INFO] - Epoch 186
+[2024-12-08 10:32:24,898][root][INFO] - train_loss: 21.559768199920654 | time: 9.307408094406128
+[2024-12-08 10:32:24,901][root][INFO] - Epoch 187
+[2024-12-08 10:32:34,206][root][INFO] - train_loss: 21.61421036720276 | time: 9.306646585464478
+[2024-12-08 10:32:34,209][root][INFO] - Epoch 188
+[2024-12-08 10:32:43,474][root][INFO] - train_loss: 22.1487056016922 | time: 9.267032146453857
+[2024-12-08 10:32:43,476][root][INFO] - Epoch 189
+[2024-12-08 10:32:52,739][root][INFO] - train_loss: 21.90092170238495 | time: 9.263674974441528
+[2024-12-08 10:32:52,741][root][INFO] - Epoch 190
+[2024-12-08 10:33:01,968][root][INFO] - train_loss: 21.705722451210022 | time: 9.228257894515991
+[2024-12-08 10:33:01,970][root][INFO] - Epoch 191
+[2024-12-08 10:33:11,216][root][INFO] - train_loss: 21.435383319854736 | time: 9.247430801391602
+[2024-12-08 10:33:11,218][root][INFO] - Epoch 192
+[2024-12-08 10:33:20,473][root][INFO] - train_loss: 21.612784028053284 | time: 9.256353616714478
+[2024-12-08 10:33:20,475][root][INFO] - Epoch 193
+[2024-12-08 10:33:29,590][root][INFO] - train_loss: 21.597289323806763 | time: 9.116502046585083
+[2024-12-08 10:33:29,593][root][INFO] - Epoch 194
+[2024-12-08 10:33:38,788][root][INFO] - train_loss: 22.005522966384888 | time: 9.196691036224365
+[2024-12-08 10:33:38,789][root][INFO] - Epoch 195
+[2024-12-08 10:33:47,931][root][INFO] - train_loss: 22.216172218322754 | time: 9.142317056655884
+[2024-12-08 10:33:47,932][root][INFO] - Epoch 196
+[2024-12-08 10:33:57,051][root][INFO] - train_loss: 21.603768706321716 | time: 9.119577884674072
+[2024-12-08 10:33:57,053][root][INFO] - Epoch 197
+[2024-12-08 10:34:06,151][root][INFO] - train_loss: 22.01219630241394 | time: 9.099188566207886
+[2024-12-08 10:34:06,152][root][INFO] - Epoch 198
+[2024-12-08 10:34:15,193][root][INFO] - train_loss: 21.844111442565918 | time: 9.04154109954834
+[2024-12-08 10:34:15,195][root][INFO] - Epoch 199
+[2024-12-08 10:34:24,299][root][INFO] - train_loss: 21.398977994918823 | time: 9.105170249938965
+[2024-12-08 10:34:24,305][root][INFO] - Epoch 200
+[2024-12-08 10:34:33,513][root][INFO] - train_loss: 21.459467887878418 | time: 9.209040880203247
+[2024-12-08 10:34:33,515][root][INFO] - Epoch 201
+[2024-12-08 10:34:42,597][root][INFO] - train_loss: 21.790529251098633 | time: 9.083656311035156
+[2024-12-08 10:34:42,600][root][INFO] - Epoch 202
+[2024-12-08 10:34:51,749][root][INFO] - train_loss: 21.820985078811646 | time: 9.149297714233398
+[2024-12-08 10:34:51,752][root][INFO] - Epoch 203
+[2024-12-08 10:35:00,896][root][INFO] - train_loss: 21.812901496887207 | time: 9.14568042755127
+[2024-12-08 10:35:00,898][root][INFO] - Epoch 204
+[2024-12-08 10:35:10,136][root][INFO] - train_loss: 21.440243005752563 | time: 9.239159345626831
+[2024-12-08 10:35:10,139][root][INFO] - Epoch 205
+[2024-12-08 10:35:19,291][root][INFO] - train_loss: 21.223021626472473 | time: 9.1535325050354
+[2024-12-08 10:35:19,295][root][INFO] - Epoch 206
+[2024-12-08 10:35:28,407][root][INFO] - train_loss: 20.976162433624268 | time: 9.113351106643677
+[2024-12-08 10:35:28,409][root][INFO] - Epoch 207
+[2024-12-08 10:35:37,475][root][INFO] - train_loss: 20.909173846244812 | time: 9.067213773727417
+[2024-12-08 10:35:37,477][root][INFO] - Epoch 208
+[2024-12-08 10:35:46,478][root][INFO] - train_loss: 20.825708627700806 | time: 9.00215744972229
+[2024-12-08 10:35:46,481][root][INFO] - Epoch 209
+[2024-12-08 10:35:55,323][root][INFO] - train_loss: 21.406705737113953 | time: 8.843817234039307
+[2024-12-08 10:35:55,327][root][INFO] - Epoch 210
+[2024-12-08 10:36:04,398][root][INFO] - train_loss: 21.522283911705017 | time: 9.0731840133667
+[2024-12-08 10:36:04,401][root][INFO] - Epoch 211
+[2024-12-08 10:36:13,421][root][INFO] - train_loss: 22.25680661201477 | time: 9.020663499832153
+[2024-12-08 10:36:13,427][root][INFO] - Epoch 212
+[2024-12-08 10:36:22,450][root][INFO] - train_loss: 21.881176471710205 | time: 9.024054527282715
+[2024-12-08 10:36:22,455][root][INFO] - Epoch 213
+[2024-12-08 10:36:31,470][root][INFO] - train_loss: 21.152209758758545 | time: 9.017015218734741
+[2024-12-08 10:36:31,475][root][INFO] - Epoch 214
+[2024-12-08 10:36:40,522][root][INFO] - train_loss: 21.313029527664185 | time: 9.048522710800171
+[2024-12-08 10:36:40,524][root][INFO] - Epoch 215
+[2024-12-08 10:36:49,642][root][INFO] - train_loss: 21.427964448928833 | time: 9.119446039199829
+[2024-12-08 10:36:49,644][root][INFO] - Epoch 216
+[2024-12-08 10:36:58,600][root][INFO] - train_loss: 21.484654664993286 | time: 8.957196712493896
+[2024-12-08 10:36:58,601][root][INFO] - Epoch 217
+[2024-12-08 10:37:07,486][root][INFO] - train_loss: 21.037843346595764 | time: 8.885265827178955
+[2024-12-08 10:37:07,489][root][INFO] - Epoch 218
+[2024-12-08 10:37:16,455][root][INFO] - train_loss: 21.014695167541504 | time: 8.96676254272461
+[2024-12-08 10:37:16,456][root][INFO] - Epoch 219
+[2024-12-08 10:37:25,389][root][INFO] - train_loss: 21.78417718410492 | time: 8.933889150619507
+[2024-12-08 10:37:25,392][root][INFO] - Epoch 220
+[2024-12-08 10:37:34,278][root][INFO] - train_loss: 21.700894832611084 | time: 8.88881230354309
+[2024-12-08 10:37:34,280][root][INFO] - Epoch 221
+[2024-12-08 10:37:43,215][root][INFO] - train_loss: 21.557859778404236 | time: 8.936337232589722
+[2024-12-08 10:37:43,218][root][INFO] - Epoch 222
+[2024-12-08 10:37:52,201][root][INFO] - train_loss: 21.08305525779724 | time: 8.984022378921509
+[2024-12-08 10:37:52,203][root][INFO] - Epoch 223
+[2024-12-08 10:38:01,138][root][INFO] - train_loss: 21.093942999839783 | time: 8.936837196350098
+[2024-12-08 10:38:01,140][root][INFO] - Epoch 224
+[2024-12-08 10:38:10,094][root][INFO] - train_loss: 20.871315836906433 | time: 8.955057621002197
+[2024-12-08 10:38:10,096][root][INFO] - Epoch 225
+[2024-12-08 10:38:19,004][root][INFO] - train_loss: 20.833759427070618 | time: 8.910084962844849
+[2024-12-08 10:38:19,007][root][INFO] - Epoch 226
+[2024-12-08 10:38:28,037][root][INFO] - train_loss: 20.7152601480484 | time: 9.02989149093628
+[2024-12-08 10:38:28,039][root][INFO] - Epoch 227
+[2024-12-08 10:38:37,042][root][INFO] - train_loss: 20.677561283111572 | time: 9.005107164382935
+[2024-12-08 10:38:37,045][root][INFO] - Epoch 228
+[2024-12-08 10:38:46,035][root][INFO] - train_loss: 20.89068043231964 | time: 8.991579294204712
+[2024-12-08 10:38:46,036][root][INFO] - Epoch 229
+[2024-12-08 10:38:55,110][root][INFO] - train_loss: 21.0965473651886 | time: 9.075078964233398
+[2024-12-08 10:38:55,115][root][INFO] - Epoch 230
+[2024-12-08 10:39:04,165][root][INFO] - train_loss: 20.874138116836548 | time: 9.051400184631348
+[2024-12-08 10:39:04,169][root][INFO] - Epoch 231
+[2024-12-08 10:39:13,174][root][INFO] - train_loss: 20.687952876091003 | time: 9.006720304489136
+[2024-12-08 10:39:13,177][root][INFO] - Epoch 232
+[2024-12-08 10:39:22,194][root][INFO] - train_loss: 20.75247299671173 | time: 9.018146753311157
+[2024-12-08 10:39:22,198][root][INFO] - Epoch 233
+[2024-12-08 10:39:31,224][root][INFO] - train_loss: 20.76439654827118 | time: 9.027649164199829
+[2024-12-08 10:39:31,228][root][INFO] - Epoch 234
+[2024-12-08 10:39:40,204][root][INFO] - train_loss: 21.095558166503906 | time: 8.976649761199951
+[2024-12-08 10:39:40,207][root][INFO] - Epoch 235
+[2024-12-08 10:39:49,173][root][INFO] - train_loss: 20.946123838424683 | time: 8.967885255813599
+[2024-12-08 10:39:49,176][root][INFO] - Epoch 236
+[2024-12-08 10:39:58,128][root][INFO] - train_loss: 20.7709858417511 | time: 8.952608823776245
+[2024-12-08 10:39:58,130][root][INFO] - Epoch 237
+[2024-12-08 10:40:07,154][root][INFO] - train_loss: 20.94833481311798 | time: 9.025863647460938
+[2024-12-08 10:40:07,157][root][INFO] - Epoch 238
+[2024-12-08 10:40:16,149][root][INFO] - train_loss: 21.060019731521606 | time: 8.994412183761597
+[2024-12-08 10:40:16,153][root][INFO] - Epoch 239
+[2024-12-08 10:40:25,161][root][INFO] - train_loss: 20.90108633041382 | time: 9.009788036346436
+[2024-12-08 10:40:25,164][root][INFO] - Epoch 240
+[2024-12-08 10:40:34,191][root][INFO] - train_loss: 20.872469663619995 | time: 9.028299808502197
+[2024-12-08 10:40:34,195][root][INFO] - Epoch 241
+[2024-12-08 10:40:43,236][root][INFO] - train_loss: 20.553646326065063 | time: 9.044054746627808
+[2024-12-08 10:40:43,237][root][INFO] - Epoch 242
+[2024-12-08 10:40:52,287][root][INFO] - train_loss: 21.139346480369568 | time: 9.051259756088257
+[2024-12-08 10:40:52,290][root][INFO] - Epoch 243
+[2024-12-08 10:41:01,256][root][INFO] - train_loss: 20.809388875961304 | time: 8.966947555541992
+[2024-12-08 10:41:01,260][root][INFO] - Epoch 244
+[2024-12-08 10:41:10,242][root][INFO] - train_loss: 20.453763961791992 | time: 8.983500242233276
+[2024-12-08 10:41:10,246][root][INFO] - Epoch 245
+[2024-12-08 10:41:19,251][root][INFO] - train_loss: 20.439439296722412 | time: 9.006347179412842
+[2024-12-08 10:41:19,255][root][INFO] - Epoch 246
+[2024-12-08 10:41:28,257][root][INFO] - train_loss: 20.621014833450317 | time: 9.004185438156128
+[2024-12-08 10:41:28,259][root][INFO] - Epoch 247
+[2024-12-08 10:41:37,256][root][INFO] - train_loss: 20.722607374191284 | time: 8.998426914215088
+[2024-12-08 10:41:37,260][root][INFO] - Epoch 248
+[2024-12-08 10:41:46,294][root][INFO] - train_loss: 20.508156299591064 | time: 9.035519361495972
+[2024-12-08 10:41:46,299][root][INFO] - Epoch 249
+[2024-12-08 10:41:55,108][root][INFO] - train_loss: 20.560107231140137 | time: 8.810887813568115
+[2024-12-08 10:41:55,109][root][INFO] - Epoch 250
+[2024-12-08 10:42:03,888][root][INFO] - train_loss: 21.131876230239868 | time: 8.780386209487915
+[2024-12-08 10:42:03,890][root][INFO] - Epoch 251
+[2024-12-08 10:42:12,761][root][INFO] - train_loss: 20.80537521839142 | time: 8.871772050857544
+[2024-12-08 10:42:12,762][root][INFO] - Epoch 252
+[2024-12-08 10:42:21,530][root][INFO] - train_loss: 20.80423891544342 | time: 8.76889419555664
+[2024-12-08 10:42:21,533][root][INFO] - Epoch 253
+[2024-12-08 10:42:30,556][root][INFO] - train_loss: 20.942490339279175 | time: 9.023472309112549
+[2024-12-08 10:42:30,557][root][INFO] - Epoch 254
+[2024-12-08 10:42:39,594][root][INFO] - train_loss: 20.726536631584167 | time: 9.037960290908813
+[2024-12-08 10:42:39,596][root][INFO] - Epoch 255
+[2024-12-08 10:42:48,234][root][INFO] - train_loss: 20.885738134384155 | time: 8.639702796936035
+[2024-12-08 10:42:48,235][root][INFO] - Epoch 256
+[2024-12-08 10:42:56,883][root][INFO] - train_loss: 20.928709387779236 | time: 8.648634910583496
+[2024-12-08 10:42:56,886][root][INFO] - Epoch 257
+[2024-12-08 10:43:05,551][root][INFO] - train_loss: 20.612918257713318 | time: 8.665700197219849
+[2024-12-08 10:43:05,552][root][INFO] - Epoch 258
+[2024-12-08 10:43:14,207][root][INFO] - train_loss: 21.272608518600464 | time: 8.655686140060425
+[2024-12-08 10:43:14,210][root][INFO] - Epoch 259
+[2024-12-08 10:43:22,932][root][INFO] - train_loss: 20.343006372451782 | time: 8.724540948867798
+[2024-12-08 10:43:22,933][root][INFO] - Epoch 260
+[2024-12-08 10:43:31,730][root][INFO] - train_loss: 20.893999218940735 | time: 8.797121524810791
+[2024-12-08 10:43:31,735][root][INFO] - Epoch 261
+[2024-12-08 10:43:40,637][root][INFO] - train_loss: 20.606995344161987 | time: 8.902394771575928
+[2024-12-08 10:43:40,639][root][INFO] - Epoch 262
+[2024-12-08 10:43:49,696][root][INFO] - train_loss: 20.400720834732056 | time: 9.05858063697815
+[2024-12-08 10:43:49,698][root][INFO] - Epoch 263
+[2024-12-08 10:43:58,689][root][INFO] - train_loss: 20.871384739875793 | time: 8.992671728134155
+[2024-12-08 10:43:58,691][root][INFO] - Epoch 264
+[2024-12-08 10:44:07,732][root][INFO] - train_loss: 20.80653214454651 | time: 9.041908025741577
+[2024-12-08 10:44:07,739][root][INFO] - Epoch 265
+[2024-12-08 10:44:16,794][root][INFO] - train_loss: 20.61612856388092 | time: 9.056924104690552
+[2024-12-08 10:44:16,800][root][INFO] - Epoch 266
+[2024-12-08 10:44:25,785][root][INFO] - train_loss: 20.298811316490173 | time: 8.98654580116272
+[2024-12-08 10:44:25,789][root][INFO] - Epoch 267
+[2024-12-08 10:44:34,727][root][INFO] - train_loss: 20.408997416496277 | time: 8.93916916847229
+[2024-12-08 10:44:34,730][root][INFO] - Epoch 268
+[2024-12-08 10:44:43,763][root][INFO] - train_loss: 20.088157534599304 | time: 9.033925294876099
+[2024-12-08 10:44:43,767][root][INFO] - Epoch 269
+[2024-12-08 10:44:52,719][root][INFO] - train_loss: 20.635475635528564 | time: 8.953596830368042
+[2024-12-08 10:44:52,721][root][INFO] - Epoch 270
+[2024-12-08 10:45:01,752][root][INFO] - train_loss: 20.20514440536499 | time: 9.032007932662964
+[2024-12-08 10:45:01,754][root][INFO] - Epoch 271
+[2024-12-08 10:45:10,662][root][INFO] - train_loss: 20.8866628408432 | time: 8.909579277038574
+[2024-12-08 10:45:10,666][root][INFO] - Epoch 272
+[2024-12-08 10:45:19,520][root][INFO] - train_loss: 21.02246594429016 | time: 8.855782747268677
+[2024-12-08 10:45:19,522][root][INFO] - Epoch 273
+[2024-12-08 10:45:28,402][root][INFO] - train_loss: 20.67164897918701 | time: 8.880981206893921
+[2024-12-08 10:45:28,405][root][INFO] - Epoch 274
+[2024-12-08 10:45:37,485][root][INFO] - train_loss: 20.60936748981476 | time: 9.081511497497559
+[2024-12-08 10:45:37,487][root][INFO] - Epoch 275
+[2024-12-08 10:45:46,488][root][INFO] - train_loss: 20.86228322982788 | time: 9.002534866333008
+[2024-12-08 10:45:46,490][root][INFO] - Epoch 276
+[2024-12-08 10:45:55,522][root][INFO] - train_loss: 20.51581907272339 | time: 9.032967805862427
+[2024-12-08 10:45:55,525][root][INFO] - Epoch 277
+[2024-12-08 10:46:04,522][root][INFO] - train_loss: 20.181583523750305 | time: 8.998739242553711
+[2024-12-08 10:46:04,526][root][INFO] - Epoch 278
+[2024-12-08 10:46:13,503][root][INFO] - train_loss: 19.96966552734375 | time: 8.97882866859436
+[2024-12-08 10:46:13,505][root][INFO] - Epoch 279
+[2024-12-08 10:46:22,589][root][INFO] - train_loss: 19.86064624786377 | time: 9.084617614746094
+[2024-12-08 10:46:22,595][root][INFO] - Epoch 280
+[2024-12-08 10:46:31,584][root][INFO] - train_loss: 20.111761689186096 | time: 8.990906715393066
+[2024-12-08 10:46:31,588][root][INFO] - Epoch 281
+[2024-12-08 10:46:40,583][root][INFO] - train_loss: 20.040762424468994 | time: 8.997007131576538
+[2024-12-08 10:46:40,589][root][INFO] - Epoch 282
+[2024-12-08 10:46:49,610][root][INFO] - train_loss: 20.020052194595337 | time: 9.023425817489624
+[2024-12-08 10:46:49,614][root][INFO] - Epoch 283
+[2024-12-08 10:46:58,628][root][INFO] - train_loss: 19.988425254821777 | time: 9.015523195266724
+[2024-12-08 10:46:58,631][root][INFO] - Epoch 284
+[2024-12-08 10:47:07,636][root][INFO] - train_loss: 19.935246109962463 | time: 9.005835056304932
+[2024-12-08 10:47:07,640][root][INFO] - Epoch 285
+[2024-12-08 10:47:16,635][root][INFO] - train_loss: 19.874679565429688 | time: 8.996375799179077
+[2024-12-08 10:47:16,637][root][INFO] - Epoch 286
+[2024-12-08 10:47:25,618][root][INFO] - train_loss: 20.129952788352966 | time: 8.981273174285889
+[2024-12-08 10:47:25,619][root][INFO] - Epoch 287
+[2024-12-08 10:47:34,595][root][INFO] - train_loss: 19.90695810317993 | time: 8.976455211639404
+[2024-12-08 10:47:34,597][root][INFO] - Epoch 288
+[2024-12-08 10:47:43,397][root][INFO] - train_loss: 19.197505354881287 | time: 8.800096273422241
+[2024-12-08 10:47:43,400][root][INFO] - Epoch 289
+[2024-12-08 10:47:52,023][root][INFO] - train_loss: 19.303922653198242 | time: 8.623794555664062
+[2024-12-08 10:47:52,024][root][INFO] - Epoch 290
+[2024-12-08 10:48:00,664][root][INFO] - train_loss: 19.380943179130554 | time: 8.640259742736816
+[2024-12-08 10:48:00,665][root][INFO] - Epoch 291
+[2024-12-08 10:48:09,307][root][INFO] - train_loss: 19.423179984092712 | time: 8.64253306388855
+[2024-12-08 10:48:09,309][root][INFO] - Epoch 292
+[2024-12-08 10:48:18,278][root][INFO] - train_loss: 19.21697771549225 | time: 8.9701247215271
+[2024-12-08 10:48:18,280][root][INFO] - Epoch 293
+[2024-12-08 10:48:27,194][root][INFO] - train_loss: 19.007578015327454 | time: 8.914370775222778
+[2024-12-08 10:48:27,195][root][INFO] - Epoch 294
+[2024-12-08 10:48:36,136][root][INFO] - train_loss: 18.469690084457397 | time: 8.941992998123169
+[2024-12-08 10:48:36,138][root][INFO] - Epoch 295
+[2024-12-08 10:48:45,070][root][INFO] - train_loss: 19.341790914535522 | time: 8.933673858642578
+[2024-12-08 10:48:45,073][root][INFO] - Epoch 296
+[2024-12-08 10:48:53,983][root][INFO] - train_loss: 19.61621105670929 | time: 8.910634517669678
+[2024-12-08 10:48:53,985][root][INFO] - Epoch 297
+[2024-12-08 10:49:02,920][root][INFO] - train_loss: 19.197240233421326 | time: 8.936518907546997
+[2024-12-08 10:49:02,922][root][INFO] - Epoch 298
+[2024-12-08 10:49:11,910][root][INFO] - train_loss: 18.874675273895264 | time: 8.988774538040161
+[2024-12-08 10:49:11,911][root][INFO] - Epoch 299
+[2024-12-08 10:49:20,889][root][INFO] - train_loss: 18.908245086669922 | time: 8.979187965393066
+[2024-12-08 10:49:20,893][root][INFO] - Epoch 300
+[2024-12-08 10:49:29,797][root][INFO] - train_loss: 18.662259936332703 | time: 8.90495228767395
+[2024-12-08 10:49:29,799][root][INFO] - Epoch 301
+[2024-12-08 10:49:38,699][root][INFO] - train_loss: 18.89829385280609 | time: 8.900909900665283
+[2024-12-08 10:49:38,701][root][INFO] - Epoch 302
+[2024-12-08 10:49:47,561][root][INFO] - train_loss: 18.857102751731873 | time: 8.861370086669922
+[2024-12-08 10:49:47,562][root][INFO] - Epoch 303
+[2024-12-08 10:49:56,229][root][INFO] - train_loss: 19.087029457092285 | time: 8.667025089263916
+[2024-12-08 10:49:56,232][root][INFO] - Epoch 304
+[2024-12-08 10:50:04,870][root][INFO] - train_loss: 18.771724224090576 | time: 8.639778852462769
+[2024-12-08 10:50:04,872][root][INFO] - Epoch 305
+[2024-12-08 10:50:13,539][root][INFO] - train_loss: 19.09279429912567 | time: 8.667296886444092
+[2024-12-08 10:50:13,541][root][INFO] - Epoch 306
+[2024-12-08 10:50:22,366][root][INFO] - train_loss: 19.5905818939209 | time: 8.827464580535889
+[2024-12-08 10:50:22,368][root][INFO] - Epoch 307
+[2024-12-08 10:50:31,215][root][INFO] - train_loss: 18.716612696647644 | time: 8.848448753356934
+[2024-12-08 10:50:31,220][root][INFO] - Epoch 308
+[2024-12-08 10:50:40,181][root][INFO] - train_loss: 18.91025412082672 | time: 8.961517572402954
+[2024-12-08 10:50:40,184][root][INFO] - Epoch 309
+[2024-12-08 10:50:49,136][root][INFO] - train_loss: 18.572141408920288 | time: 8.954078197479248
+[2024-12-08 10:50:49,140][root][INFO] - Epoch 310
+[2024-12-08 10:50:58,082][root][INFO] - train_loss: 18.809948801994324 | time: 8.942503690719604
+[2024-12-08 10:50:58,083][root][INFO] - Epoch 311
+[2024-12-08 10:51:07,015][root][INFO] - train_loss: 18.62257993221283 | time: 8.933231830596924
+[2024-12-08 10:51:07,017][root][INFO] - Epoch 312
+[2024-12-08 10:51:15,654][root][INFO] - train_loss: 18.98072373867035 | time: 8.63775086402893
+[2024-12-08 10:51:15,655][root][INFO] - Epoch 313
+[2024-12-08 10:51:24,349][root][INFO] - train_loss: 19.174150466918945 | time: 8.695118188858032
+[2024-12-08 10:51:24,353][root][INFO] - Epoch 314
+[2024-12-08 10:51:33,342][root][INFO] - train_loss: 18.987807631492615 | time: 8.990747213363647
+[2024-12-08 10:51:33,344][root][INFO] - Epoch 315
+[2024-12-08 10:51:42,393][root][INFO] - train_loss: 18.76916253566742 | time: 9.050360202789307
+[2024-12-08 10:51:42,395][root][INFO] - Epoch 316
+[2024-12-08 10:51:51,424][root][INFO] - train_loss: 18.786256432533264 | time: 9.029952049255371
+[2024-12-08 10:51:51,427][root][INFO] - Epoch 317
+[2024-12-08 10:52:00,456][root][INFO] - train_loss: 19.105900526046753 | time: 9.030348539352417
+[2024-12-08 10:52:00,459][root][INFO] - Epoch 318
+[2024-12-08 10:52:09,456][root][INFO] - train_loss: 18.79265832901001 | time: 8.998533010482788
+[2024-12-08 10:52:09,458][root][INFO] - Epoch 319
+[2024-12-08 10:52:18,448][root][INFO] - train_loss: 18.54457986354828 | time: 8.992039203643799
+[2024-12-08 10:52:18,450][root][INFO] - Epoch 320
+[2024-12-08 10:52:27,451][root][INFO] - train_loss: 18.497419476509094 | time: 9.00206732749939
+[2024-12-08 10:52:27,453][root][INFO] - Epoch 321
+[2024-12-08 10:52:36,442][root][INFO] - train_loss: 19.334476470947266 | time: 8.99020266532898
+[2024-12-08 10:52:36,444][root][INFO] - Epoch 322
+[2024-12-08 10:52:45,442][root][INFO] - train_loss: 19.371939063072205 | time: 8.999431371688843
+[2024-12-08 10:52:45,444][root][INFO] - Epoch 323
+[2024-12-08 10:52:54,437][root][INFO] - train_loss: 18.82266366481781 | time: 8.994026184082031
+[2024-12-08 10:52:54,439][root][INFO] - Epoch 324
+[2024-12-08 10:53:03,460][root][INFO] - train_loss: 18.387130737304688 | time: 9.022039890289307
+[2024-12-08 10:53:03,461][root][INFO] - Epoch 325
+[2024-12-08 10:53:12,471][root][INFO] - train_loss: 18.51204478740692 | time: 9.01059889793396
+[2024-12-08 10:53:12,473][root][INFO] - Epoch 326
+[2024-12-08 10:53:21,464][root][INFO] - train_loss: 18.666897296905518 | time: 8.992084980010986
+[2024-12-08 10:53:21,465][root][INFO] - Epoch 327
+[2024-12-08 10:53:30,466][root][INFO] - train_loss: 18.57539701461792 | time: 9.002019882202148
+[2024-12-08 10:53:30,468][root][INFO] - Epoch 328
+[2024-12-08 10:53:39,326][root][INFO] - train_loss: 18.3788800239563 | time: 8.859203100204468
+[2024-12-08 10:53:39,328][root][INFO] - Epoch 329
+[2024-12-08 10:53:48,417][root][INFO] - train_loss: 18.78760325908661 | time: 9.090799570083618
+[2024-12-08 10:53:48,420][root][INFO] - Epoch 330
+[2024-12-08 10:53:57,486][root][INFO] - train_loss: 18.62449836730957 | time: 9.067728281021118
+[2024-12-08 10:53:57,488][root][INFO] - Epoch 331
+[2024-12-08 10:54:06,456][root][INFO] - train_loss: 18.736533880233765 | time: 8.969111919403076
+[2024-12-08 10:54:06,461][root][INFO] - Epoch 332
+[2024-12-08 10:54:15,459][root][INFO] - train_loss: 18.737715482711792 | time: 8.998953342437744
+[2024-12-08 10:54:15,466][root][INFO] - Epoch 333
+[2024-12-08 10:54:24,590][root][INFO] - train_loss: 18.964051604270935 | time: 9.129148006439209
+[2024-12-08 10:54:24,593][root][INFO] - Epoch 334
+[2024-12-08 10:54:33,595][root][INFO] - train_loss: 19.119335412979126 | time: 9.003451347351074
+[2024-12-08 10:54:33,600][root][INFO] - Epoch 335
+[2024-12-08 10:54:42,559][root][INFO] - train_loss: 18.5482360124588 | time: 8.96094298362732
+[2024-12-08 10:54:42,561][root][INFO] - Epoch 336
+[2024-12-08 10:54:51,596][root][INFO] - train_loss: 18.34563457965851 | time: 9.036482572555542
+[2024-12-08 10:54:51,599][root][INFO] - Epoch 337
+[2024-12-08 10:55:00,585][root][INFO] - train_loss: 18.733031153678894 | time: 8.987298488616943
+[2024-12-08 10:55:00,588][root][INFO] - Epoch 338
+[2024-12-08 10:55:09,626][root][INFO] - train_loss: 19.239158749580383 | time: 9.039680004119873
+[2024-12-08 10:55:09,629][root][INFO] - Epoch 339
+[2024-12-08 10:55:18,647][root][INFO] - train_loss: 18.887797832489014 | time: 9.019294500350952
+[2024-12-08 10:55:18,649][root][INFO] - Epoch 340
+[2024-12-08 10:55:27,570][root][INFO] - train_loss: 18.81058633327484 | time: 8.92188572883606
+[2024-12-08 10:55:27,574][root][INFO] - Epoch 341
+[2024-12-08 10:55:36,711][root][INFO] - train_loss: 19.00977849960327 | time: 9.138690948486328
+[2024-12-08 10:55:36,715][root][INFO] - Epoch 342
+[2024-12-08 10:55:45,859][root][INFO] - train_loss: 18.748759388923645 | time: 9.144982099533081
+[2024-12-08 10:55:45,865][root][INFO] - Epoch 343
+[2024-12-08 10:55:55,039][root][INFO] - train_loss: 18.853384852409363 | time: 9.175628185272217
+[2024-12-08 10:55:55,041][root][INFO] - Epoch 344
+[2024-12-08 10:56:04,039][root][INFO] - train_loss: 18.74271845817566 | time: 8.99882698059082
+[2024-12-08 10:56:04,041][root][INFO] - Epoch 345
+[2024-12-08 10:56:13,028][root][INFO] - train_loss: 18.279552936553955 | time: 8.988056182861328
+[2024-12-08 10:56:13,029][root][INFO] - Epoch 346
+[2024-12-08 10:56:21,917][root][INFO] - train_loss: 17.967385292053223 | time: 8.888380527496338
+[2024-12-08 10:56:21,925][root][INFO] - Epoch 347
+[2024-12-08 10:56:30,936][root][INFO] - train_loss: 18.239136219024658 | time: 9.012408256530762
+[2024-12-08 10:56:30,941][root][INFO] - Epoch 348
+[2024-12-08 10:56:39,922][root][INFO] - train_loss: 18.3707674741745 | time: 8.982368230819702
+[2024-12-08 10:56:39,924][root][INFO] - Epoch 349
+[2024-12-08 10:56:48,741][root][INFO] - train_loss: 18.548476338386536 | time: 8.81785249710083
+[2024-12-08 10:56:48,743][root][INFO] - Epoch 350
+[2024-12-08 10:56:57,624][root][INFO] - train_loss: 18.678377151489258 | time: 8.882415294647217
+[2024-12-08 10:56:57,629][root][INFO] - Epoch 351
+[2024-12-08 10:57:06,549][root][INFO] - train_loss: 18.98946261405945 | time: 8.921657085418701
+[2024-12-08 10:57:06,550][root][INFO] - Epoch 352
+[2024-12-08 10:57:15,462][root][INFO] - train_loss: 18.38010001182556 | time: 8.912530899047852
+[2024-12-08 10:57:15,463][root][INFO] - Epoch 353
+[2024-12-08 10:57:24,506][root][INFO] - train_loss: 18.54057216644287 | time: 9.043916702270508
+[2024-12-08 10:57:24,510][root][INFO] - Epoch 354
+[2024-12-08 10:57:33,722][root][INFO] - train_loss: 18.348464250564575 | time: 9.213828563690186
+[2024-12-08 10:57:33,727][root][INFO] - Epoch 355
+[2024-12-08 10:57:42,745][root][INFO] - train_loss: 18.504878401756287 | time: 9.019690036773682
+[2024-12-08 10:57:42,747][root][INFO] - Epoch 356
+[2024-12-08 10:57:51,824][root][INFO] - train_loss: 18.315914273262024 | time: 9.078945636749268
+[2024-12-08 10:57:51,832][root][INFO] - Epoch 357
+[2024-12-08 10:58:00,777][root][INFO] - train_loss: 18.49296247959137 | time: 8.946284770965576
+[2024-12-08 10:58:00,781][root][INFO] - Epoch 358
+[2024-12-08 10:58:09,950][root][INFO] - train_loss: 18.657097101211548 | time: 9.169237613677979
+[2024-12-08 10:58:09,952][root][INFO] - Epoch 359
+[2024-12-08 10:58:18,943][root][INFO] - train_loss: 18.429840207099915 | time: 8.992531776428223
+[2024-12-08 10:58:18,945][root][INFO] - Epoch 360
+[2024-12-08 10:58:27,934][root][INFO] - train_loss: 18.208089470863342 | time: 8.989923000335693
+[2024-12-08 10:58:27,940][root][INFO] - Epoch 361
+[2024-12-08 10:58:36,935][root][INFO] - train_loss: 18.324310779571533 | time: 8.996944904327393
+[2024-12-08 10:58:36,940][root][INFO] - Epoch 362
+[2024-12-08 10:58:45,903][root][INFO] - train_loss: 18.35684883594513 | time: 8.964087724685669
+[2024-12-08 10:58:45,906][root][INFO] - Epoch 363
+[2024-12-08 10:58:54,918][root][INFO] - train_loss: 18.311795592308044 | time: 9.013682126998901
+[2024-12-08 10:58:54,923][root][INFO] - Epoch 364
+[2024-12-08 10:59:03,834][root][INFO] - train_loss: 18.989417791366577 | time: 8.91258192062378
+[2024-12-08 10:59:03,836][root][INFO] - Epoch 365
+[2024-12-08 10:59:12,771][root][INFO] - train_loss: 19.032121062278748 | time: 8.936165809631348
+[2024-12-08 10:59:12,772][root][INFO] - Epoch 366
+[2024-12-08 10:59:21,591][root][INFO] - train_loss: 18.74362802505493 | time: 8.820312023162842
+[2024-12-08 10:59:21,594][root][INFO] - Epoch 367
+[2024-12-08 10:59:30,578][root][INFO] - train_loss: 18.774152159690857 | time: 8.98512053489685
+[2024-12-08 10:59:30,581][root][INFO] - Epoch 368
+[2024-12-08 10:59:39,473][root][INFO] - train_loss: 18.460167407989502 | time: 8.893316507339478
+[2024-12-08 10:59:39,475][root][INFO] - Epoch 369
+[2024-12-08 10:59:48,573][root][INFO] - train_loss: 18.411341905593872 | time: 9.099170684814453
+[2024-12-08 10:59:48,575][root][INFO] - Epoch 370
+[2024-12-08 10:59:57,631][root][INFO] - train_loss: 18.948920726776123 | time: 9.056848049163818
+[2024-12-08 10:59:57,633][root][INFO] - Epoch 371
+[2024-12-08 11:00:06,814][root][INFO] - train_loss: 18.389596223831177 | time: 9.182269811630249
+[2024-12-08 11:00:06,816][root][INFO] - Epoch 372
+[2024-12-08 11:00:15,951][root][INFO] - train_loss: 17.985557675361633 | time: 9.13637113571167
+[2024-12-08 11:00:15,956][root][INFO] - Epoch 373
+[2024-12-08 11:00:24,875][root][INFO] - train_loss: 18.15367317199707 | time: 8.921003103256226
+[2024-12-08 11:00:24,877][root][INFO] - Epoch 374
+[2024-12-08 11:00:33,783][root][INFO] - train_loss: 18.16881763935089 | time: 8.907386779785156
+[2024-12-08 11:00:33,784][root][INFO] - Epoch 375
+[2024-12-08 11:00:42,767][root][INFO] - train_loss: 18.593124389648438 | time: 8.983830690383911
+[2024-12-08 11:00:42,769][root][INFO] - Epoch 376
+[2024-12-08 11:00:51,796][root][INFO] - train_loss: 18.110313653945923 | time: 9.027672529220581
+[2024-12-08 11:00:51,801][root][INFO] - Epoch 377
+[2024-12-08 11:01:00,777][root][INFO] - train_loss: 18.073688626289368 | time: 8.976882457733154
+[2024-12-08 11:01:00,779][root][INFO] - Epoch 378
+[2024-12-08 11:01:09,846][root][INFO] - train_loss: 18.496028065681458 | time: 9.06870985031128
+[2024-12-08 11:01:09,852][root][INFO] - Epoch 379
+[2024-12-08 11:01:18,769][root][INFO] - train_loss: 18.389740467071533 | time: 8.91830325126648
+[2024-12-08 11:01:18,771][root][INFO] - Epoch 380
+[2024-12-08 11:01:27,806][root][INFO] - train_loss: 18.751264929771423 | time: 9.036320924758911
+[2024-12-08 11:01:27,808][root][INFO] - Epoch 381
+[2024-12-08 11:01:36,887][root][INFO] - train_loss: 17.72987687587738 | time: 9.080436706542969
+[2024-12-08 11:01:36,889][root][INFO] - Epoch 382
+[2024-12-08 11:01:45,897][root][INFO] - train_loss: 17.90583610534668 | time: 9.009795665740967
+[2024-12-08 11:01:45,901][root][INFO] - Epoch 383
+[2024-12-08 11:01:54,948][root][INFO] - train_loss: 18.963826775550842 | time: 9.0483078956604
+[2024-12-08 11:01:54,952][root][INFO] - Epoch 384
+[2024-12-08 11:02:04,045][root][INFO] - train_loss: 19.132071256637573 | time: 9.09408450126648
+[2024-12-08 11:02:04,046][root][INFO] - Epoch 385
+[2024-12-08 11:02:12,933][root][INFO] - train_loss: 18.39931082725525 | time: 8.887888669967651
+[2024-12-08 11:02:12,936][root][INFO] - Epoch 386
+[2024-12-08 11:02:21,871][root][INFO] - train_loss: 18.650107741355896 | time: 8.936540603637695
+[2024-12-08 11:02:21,874][root][INFO] - Epoch 387
+[2024-12-08 11:02:30,744][root][INFO] - train_loss: 18.269012331962585 | time: 8.87075161933899
+[2024-12-08 11:02:30,745][root][INFO] - Epoch 388
+[2024-12-08 11:02:39,631][root][INFO] - train_loss: 18.39127004146576 | time: 8.88699746131897
+[2024-12-08 11:02:39,633][root][INFO] - Epoch 389
+[2024-12-08 11:02:48,468][root][INFO] - train_loss: 18.512734532356262 | time: 8.836551666259766
+[2024-12-08 11:02:48,471][root][INFO] - Epoch 390
+[2024-12-08 11:02:57,310][root][INFO] - train_loss: 18.500611543655396 | time: 8.840054273605347
+[2024-12-08 11:02:57,311][root][INFO] - Epoch 391
+[2024-12-08 11:03:06,317][root][INFO] - train_loss: 18.845245599746704 | time: 9.006624460220337
+[2024-12-08 11:03:06,321][root][INFO] - Epoch 392
+[2024-12-08 11:03:15,087][root][INFO] - train_loss: 19.001578330993652 | time: 8.766842603683472
+[2024-12-08 11:03:15,088][root][INFO] - Epoch 393
+[2024-12-08 11:03:23,720][root][INFO] - train_loss: 18.50998556613922 | time: 8.633371829986572
+[2024-12-08 11:03:23,721][root][INFO] - Epoch 394
+[2024-12-08 11:03:32,297][root][INFO] - train_loss: 18.25157403945923 | time: 8.576717138290405
+[2024-12-08 11:03:32,299][root][INFO] - Epoch 395
+[2024-12-08 11:03:41,170][root][INFO] - train_loss: 18.634891271591187 | time: 8.872354507446289
+[2024-12-08 11:03:41,174][root][INFO] - Epoch 396
+[2024-12-08 11:03:50,027][root][INFO] - train_loss: 18.55761420726776 | time: 8.853449821472168
+[2024-12-08 11:03:50,028][root][INFO] - Epoch 397
+[2024-12-08 11:03:58,831][root][INFO] - train_loss: 18.07977604866028 | time: 8.8043372631073
+[2024-12-08 11:03:58,835][root][INFO] - Epoch 398
+[2024-12-08 11:04:07,652][root][INFO] - train_loss: 18.325032114982605 | time: 8.817344665527344
+[2024-12-08 11:04:07,653][root][INFO] - Epoch 399
+[2024-12-08 11:04:16,531][root][INFO] - train_loss: 17.886714458465576 | time: 8.878255128860474
+[2024-12-08 11:04:16,532][root][INFO] - Epoch 400
+[2024-12-08 11:04:25,531][root][INFO] - train_loss: 17.979533910751343 | time: 8.999547481536865
+[2024-12-08 11:04:25,533][root][INFO] - Epoch 401
+[2024-12-08 11:04:34,756][root][INFO] - train_loss: 18.484922170639038 | time: 9.224074125289917
+[2024-12-08 11:04:34,760][root][INFO] - Epoch 402
+[2024-12-08 11:04:43,765][root][INFO] - train_loss: 18.77262783050537 | time: 9.006513595581055
+[2024-12-08 11:04:43,768][root][INFO] - Epoch 403
+[2024-12-08 11:04:53,757][root][INFO] - train_loss: 18.517517924308777 | time: 9.99014401435852
+[2024-12-08 11:04:53,758][root][INFO] - Epoch 404
+[2024-12-08 11:05:02,842][root][INFO] - train_loss: 18.87137246131897 | time: 9.084600448608398
+[2024-12-08 11:05:02,844][root][INFO] - Epoch 405
+[2024-12-08 11:05:12,067][root][INFO] - train_loss: 17.920876622200012 | time: 9.224212646484375
+[2024-12-08 11:05:12,071][root][INFO] - Epoch 406
+[2024-12-08 11:05:20,867][root][INFO] - train_loss: 17.94216275215149 | time: 8.797671794891357
+[2024-12-08 11:05:20,870][root][INFO] - Epoch 407
+[2024-12-08 11:05:29,636][root][INFO] - train_loss: 18.253913402557373 | time: 8.76798152923584
+[2024-12-08 11:05:29,637][root][INFO] - Epoch 408
+[2024-12-08 11:05:38,698][root][INFO] - train_loss: 18.4883234500885 | time: 9.061418056488037
+[2024-12-08 11:05:38,700][root][INFO] - Epoch 409
+[2024-12-08 11:05:47,740][root][INFO] - train_loss: 18.839128732681274 | time: 9.041642665863037
+[2024-12-08 11:05:47,749][root][INFO] - Epoch 410
+[2024-12-08 11:05:56,839][root][INFO] - train_loss: 19.035831928253174 | time: 9.09192180633545
+[2024-12-08 11:05:56,845][root][INFO] - Epoch 411
+[2024-12-08 11:06:05,977][root][INFO] - train_loss: 18.82962691783905 | time: 9.133841276168823
+[2024-12-08 11:06:05,983][root][INFO] - Epoch 412
+[2024-12-08 11:06:15,057][root][INFO] - train_loss: 18.618067383766174 | time: 9.075377464294434
+[2024-12-08 11:06:15,066][root][INFO] - Epoch 413
+[2024-12-08 11:06:23,981][root][INFO] - train_loss: 18.18107509613037 | time: 8.916399478912354
+[2024-12-08 11:06:23,986][root][INFO] - Epoch 414
+[2024-12-08 11:06:32,809][root][INFO] - train_loss: 18.106861233711243 | time: 8.824158191680908
+[2024-12-08 11:06:32,811][root][INFO] - Epoch 415
+[2024-12-08 11:06:41,695][root][INFO] - train_loss: 18.437204480171204 | time: 8.885395765304565
+[2024-12-08 11:06:41,697][root][INFO] - Epoch 416
+[2024-12-08 11:06:50,664][root][INFO] - train_loss: 18.022677302360535 | time: 8.968344449996948
+[2024-12-08 11:06:50,666][root][INFO] - Epoch 417
+[2024-12-08 11:06:59,618][root][INFO] - train_loss: 18.025493502616882 | time: 8.953047275543213
+[2024-12-08 11:06:59,624][root][INFO] - Epoch 418
+[2024-12-08 11:07:08,700][root][INFO] - train_loss: 18.261484146118164 | time: 9.077503204345703
+[2024-12-08 11:07:08,704][root][INFO] - Epoch 419
+[2024-12-08 11:07:17,802][root][INFO] - train_loss: 18.176371574401855 | time: 9.099732637405396
+[2024-12-08 11:07:17,804][root][INFO] - Epoch 420
+[2024-12-08 11:07:26,873][root][INFO] - train_loss: 18.464905858039856 | time: 9.069666147232056
+[2024-12-08 11:07:26,875][root][INFO] - Epoch 421
+[2024-12-08 11:07:35,945][root][INFO] - train_loss: 18.428038358688354 | time: 9.071223020553589
+[2024-12-08 11:07:35,947][root][INFO] - Epoch 422
+[2024-12-08 11:07:44,916][root][INFO] - train_loss: 17.544752597808838 | time: 8.970927476882935
+[2024-12-08 11:07:44,928][root][INFO] - Epoch 423
+[2024-12-08 11:07:53,786][root][INFO] - train_loss: 18.8342524766922 | time: 8.860071420669556
+[2024-12-08 11:07:53,788][root][INFO] - Epoch 424
+[2024-12-08 11:08:02,793][root][INFO] - train_loss: 18.90051007270813 | time: 9.00598692893982
+[2024-12-08 11:08:02,797][root][INFO] - Epoch 425
+[2024-12-08 11:08:11,791][root][INFO] - train_loss: 18.64634919166565 | time: 8.995521783828735
+[2024-12-08 11:08:11,796][root][INFO] - Epoch 426
+[2024-12-08 11:08:20,740][root][INFO] - train_loss: 18.457318425178528 | time: 8.945243835449219
+[2024-12-08 11:08:20,745][root][INFO] - Epoch 427
+[2024-12-08 11:08:29,673][root][INFO] - train_loss: 17.443851113319397 | time: 8.930442094802856
+[2024-12-08 11:08:29,675][root][INFO] - Epoch 428
+[2024-12-08 11:08:38,631][root][INFO] - train_loss: 18.218857169151306 | time: 8.957224607467651
+[2024-12-08 11:08:38,633][root][INFO] - Epoch 429
+[2024-12-08 11:08:47,542][root][INFO] - train_loss: 18.717609167099 | time: 8.910668849945068
+[2024-12-08 11:08:47,544][root][INFO] - Epoch 430
+[2024-12-08 11:08:56,445][root][INFO] - train_loss: 19.086450219154358 | time: 8.901651382446289
+[2024-12-08 11:08:56,449][root][INFO] - Epoch 431
+[2024-12-08 11:09:05,324][root][INFO] - train_loss: 18.350675225257874 | time: 8.877111911773682
+[2024-12-08 11:09:05,326][root][INFO] - Epoch 432
+[2024-12-08 11:09:14,282][root][INFO] - train_loss: 18.187604308128357 | time: 8.957659244537354
+[2024-12-08 11:09:14,284][root][INFO] - Epoch 433
+[2024-12-08 11:09:23,195][root][INFO] - train_loss: 18.126784920692444 | time: 8.911797761917114
+[2024-12-08 11:09:23,197][root][INFO] - Epoch 434
+[2024-12-08 11:09:32,060][root][INFO] - train_loss: 17.933725595474243 | time: 8.863409996032715
+[2024-12-08 11:09:32,064][root][INFO] - Epoch 435
+[2024-12-08 11:09:40,820][root][INFO] - train_loss: 19.234161972999573 | time: 8.757194519042969
+[2024-12-08 11:09:40,821][root][INFO] - Epoch 436
+[2024-12-08 11:09:49,755][root][INFO] - train_loss: 18.396191358566284 | time: 8.934612274169922
+[2024-12-08 11:09:49,760][root][INFO] - Epoch 437
+[2024-12-08 11:09:58,579][root][INFO] - train_loss: 18.370136857032776 | time: 8.820060968399048
+[2024-12-08 11:09:58,580][root][INFO] - Epoch 438
+[2024-12-08 11:10:07,200][root][INFO] - train_loss: 17.950836658477783 | time: 8.621045351028442
+[2024-12-08 11:10:07,201][root][INFO] - Epoch 439
+[2024-12-08 11:10:15,807][root][INFO] - train_loss: 17.461153268814087 | time: 8.606426000595093
+[2024-12-08 11:10:15,808][root][INFO] - Epoch 440
+[2024-12-08 11:10:24,456][root][INFO] - train_loss: 18.93715751171112 | time: 8.648396253585815
+[2024-12-08 11:10:24,457][root][INFO] - Epoch 441
+[2024-12-08 11:10:33,093][root][INFO] - train_loss: 18.429548025131226 | time: 8.63690185546875
+[2024-12-08 11:10:33,094][root][INFO] - Epoch 442
+[2024-12-08 11:10:41,974][root][INFO] - train_loss: 18.047276735305786 | time: 8.88047170639038
+[2024-12-08 11:10:41,975][root][INFO] - Epoch 443
+[2024-12-08 11:10:50,828][root][INFO] - train_loss: 17.95770502090454 | time: 8.853442430496216
+[2024-12-08 11:10:50,829][root][INFO] - Epoch 444
+[2024-12-08 11:10:59,710][root][INFO] - train_loss: 17.726876497268677 | time: 8.88203740119934
+[2024-12-08 11:10:59,714][root][INFO] - Epoch 445
+[2024-12-08 11:11:08,622][root][INFO] - train_loss: 18.005010724067688 | time: 8.908714294433594
+[2024-12-08 11:11:08,623][root][INFO] - Epoch 446
+[2024-12-08 11:11:17,618][root][INFO] - train_loss: 18.368257641792297 | time: 8.99580979347229
+[2024-12-08 11:11:17,620][root][INFO] - Epoch 447
+[2024-12-08 11:11:26,639][root][INFO] - train_loss: 18.55336856842041 | time: 9.020010948181152
+[2024-12-08 11:11:26,641][root][INFO] - Epoch 448
+[2024-12-08 11:11:35,667][root][INFO] - train_loss: 18.737250685691833 | time: 9.02794623374939
+[2024-12-08 11:11:35,672][root][INFO] - Epoch 449
+[2024-12-08 11:11:44,706][root][INFO] - train_loss: 17.997440934181213 | time: 9.035276412963867
+[2024-12-08 11:11:44,710][root][INFO] - Epoch 450
+[2024-12-08 11:11:53,639][root][INFO] - train_loss: 17.852089762687683 | time: 8.930910110473633
+[2024-12-08 11:11:53,641][root][INFO] - Epoch 451
+[2024-12-08 11:12:02,537][root][INFO] - train_loss: 18.21621310710907 | time: 8.8969087600708
+[2024-12-08 11:12:02,539][root][INFO] - Epoch 452
+[2024-12-08 11:12:11,481][root][INFO] - train_loss: 18.39781093597412 | time: 8.943432807922363
+[2024-12-08 11:12:11,486][root][INFO] - Epoch 453
+[2024-12-08 11:12:20,381][root][INFO] - train_loss: 18.152628302574158 | time: 8.89679741859436
+[2024-12-08 11:12:20,383][root][INFO] - Epoch 454
+[2024-12-08 11:12:29,365][root][INFO] - train_loss: 18.424075484275818 | time: 8.983270406723022
+[2024-12-08 11:12:29,367][root][INFO] - Epoch 455
+[2024-12-08 11:12:38,413][root][INFO] - train_loss: 18.69552206993103 | time: 9.047454118728638
+[2024-12-08 11:12:38,415][root][INFO] - Epoch 456
+[2024-12-08 11:12:47,402][root][INFO] - train_loss: 18.259175777435303 | time: 8.988748788833618
+[2024-12-08 11:12:47,406][root][INFO] - Epoch 457
+[2024-12-08 11:12:56,430][root][INFO] - train_loss: 17.990806102752686 | time: 9.025160551071167
+[2024-12-08 11:12:56,432][root][INFO] - Epoch 458
+[2024-12-08 11:13:05,430][root][INFO] - train_loss: 17.528688788414 | time: 8.999128341674805
+[2024-12-08 11:13:05,433][root][INFO] - Epoch 459
+[2024-12-08 11:13:14,559][root][INFO] - train_loss: 17.93830633163452 | time: 9.126820087432861
+[2024-12-08 11:13:14,563][root][INFO] - Epoch 460
+[2024-12-08 11:13:23,388][root][INFO] - train_loss: 18.433637380599976 | time: 8.826480865478516
+[2024-12-08 11:13:23,390][root][INFO] - Epoch 461
+[2024-12-08 11:13:32,349][root][INFO] - train_loss: 17.88516926765442 | time: 8.960346937179565
+[2024-12-08 11:13:32,351][root][INFO] - Epoch 462
+[2024-12-08 11:13:41,137][root][INFO] - train_loss: 18.00392711162567 | time: 8.787773609161377
+[2024-12-08 11:13:41,139][root][INFO] - Epoch 463
+[2024-12-08 11:13:49,907][root][INFO] - train_loss: 18.366143107414246 | time: 8.769291400909424
+[2024-12-08 11:13:49,908][root][INFO] - Epoch 464
+[2024-12-08 11:13:58,788][root][INFO] - train_loss: 18.4986492395401 | time: 8.880295038223267
+[2024-12-08 11:13:58,789][root][INFO] - Epoch 465
+[2024-12-08 11:14:07,594][root][INFO] - train_loss: 18.590285062789917 | time: 8.805466175079346
+[2024-12-08 11:14:07,595][root][INFO] - Epoch 466
+[2024-12-08 11:14:16,742][root][INFO] - train_loss: 18.089946389198303 | time: 9.147640705108643
+[2024-12-08 11:14:16,743][root][INFO] - Epoch 467
+[2024-12-08 11:14:25,585][root][INFO] - train_loss: 19.00476384162903 | time: 8.843047618865967
+[2024-12-08 11:14:25,587][root][INFO] - Epoch 468
+[2024-12-08 11:14:34,409][root][INFO] - train_loss: 19.141119480133057 | time: 8.823535442352295
+[2024-12-08 11:14:34,410][root][INFO] - Epoch 469
+[2024-12-08 11:14:43,319][root][INFO] - train_loss: 19.02309274673462 | time: 8.909333229064941
+[2024-12-08 11:14:43,321][root][INFO] - Epoch 470
+[2024-12-08 11:14:52,275][root][INFO] - train_loss: 18.095033645629883 | time: 8.954915046691895
+[2024-12-08 11:14:52,277][root][INFO] - Epoch 471
+[2024-12-08 11:15:01,379][root][INFO] - train_loss: 18.015731930732727 | time: 9.10256552696228
+[2024-12-08 11:15:01,381][root][INFO] - Epoch 472
+[2024-12-08 11:15:10,347][root][INFO] - train_loss: 17.63148272037506 | time: 8.967155694961548
+[2024-12-08 11:15:10,348][root][INFO] - Epoch 473
+[2024-12-08 11:15:19,299][root][INFO] - train_loss: 18.402090907096863 | time: 8.952263593673706
+[2024-12-08 11:15:19,301][root][INFO] - Epoch 474
+[2024-12-08 11:15:28,257][root][INFO] - train_loss: 17.656745076179504 | time: 8.957048416137695
+[2024-12-08 11:15:28,259][root][INFO] - Epoch 475
+[2024-12-08 11:15:37,209][root][INFO] - train_loss: 18.00597047805786 | time: 8.951448917388916
+[2024-12-08 11:15:37,211][root][INFO] - Epoch 476
+[2024-12-08 11:15:46,345][root][INFO] - train_loss: 18.522908926010132 | time: 9.135406494140625
+[2024-12-08 11:15:46,346][root][INFO] - Epoch 477
+[2024-12-08 11:15:55,271][root][INFO] - train_loss: 18.554317951202393 | time: 8.924952030181885
+[2024-12-08 11:15:55,272][root][INFO] - Epoch 478
+[2024-12-08 11:16:04,361][root][INFO] - train_loss: 17.938655972480774 | time: 9.090186834335327
+[2024-12-08 11:16:04,363][root][INFO] - Epoch 479
+[2024-12-08 11:16:13,179][root][INFO] - train_loss: 18.240674376487732 | time: 8.816851139068604
+[2024-12-08 11:16:13,180][root][INFO] - Epoch 480
+[2024-12-08 11:16:22,229][root][INFO] - train_loss: 17.91877794265747 | time: 9.04945421218872
+[2024-12-08 11:16:22,231][root][INFO] - Epoch 481
+[2024-12-08 11:16:31,244][root][INFO] - train_loss: 17.81852614879608 | time: 9.01522159576416
+[2024-12-08 11:16:31,246][root][INFO] - Epoch 482
+[2024-12-08 11:16:40,199][root][INFO] - train_loss: 17.823943734169006 | time: 8.954423904418945
+[2024-12-08 11:16:40,201][root][INFO] - Epoch 483
+[2024-12-08 11:16:48,993][root][INFO] - train_loss: 18.06277060508728 | time: 8.792932748794556
+[2024-12-08 11:16:48,994][root][INFO] - Epoch 484
+[2024-12-08 11:16:57,838][root][INFO] - train_loss: 17.69512116909027 | time: 8.84471845626831
+[2024-12-08 11:16:57,839][root][INFO] - Epoch 485
+[2024-12-08 11:17:06,683][root][INFO] - train_loss: 18.259268522262573 | time: 8.844150066375732
+[2024-12-08 11:17:06,684][root][INFO] - Epoch 486
+[2024-12-08 11:17:15,579][root][INFO] - train_loss: 18.320788502693176 | time: 8.895546913146973
+[2024-12-08 11:17:15,580][root][INFO] - Epoch 487
+[2024-12-08 11:17:24,445][root][INFO] - train_loss: 17.73417329788208 | time: 8.865789413452148
+[2024-12-08 11:17:24,446][root][INFO] - Epoch 488
+[2024-12-08 11:17:33,484][root][INFO] - train_loss: 18.0127090215683 | time: 9.039042234420776
+[2024-12-08 11:17:33,486][root][INFO] - Epoch 489
+[2024-12-08 11:17:42,376][root][INFO] - train_loss: 17.953713536262512 | time: 8.890711545944214
+[2024-12-08 11:17:42,377][root][INFO] - Epoch 490
+[2024-12-08 11:17:51,200][root][INFO] - train_loss: 17.984426736831665 | time: 8.824056625366211
+[2024-12-08 11:17:51,201][root][INFO] - Epoch 491
+[2024-12-08 11:18:00,077][root][INFO] - train_loss: 18.36973738670349 | time: 8.876436233520508
+[2024-12-08 11:18:00,078][root][INFO] - Epoch 492
+[2024-12-08 11:18:08,898][root][INFO] - train_loss: 18.751663327217102 | time: 8.821069478988647
+[2024-12-08 11:18:08,899][root][INFO] - Epoch 493
+[2024-12-08 11:18:17,845][root][INFO] - train_loss: 18.797929525375366 | time: 8.945844650268555
+[2024-12-08 11:18:17,846][root][INFO] - Epoch 494
+[2024-12-08 11:18:26,853][root][INFO] - train_loss: 18.63829493522644 | time: 9.008363246917725
+[2024-12-08 11:18:26,855][root][INFO] - Epoch 495
+[2024-12-08 11:18:35,655][root][INFO] - train_loss: 18.608089447021484 | time: 8.800724506378174
+[2024-12-08 11:18:35,656][root][INFO] - Epoch 496
+[2024-12-08 11:18:44,558][root][INFO] - train_loss: 18.962780952453613 | time: 8.90246319770813
+[2024-12-08 11:18:44,559][root][INFO] - Epoch 497
+[2024-12-08 11:18:53,407][root][INFO] - train_loss: 18.893758177757263 | time: 8.849146366119385
+[2024-12-08 11:18:53,410][root][INFO] - Epoch 498
+[2024-12-08 11:19:02,285][root][INFO] - train_loss: 18.42383635044098 | time: 8.877599239349365
+[2024-12-08 11:19:02,287][root][INFO] - Epoch 499
+[2024-12-08 11:19:11,371][root][INFO] - train_loss: 18.956724882125854 | time: 9.085304260253906
+[2024-12-08 11:19:11,373][root][INFO] - Epoch 500
+[2024-12-08 11:19:20,445][root][INFO] - train_loss: 18.677275896072388 | time: 9.07274055480957
+[2024-12-08 11:19:20,560][accelerate.accelerator][INFO] - Model weights saved in /cluster/scratch/ckeusch/dsl-as24-challenge-3/outputs/2024-12-08/10-04-03/500/pytorch_model.bin
+[2024-12-08 11:19:20,562][root][INFO] - Epoch 501
+[2024-12-08 11:19:29,588][root][INFO] - train_loss: 18.890019178390503 | time: 9.027613639831543
+[2024-12-08 11:19:29,590][root][INFO] - Epoch 502
+[2024-12-08 11:19:38,592][root][INFO] - train_loss: 18.92125165462494 | time: 9.003298997879028
+[2024-12-08 11:19:38,593][root][INFO] - Epoch 503
+[2024-12-08 11:19:47,664][root][INFO] - train_loss: 18.755210757255554 | time: 9.07198715209961
+[2024-12-08 11:19:47,666][root][INFO] - Epoch 504
+[2024-12-08 11:19:56,786][root][INFO] - train_loss: 18.433727860450745 | time: 9.120782852172852
+[2024-12-08 11:19:56,787][root][INFO] - Epoch 505
+[2024-12-08 11:20:05,816][root][INFO] - train_loss: 18.31429672241211 | time: 9.029836893081665
+[2024-12-08 11:20:05,819][root][INFO] - Epoch 506
+[2024-12-08 11:20:14,911][root][INFO] - train_loss: 18.121458530426025 | time: 9.093053340911865
+[2024-12-08 11:20:14,912][root][INFO] - Epoch 507
+[2024-12-08 11:20:23,940][root][INFO] - train_loss: 18.77007508277893 | time: 9.028883934020996
+[2024-12-08 11:20:23,942][root][INFO] - Epoch 508
+[2024-12-08 11:20:33,028][root][INFO] - train_loss: 19.017780780792236 | time: 9.087376356124878
+[2024-12-08 11:20:33,030][root][INFO] - Epoch 509
+[2024-12-08 11:20:42,077][root][INFO] - train_loss: 18.01571500301361 | time: 9.048081398010254
+[2024-12-08 11:20:42,079][root][INFO] - Epoch 510
+[2024-12-08 11:20:51,141][root][INFO] - train_loss: 17.767905354499817 | time: 9.063683986663818
+[2024-12-08 11:20:51,142][root][INFO] - Epoch 511
+[2024-12-08 11:21:00,010][root][INFO] - train_loss: 18.994096398353577 | time: 8.868356227874756
+[2024-12-08 11:21:00,011][root][INFO] - Epoch 512
+[2024-12-08 11:21:08,943][root][INFO] - train_loss: 18.468610882759094 | time: 8.932791471481323
+[2024-12-08 11:21:08,944][root][INFO] - Epoch 513
+[2024-12-08 11:21:17,877][root][INFO] - train_loss: 17.841933131217957 | time: 8.933938264846802
+[2024-12-08 11:21:17,878][root][INFO] - Epoch 514
+[2024-12-08 11:21:26,767][root][INFO] - train_loss: 17.773276567459106 | time: 8.888902425765991
+[2024-12-08 11:21:26,768][root][INFO] - Epoch 515
+[2024-12-08 11:21:35,754][root][INFO] - train_loss: 18.69235372543335 | time: 8.986643314361572
+[2024-12-08 11:21:35,755][root][INFO] - Epoch 516
+[2024-12-08 11:21:44,685][root][INFO] - train_loss: 18.017561078071594 | time: 8.930866003036499
+[2024-12-08 11:21:44,686][root][INFO] - Epoch 517
+[2024-12-08 11:21:53,638][root][INFO] - train_loss: 18.420166850090027 | time: 8.952976942062378
+[2024-12-08 11:21:53,639][root][INFO] - Epoch 518
+[2024-12-08 11:22:02,586][root][INFO] - train_loss: 19.031411051750183 | time: 8.947243928909302
+[2024-12-08 11:22:02,591][root][INFO] - Epoch 519
+[2024-12-08 11:22:11,505][root][INFO] - train_loss: 17.736819744110107 | time: 8.914553880691528
+[2024-12-08 11:22:11,506][root][INFO] - Epoch 520
+[2024-12-08 11:22:20,558][root][INFO] - train_loss: 18.646504163742065 | time: 9.053176641464233
+[2024-12-08 11:22:20,560][root][INFO] - Epoch 521
+[2024-12-08 11:22:29,635][root][INFO] - train_loss: 18.212223410606384 | time: 9.075950384140015
+[2024-12-08 11:22:29,637][root][INFO] - Epoch 522
+[2024-12-08 11:22:38,705][root][INFO] - train_loss: 17.968871235847473 | time: 9.069808006286621
+[2024-12-08 11:22:38,708][root][INFO] - Epoch 523
+[2024-12-08 11:22:47,805][root][INFO] - train_loss: 18.189924716949463 | time: 9.098359107971191
+[2024-12-08 11:22:47,806][root][INFO] - Epoch 524
+[2024-12-08 11:22:56,855][root][INFO] - train_loss: 17.867897629737854 | time: 9.049896001815796
+[2024-12-08 11:22:56,857][root][INFO] - Epoch 525
+[2024-12-08 11:23:06,100][root][INFO] - train_loss: 17.853058576583862 | time: 9.243842363357544
+[2024-12-08 11:23:06,103][root][INFO] - Epoch 526
+[2024-12-08 11:23:14,983][root][INFO] - train_loss: 17.85107672214508 | time: 8.881469964981079
+[2024-12-08 11:23:14,985][root][INFO] - Epoch 527
+[2024-12-08 11:23:24,109][root][INFO] - train_loss: 18.029771089553833 | time: 9.124839067459106
+[2024-12-08 11:23:24,111][root][INFO] - Epoch 528
+[2024-12-08 11:23:33,142][root][INFO] - train_loss: 18.044830799102783 | time: 9.032512187957764
+[2024-12-08 11:23:33,144][root][INFO] - Epoch 529
+[2024-12-08 11:23:42,446][root][INFO] - train_loss: 18.930312395095825 | time: 9.303734064102173
+[2024-12-08 11:23:42,451][root][INFO] - Epoch 530
+[2024-12-08 11:23:51,528][root][INFO] - train_loss: 18.71934938430786 | time: 9.079259395599365
+[2024-12-08 11:23:51,530][root][INFO] - Epoch 531
+[2024-12-08 11:24:00,601][root][INFO] - train_loss: 19.05438733100891 | time: 9.072174310684204
+[2024-12-08 11:24:00,605][root][INFO] - Epoch 532
+[2024-12-08 11:24:09,672][root][INFO] - train_loss: 18.671406149864197 | time: 9.068543910980225
+[2024-12-08 11:24:09,674][root][INFO] - Epoch 533
+[2024-12-08 11:24:18,665][root][INFO] - train_loss: 19.168806076049805 | time: 8.992075204849243
+[2024-12-08 11:24:18,666][root][INFO] - Epoch 534
+[2024-12-08 11:24:27,717][root][INFO] - train_loss: 18.79761230945587 | time: 9.051669120788574
+[2024-12-08 11:24:27,719][root][INFO] - Epoch 535
+[2024-12-08 11:24:36,582][root][INFO] - train_loss: 18.57671368122101 | time: 8.86456298828125
+[2024-12-08 11:24:36,586][root][INFO] - Epoch 536
+[2024-12-08 11:24:45,519][root][INFO] - train_loss: 18.552783012390137 | time: 8.935022115707397
+[2024-12-08 11:24:45,522][root][INFO] - Epoch 537
+[2024-12-08 11:24:54,139][root][INFO] - train_loss: 18.232021808624268 | time: 8.61944317817688
+[2024-12-08 11:24:54,140][root][INFO] - Epoch 538
+[2024-12-08 11:25:03,013][root][INFO] - train_loss: 18.626009702682495 | time: 8.873193979263306
+[2024-12-08 11:25:03,014][root][INFO] - Epoch 539
+[2024-12-08 11:25:11,850][root][INFO] - train_loss: 18.740859985351562 | time: 8.837058782577515
+[2024-12-08 11:25:11,853][root][INFO] - Epoch 540
+[2024-12-08 11:25:20,789][root][INFO] - train_loss: 19.158225774765015 | time: 8.936339378356934
+[2024-12-08 11:25:20,791][root][INFO] - Epoch 541
+[2024-12-08 11:25:29,634][root][INFO] - train_loss: 17.93910825252533 | time: 8.844229936599731
+[2024-12-08 11:25:29,636][root][INFO] - Epoch 542
+[2024-12-08 11:25:38,590][root][INFO] - train_loss: 18.079252243041992 | time: 8.955838441848755
+[2024-12-08 11:25:38,592][root][INFO] - Epoch 543
+[2024-12-08 11:25:47,522][root][INFO] - train_loss: 18.122104287147522 | time: 8.931007862091064
+[2024-12-08 11:25:47,525][root][INFO] - Epoch 544
+[2024-12-08 11:25:56,400][root][INFO] - train_loss: 18.22271764278412 | time: 8.876363039016724
+[2024-12-08 11:25:56,402][root][INFO] - Epoch 545
+[2024-12-08 11:26:05,338][root][INFO] - train_loss: 18.10832917690277 | time: 8.937088966369629
+[2024-12-08 11:26:05,340][root][INFO] - Epoch 546
+[2024-12-08 11:26:14,236][root][INFO] - train_loss: 18.052671313285828 | time: 8.897889614105225
+[2024-12-08 11:26:14,238][root][INFO] - Epoch 547
+[2024-12-08 11:26:23,038][root][INFO] - train_loss: 17.973162293434143 | time: 8.801701307296753
+[2024-12-08 11:26:23,041][root][INFO] - Epoch 548
+[2024-12-08 11:26:32,332][root][INFO] - train_loss: 17.872918367385864 | time: 9.291850090026855
+[2024-12-08 11:26:32,334][root][INFO] - Epoch 549
+[2024-12-08 11:26:41,159][root][INFO] - train_loss: 17.958487033843994 | time: 8.825860977172852
+[2024-12-08 11:26:41,160][root][INFO] - Epoch 550
+[2024-12-08 11:26:50,308][root][INFO] - train_loss: 18.38895332813263 | time: 9.149247407913208
+[2024-12-08 11:26:50,310][root][INFO] - Epoch 551
+[2024-12-08 11:26:59,203][root][INFO] - train_loss: 17.89141833782196 | time: 8.894628763198853
+[2024-12-08 11:26:59,206][root][INFO] - Epoch 552
+[2024-12-08 11:27:08,280][root][INFO] - train_loss: 18.364149808883667 | time: 9.074060916900635
+[2024-12-08 11:27:08,281][root][INFO] - Epoch 553
+[2024-12-08 11:27:17,146][root][INFO] - train_loss: 18.24493908882141 | time: 8.86645793914795
+[2024-12-08 11:27:17,147][root][INFO] - Epoch 554
+[2024-12-08 11:27:25,989][root][INFO] - train_loss: 18.582193732261658 | time: 8.842098236083984
+[2024-12-08 11:27:25,990][root][INFO] - Epoch 555
+[2024-12-08 11:27:34,957][root][INFO] - train_loss: 18.298627257347107 | time: 8.967938899993896
+[2024-12-08 11:27:34,961][root][INFO] - Epoch 556
+[2024-12-08 11:27:43,929][root][INFO] - train_loss: 17.858266472816467 | time: 8.969363689422607
+[2024-12-08 11:27:43,931][root][INFO] - Epoch 557
+[2024-12-08 11:27:52,951][root][INFO] - train_loss: 18.06255543231964 | time: 9.021089792251587
+[2024-12-08 11:27:52,953][root][INFO] - Epoch 558
+[2024-12-08 11:28:02,059][root][INFO] - train_loss: 18.032202005386353 | time: 9.107129573822021
+[2024-12-08 11:28:02,060][root][INFO] - Epoch 559
+[2024-12-08 11:28:11,197][root][INFO] - train_loss: 17.646664142608643 | time: 9.13757848739624
+[2024-12-08 11:28:11,201][root][INFO] - Epoch 560
+[2024-12-08 11:28:20,158][root][INFO] - train_loss: 18.509404063224792 | time: 8.958382606506348
+[2024-12-08 11:28:20,162][root][INFO] - Epoch 561
+[2024-12-08 11:28:29,019][root][INFO] - train_loss: 18.92956256866455 | time: 8.858356714248657
+[2024-12-08 11:28:29,021][root][INFO] - Epoch 562
+[2024-12-08 11:28:37,856][root][INFO] - train_loss: 18.343475103378296 | time: 8.836383819580078
+[2024-12-08 11:28:37,857][root][INFO] - Epoch 563
+[2024-12-08 11:28:46,762][root][INFO] - train_loss: 19.084261775016785 | time: 8.905121326446533
+[2024-12-08 11:28:46,764][root][INFO] - Epoch 564
+[2024-12-08 11:28:55,630][root][INFO] - train_loss: 18.3503075838089 | time: 8.866458415985107
+[2024-12-08 11:28:55,631][root][INFO] - Epoch 565
+[2024-12-08 11:29:04,456][root][INFO] - train_loss: 17.954034686088562 | time: 8.826042652130127
+[2024-12-08 11:29:04,458][root][INFO] - Epoch 566
+[2024-12-08 11:29:13,346][root][INFO] - train_loss: 18.180107831954956 | time: 8.889307498931885
+[2024-12-08 11:29:13,347][root][INFO] - Epoch 567
+[2024-12-08 11:29:22,203][root][INFO] - train_loss: 18.70264208316803 | time: 8.85667085647583
+[2024-12-08 11:29:22,207][root][INFO] - Epoch 568
+[2024-12-08 11:29:31,096][root][INFO] - train_loss: 17.83678901195526 | time: 8.89031457901001
+[2024-12-08 11:29:31,099][root][INFO] - Epoch 569
+[2024-12-08 11:29:40,071][root][INFO] - train_loss: 18.828585624694824 | time: 8.97330355644226
+[2024-12-08 11:29:40,074][root][INFO] - Epoch 570
+[2024-12-08 11:29:49,036][root][INFO] - train_loss: 18.79719376564026 | time: 8.963834762573242
+[2024-12-08 11:29:49,038][root][INFO] - Epoch 571
+[2024-12-08 11:29:57,969][root][INFO] - train_loss: 18.2935391664505 | time: 8.93277359008789
+[2024-12-08 11:29:57,971][root][INFO] - Epoch 572
+[2024-12-08 11:30:06,885][root][INFO] - train_loss: 17.62635850906372 | time: 8.915088176727295
+[2024-12-08 11:30:06,887][root][INFO] - Epoch 573
+[2024-12-08 11:30:15,725][root][INFO] - train_loss: 18.629326343536377 | time: 8.839198350906372
+[2024-12-08 11:30:15,727][root][INFO] - Epoch 574
+[2024-12-08 11:30:24,529][root][INFO] - train_loss: 17.901002287864685 | time: 8.80323600769043
+[2024-12-08 11:30:24,531][root][INFO] - Epoch 575
+[2024-12-08 11:30:33,314][root][INFO] - train_loss: 18.475733160972595 | time: 8.784906148910522
+[2024-12-08 11:30:33,317][root][INFO] - Epoch 576
+[2024-12-08 11:30:42,105][root][INFO] - train_loss: 17.671247482299805 | time: 8.789344787597656
+[2024-12-08 11:30:42,107][root][INFO] - Epoch 577
+[2024-12-08 11:30:50,887][root][INFO] - train_loss: 18.0995352268219 | time: 8.781162023544312
+[2024-12-08 11:30:50,889][root][INFO] - Epoch 578
+[2024-12-08 11:30:59,668][root][INFO] - train_loss: 17.848445415496826 | time: 8.78078317642212
+[2024-12-08 11:30:59,670][root][INFO] - Epoch 579
+[2024-12-08 11:31:08,470][root][INFO] - train_loss: 18.57408058643341 | time: 8.801112174987793
+[2024-12-08 11:31:08,472][root][INFO] - Epoch 580
+[2024-12-08 11:31:17,264][root][INFO] - train_loss: 18.13869273662567 | time: 8.792639017105103
+[2024-12-08 11:31:17,265][root][INFO] - Epoch 581
+[2024-12-08 11:31:26,255][root][INFO] - train_loss: 17.67487609386444 | time: 8.990283012390137
+[2024-12-08 11:31:26,256][root][INFO] - Epoch 582
+[2024-12-08 11:31:35,069][root][INFO] - train_loss: 18.516416311264038 | time: 8.813464641571045
+[2024-12-08 11:31:35,071][root][INFO] - Epoch 583
+[2024-12-08 11:31:43,932][root][INFO] - train_loss: 17.983919739723206 | time: 8.862614393234253
+[2024-12-08 11:31:43,934][root][INFO] - Epoch 584
+[2024-12-08 11:31:52,806][root][INFO] - train_loss: 18.203046917915344 | time: 8.872963190078735
+[2024-12-08 11:31:52,808][root][INFO] - Epoch 585
+[2024-12-08 11:32:01,700][root][INFO] - train_loss: 17.69905114173889 | time: 8.893418788909912
+[2024-12-08 11:32:01,702][root][INFO] - Epoch 586
+[2024-12-08 11:32:10,487][root][INFO] - train_loss: 18.127588391304016 | time: 8.78646469116211
+[2024-12-08 11:32:10,489][root][INFO] - Epoch 587
+[2024-12-08 11:32:19,410][root][INFO] - train_loss: 17.68901765346527 | time: 8.922395706176758
+[2024-12-08 11:32:19,412][root][INFO] - Epoch 588
+[2024-12-08 11:32:28,381][root][INFO] - train_loss: 18.064383625984192 | time: 8.970109939575195
+[2024-12-08 11:32:28,383][root][INFO] - Epoch 589
+[2024-12-08 11:32:37,375][root][INFO] - train_loss: 18.67723846435547 | time: 8.992826700210571
+[2024-12-08 11:32:37,376][root][INFO] - Epoch 590
+[2024-12-08 11:32:46,271][root][INFO] - train_loss: 18.438508987426758 | time: 8.895505666732788
+[2024-12-08 11:32:46,273][root][INFO] - Epoch 591
+[2024-12-08 11:32:55,277][root][INFO] - train_loss: 19.321152806282043 | time: 9.005792379379272
+[2024-12-08 11:32:55,279][root][INFO] - Epoch 592
+[2024-12-08 11:33:04,228][root][INFO] - train_loss: 19.28335928916931 | time: 8.950155258178711
+[2024-12-08 11:33:04,231][root][INFO] - Epoch 593
+[2024-12-08 11:33:13,147][root][INFO] - train_loss: 19.1000657081604 | time: 8.918394088745117
+[2024-12-08 11:33:13,149][root][INFO] - Epoch 594
+[2024-12-08 11:33:22,141][root][INFO] - train_loss: 18.663238525390625 | time: 8.992932319641113
+[2024-12-08 11:33:22,143][root][INFO] - Epoch 595
+[2024-12-08 11:33:31,216][root][INFO] - train_loss: 18.191237568855286 | time: 9.074157238006592
+[2024-12-08 11:33:31,218][root][INFO] - Epoch 596
+[2024-12-08 11:33:40,250][root][INFO] - train_loss: 18.45044255256653 | time: 9.033742904663086
+[2024-12-08 11:33:40,252][root][INFO] - Epoch 597
+[2024-12-08 11:33:49,371][root][INFO] - train_loss: 18.04986035823822 | time: 9.12018346786499
+[2024-12-08 11:33:49,373][root][INFO] - Epoch 598
+[2024-12-08 11:33:58,116][root][INFO] - train_loss: 18.385947465896606 | time: 8.74381160736084
+[2024-12-08 11:33:58,117][root][INFO] - Epoch 599
+[2024-12-08 11:34:06,733][root][INFO] - train_loss: 17.88510227203369 | time: 8.616882801055908
+[2024-12-08 11:34:06,734][root][INFO] - Epoch 600
+[2024-12-08 11:34:15,669][root][INFO] - train_loss: 18.526508569717407 | time: 8.935756921768188
+[2024-12-08 11:34:15,671][root][INFO] - Epoch 601
+[2024-12-08 11:34:24,697][root][INFO] - train_loss: 18.273088455200195 | time: 9.026963710784912
+[2024-12-08 11:34:24,699][root][INFO] - Epoch 602
+[2024-12-08 11:34:33,680][root][INFO] - train_loss: 17.731215953826904 | time: 8.98276400566101
+[2024-12-08 11:34:33,682][root][INFO] - Epoch 603
+[2024-12-08 11:34:42,642][root][INFO] - train_loss: 17.906957268714905 | time: 8.960848569869995
+[2024-12-08 11:34:42,644][root][INFO] - Epoch 604
+[2024-12-08 11:34:51,585][root][INFO] - train_loss: 17.879527688026428 | time: 8.943013668060303
+[2024-12-08 11:34:51,587][root][INFO] - Epoch 605
+[2024-12-08 11:35:00,456][root][INFO] - train_loss: 17.37547469139099 | time: 8.869949102401733
+[2024-12-08 11:35:00,458][root][INFO] - Epoch 606
+[2024-12-08 11:35:09,446][root][INFO] - train_loss: 17.97769808769226 | time: 8.989665508270264
+[2024-12-08 11:35:09,451][root][INFO] - Epoch 607
+[2024-12-08 11:35:18,335][root][INFO] - train_loss: 17.560473918914795 | time: 8.88578486442566
+[2024-12-08 11:35:18,337][root][INFO] - Epoch 608
+[2024-12-08 11:35:27,279][root][INFO] - train_loss: 17.781962633132935 | time: 8.942923545837402
+[2024-12-08 11:35:27,281][root][INFO] - Epoch 609
+[2024-12-08 11:35:36,294][root][INFO] - train_loss: 17.81464457511902 | time: 9.014289140701294
+[2024-12-08 11:35:36,301][root][INFO] - Epoch 610
+[2024-12-08 11:35:45,263][root][INFO] - train_loss: 18.054698705673218 | time: 8.964182615280151
+[2024-12-08 11:35:45,267][root][INFO] - Epoch 611
+[2024-12-08 11:35:54,177][root][INFO] - train_loss: 17.237891793251038 | time: 8.912030220031738
+[2024-12-08 11:35:54,179][root][INFO] - Epoch 612
+[2024-12-08 11:36:03,108][root][INFO] - train_loss: 17.660557746887207 | time: 8.929812908172607
+[2024-12-08 11:36:03,111][root][INFO] - Epoch 613
+[2024-12-08 11:36:12,097][root][INFO] - train_loss: 17.233919739723206 | time: 8.987123966217041
+[2024-12-08 11:36:12,102][root][INFO] - Epoch 614
+[2024-12-08 11:36:21,067][root][INFO] - train_loss: 17.523035049438477 | time: 8.966635942459106
+[2024-12-08 11:36:21,069][root][INFO] - Epoch 615
+[2024-12-08 11:36:30,058][root][INFO] - train_loss: 18.003556728363037 | time: 8.990299940109253
+[2024-12-08 11:36:30,059][root][INFO] - Epoch 616
+[2024-12-08 11:36:39,009][root][INFO] - train_loss: 18.06325328350067 | time: 8.95047926902771
+[2024-12-08 11:36:39,011][root][INFO] - Epoch 617
+[2024-12-08 11:36:47,951][root][INFO] - train_loss: 18.821574687957764 | time: 8.940932750701904
+[2024-12-08 11:36:47,953][root][INFO] - Epoch 618
+[2024-12-08 11:36:56,974][root][INFO] - train_loss: 17.910262942314148 | time: 9.021716833114624
+[2024-12-08 11:36:56,977][root][INFO] - Epoch 619
+[2024-12-08 11:37:06,040][root][INFO] - train_loss: 18.926499247550964 | time: 9.064196586608887
+[2024-12-08 11:37:06,042][root][INFO] - Epoch 620
+[2024-12-08 11:37:15,033][root][INFO] - train_loss: 18.25337588787079 | time: 8.991918325424194
+[2024-12-08 11:37:15,035][root][INFO] - Epoch 621
+[2024-12-08 11:37:24,020][root][INFO] - train_loss: 18.240479588508606 | time: 8.98594069480896
+[2024-12-08 11:37:24,025][root][INFO] - Epoch 622
+[2024-12-08 11:37:32,990][root][INFO] - train_loss: 17.74553155899048 | time: 8.966913938522339
+[2024-12-08 11:37:32,992][root][INFO] - Epoch 623
+[2024-12-08 11:37:41,981][root][INFO] - train_loss: 18.113834381103516 | time: 8.989556789398193
+[2024-12-08 11:37:41,983][root][INFO] - Epoch 624
+[2024-12-08 11:37:50,926][root][INFO] - train_loss: 18.418374180793762 | time: 8.944695711135864
+[2024-12-08 11:37:50,927][root][INFO] - Epoch 625
+[2024-12-08 11:37:59,742][root][INFO] - train_loss: 17.98153555393219 | time: 8.815741062164307
+[2024-12-08 11:37:59,746][root][INFO] - Epoch 626
+[2024-12-08 11:38:08,684][root][INFO] - train_loss: 18.352334141731262 | time: 8.93860387802124
+[2024-12-08 11:38:08,686][root][INFO] - Epoch 627
+[2024-12-08 11:38:17,682][root][INFO] - train_loss: 18.242817401885986 | time: 8.997600793838501
+[2024-12-08 11:38:17,683][root][INFO] - Epoch 628
+[2024-12-08 11:38:26,667][root][INFO] - train_loss: 18.217803955078125 | time: 8.984573364257812
+[2024-12-08 11:38:26,668][root][INFO] - Epoch 629
+[2024-12-08 11:38:35,783][root][INFO] - train_loss: 18.10635006427765 | time: 9.115970611572266
+[2024-12-08 11:38:35,788][root][INFO] - Epoch 630
+[2024-12-08 11:38:44,965][root][INFO] - train_loss: 18.47963845729828 | time: 9.178855657577515
+[2024-12-08 11:38:44,967][root][INFO] - Epoch 631
+[2024-12-08 11:38:54,111][root][INFO] - train_loss: 18.812129616737366 | time: 9.144511699676514
+[2024-12-08 11:38:54,117][root][INFO] - Epoch 632
+[2024-12-08 11:39:03,213][root][INFO] - train_loss: 18.043464064598083 | time: 9.097416400909424
+[2024-12-08 11:39:03,215][root][INFO] - Epoch 633
+[2024-12-08 11:39:12,333][root][INFO] - train_loss: 18.313928604125977 | time: 9.119401931762695
+[2024-12-08 11:39:12,335][root][INFO] - Epoch 634
+[2024-12-08 11:39:21,408][root][INFO] - train_loss: 18.435850143432617 | time: 9.074156522750854
+[2024-12-08 11:39:21,410][root][INFO] - Epoch 635
+[2024-12-08 11:39:30,538][root][INFO] - train_loss: 17.385098695755005 | time: 9.130256175994873
+[2024-12-08 11:39:30,543][root][INFO] - Epoch 636
+[2024-12-08 11:39:39,706][root][INFO] - train_loss: 17.676342487335205 | time: 9.164741039276123
+[2024-12-08 11:39:39,710][root][INFO] - Epoch 637
+[2024-12-08 11:39:48,877][root][INFO] - train_loss: 17.460968375205994 | time: 9.168213367462158
+[2024-12-08 11:39:48,879][root][INFO] - Epoch 638
+[2024-12-08 11:39:57,859][root][INFO] - train_loss: 18.40106439590454 | time: 8.981878995895386
+[2024-12-08 11:39:57,863][root][INFO] - Epoch 639
+[2024-12-08 11:40:06,757][root][INFO] - train_loss: 18.14691722393036 | time: 8.894967079162598
+[2024-12-08 11:40:06,759][root][INFO] - Epoch 640
+[2024-12-08 11:40:15,673][root][INFO] - train_loss: 17.702308773994446 | time: 8.914923906326294
+[2024-12-08 11:40:15,675][root][INFO] - Epoch 641
+[2024-12-08 11:40:24,674][root][INFO] - train_loss: 19.486810564994812 | time: 9.001024961471558
+[2024-12-08 11:40:24,676][root][INFO] - Epoch 642
+[2024-12-08 11:40:33,556][root][INFO] - train_loss: 17.9551283121109 | time: 8.881590366363525
+[2024-12-08 11:40:33,559][root][INFO] - Epoch 643
+[2024-12-08 11:40:42,462][root][INFO] - train_loss: 17.909756541252136 | time: 8.904858589172363
+[2024-12-08 11:40:42,467][root][INFO] - Epoch 644
+[2024-12-08 11:40:51,292][root][INFO] - train_loss: 18.100515842437744 | time: 8.826025247573853
+[2024-12-08 11:40:51,294][root][INFO] - Epoch 645
+[2024-12-08 11:41:00,155][root][INFO] - train_loss: 18.117567539215088 | time: 8.862334966659546
+[2024-12-08 11:41:00,157][root][INFO] - Epoch 646
+[2024-12-08 11:41:09,080][root][INFO] - train_loss: 17.611952543258667 | time: 8.924235105514526
+[2024-12-08 11:41:09,081][root][INFO] - Epoch 647
+[2024-12-08 11:41:17,893][root][INFO] - train_loss: 18.220987677574158 | time: 8.812184572219849
+[2024-12-08 11:41:17,895][root][INFO] - Epoch 648
+[2024-12-08 11:41:26,801][root][INFO] - train_loss: 19.367146134376526 | time: 8.906630277633667
+[2024-12-08 11:41:26,803][root][INFO] - Epoch 649
+[2024-12-08 11:41:35,770][root][INFO] - train_loss: 18.460371494293213 | time: 8.968777179718018
+[2024-12-08 11:41:35,772][root][INFO] - Epoch 650
+[2024-12-08 11:41:44,760][root][INFO] - train_loss: 17.436100363731384 | time: 8.989067316055298
+[2024-12-08 11:41:44,763][root][INFO] - Epoch 651
+[2024-12-08 11:41:53,808][root][INFO] - train_loss: 17.42599654197693 | time: 9.045978546142578
+[2024-12-08 11:41:53,809][root][INFO] - Epoch 652
+[2024-12-08 11:42:02,815][root][INFO] - train_loss: 17.74994647502899 | time: 9.006672382354736
+[2024-12-08 11:42:02,817][root][INFO] - Epoch 653
+[2024-12-08 11:42:11,814][root][INFO] - train_loss: 18.043352723121643 | time: 8.998624801635742
+[2024-12-08 11:42:11,816][root][INFO] - Epoch 654
+[2024-12-08 11:42:20,787][root][INFO] - train_loss: 18.42391860485077 | time: 8.972503662109375
+[2024-12-08 11:42:20,789][root][INFO] - Epoch 655
+[2024-12-08 11:42:29,781][root][INFO] - train_loss: 18.772075533866882 | time: 8.992807865142822
+[2024-12-08 11:42:29,786][root][INFO] - Epoch 656
+[2024-12-08 11:42:38,648][root][INFO] - train_loss: 18.527291417121887 | time: 8.863521337509155
+[2024-12-08 11:42:38,650][root][INFO] - Epoch 657
+[2024-12-08 11:42:47,604][root][INFO] - train_loss: 18.432332038879395 | time: 8.954965591430664
+[2024-12-08 11:42:47,606][root][INFO] - Epoch 658
+[2024-12-08 11:42:56,446][root][INFO] - train_loss: 18.54484987258911 | time: 8.8411545753479
+[2024-12-08 11:42:56,448][root][INFO] - Epoch 659
+[2024-12-08 11:43:05,288][root][INFO] - train_loss: 19.043277859687805 | time: 8.841981887817383
+[2024-12-08 11:43:05,291][root][INFO] - Epoch 660
+[2024-12-08 11:43:14,227][root][INFO] - train_loss: 18.289765119552612 | time: 8.937910795211792
+[2024-12-08 11:43:14,229][root][INFO] - Epoch 661
+[2024-12-08 11:43:23,069][root][INFO] - train_loss: 17.930942058563232 | time: 8.841036796569824
+[2024-12-08 11:43:23,071][root][INFO] - Epoch 662
+[2024-12-08 11:43:32,003][root][INFO] - train_loss: 18.550100922584534 | time: 8.933918714523315
+[2024-12-08 11:43:32,005][root][INFO] - Epoch 663
+[2024-12-08 11:43:40,902][root][INFO] - train_loss: 17.988033413887024 | time: 8.897534608840942
+[2024-12-08 11:43:40,903][root][INFO] - Epoch 664
+[2024-12-08 11:43:49,808][root][INFO] - train_loss: 18.423669457435608 | time: 8.90575885772705
+[2024-12-08 11:43:49,810][root][INFO] - Epoch 665
+[2024-12-08 11:43:58,714][root][INFO] - train_loss: 17.874624252319336 | time: 8.905691385269165
+[2024-12-08 11:43:58,718][root][INFO] - Epoch 666
+[2024-12-08 11:44:07,639][root][INFO] - train_loss: 17.795055747032166 | time: 8.921894550323486
+[2024-12-08 11:44:07,641][root][INFO] - Epoch 667
+[2024-12-08 11:44:16,582][root][INFO] - train_loss: 19.03161120414734 | time: 8.942446947097778
+[2024-12-08 11:44:16,586][root][INFO] - Epoch 668
+[2024-12-08 11:44:25,589][root][INFO] - train_loss: 19.22376823425293 | time: 9.004076480865479
+[2024-12-08 11:44:25,591][root][INFO] - Epoch 669
+[2024-12-08 11:44:34,413][root][INFO] - train_loss: 17.976294994354248 | time: 8.824231386184692
+[2024-12-08 11:44:34,415][root][INFO] - Epoch 670
+[2024-12-08 11:44:43,214][root][INFO] - train_loss: 18.030378103256226 | time: 8.799896478652954
+[2024-12-08 11:44:43,215][root][INFO] - Epoch 671
+[2024-12-08 11:44:52,067][root][INFO] - train_loss: 18.319627165794373 | time: 8.853158473968506
+[2024-12-08 11:44:52,072][root][INFO] - Epoch 672
+[2024-12-08 11:45:00,925][root][INFO] - train_loss: 18.21332311630249 | time: 8.85469675064087
+[2024-12-08 11:45:00,927][root][INFO] - Epoch 673
+[2024-12-08 11:45:09,818][root][INFO] - train_loss: 18.21177649497986 | time: 8.892545938491821
+[2024-12-08 11:45:09,820][root][INFO] - Epoch 674
+[2024-12-08 11:45:18,632][root][INFO] - train_loss: 17.58263373374939 | time: 8.813624382019043
+[2024-12-08 11:45:18,634][root][INFO] - Epoch 675
+[2024-12-08 11:45:27,401][root][INFO] - train_loss: 18.7374929189682 | time: 8.767796516418457
+[2024-12-08 11:45:27,404][root][INFO] - Epoch 676
+[2024-12-08 11:45:36,071][root][INFO] - train_loss: 17.918478965759277 | time: 8.66771125793457
+[2024-12-08 11:45:36,072][root][INFO] - Epoch 677
+[2024-12-08 11:45:44,745][root][INFO] - train_loss: 17.827825784683228 | time: 8.673223972320557
+[2024-12-08 11:45:44,747][root][INFO] - Epoch 678
+[2024-12-08 11:45:53,620][root][INFO] - train_loss: 18.573123812675476 | time: 8.874502182006836
+[2024-12-08 11:45:53,623][root][INFO] - Epoch 679
+[2024-12-08 11:46:02,557][root][INFO] - train_loss: 18.193748712539673 | time: 8.935834884643555
+[2024-12-08 11:46:02,561][root][INFO] - Epoch 680
+[2024-12-08 11:46:11,388][root][INFO] - train_loss: 18.081206679344177 | time: 8.82869839668274
+[2024-12-08 11:46:11,390][root][INFO] - Epoch 681
+[2024-12-08 11:46:20,338][root][INFO] - train_loss: 18.575997829437256 | time: 8.949002504348755
+[2024-12-08 11:46:20,340][root][INFO] - Epoch 682
+[2024-12-08 11:46:29,186][root][INFO] - train_loss: 19.174612522125244 | time: 8.847773313522339
+[2024-12-08 11:46:29,188][root][INFO] - Epoch 683
+[2024-12-08 11:46:38,111][root][INFO] - train_loss: 18.550702571868896 | time: 8.924332857131958
+[2024-12-08 11:46:38,115][root][INFO] - Epoch 684
+[2024-12-08 11:46:47,038][root][INFO] - train_loss: 17.806601405143738 | time: 8.924468755722046
+[2024-12-08 11:46:47,040][root][INFO] - Epoch 685
+[2024-12-08 11:46:55,998][root][INFO] - train_loss: 17.83051884174347 | time: 8.958818435668945
+[2024-12-08 11:46:55,999][root][INFO] - Epoch 686
+[2024-12-08 11:47:04,961][root][INFO] - train_loss: 18.496902108192444 | time: 8.962891340255737
+[2024-12-08 11:47:04,963][root][INFO] - Epoch 687
+[2024-12-08 11:47:13,988][root][INFO] - train_loss: 17.754424333572388 | time: 9.025834321975708
+[2024-12-08 11:47:13,992][root][INFO] - Epoch 688
+[2024-12-08 11:47:22,858][root][INFO] - train_loss: 18.445197820663452 | time: 8.8677818775177
+[2024-12-08 11:47:22,860][root][INFO] - Epoch 689
+[2024-12-08 11:47:31,777][root][INFO] - train_loss: 18.1728835105896 | time: 8.918273448944092
+[2024-12-08 11:47:31,779][root][INFO] - Epoch 690
+[2024-12-08 11:47:40,711][root][INFO] - train_loss: 18.420197367668152 | time: 8.933544874191284
+[2024-12-08 11:47:40,715][root][INFO] - Epoch 691
+[2024-12-08 11:47:49,812][root][INFO] - train_loss: 18.12111496925354 | time: 9.097745180130005
+[2024-12-08 11:47:49,814][root][INFO] - Epoch 692
+[2024-12-08 11:47:58,721][root][INFO] - train_loss: 18.108253359794617 | time: 8.908348798751831
+[2024-12-08 11:47:58,724][root][INFO] - Epoch 693
+[2024-12-08 11:48:07,646][root][INFO] - train_loss: 18.13202154636383 | time: 8.923320531845093
+[2024-12-08 11:48:07,651][root][INFO] - Epoch 694
+[2024-12-08 11:48:16,541][root][INFO] - train_loss: 18.67524027824402 | time: 8.89101767539978
+[2024-12-08 11:48:16,545][root][INFO] - Epoch 695
+[2024-12-08 11:48:25,910][root][INFO] - train_loss: 17.887415409088135 | time: 9.366514444351196
+[2024-12-08 11:48:25,914][root][INFO] - Epoch 696
+[2024-12-08 11:48:34,811][root][INFO] - train_loss: 17.878715872764587 | time: 8.898701906204224
+[2024-12-08 11:48:34,815][root][INFO] - Epoch 697
+[2024-12-08 11:48:43,723][root][INFO] - train_loss: 17.736894249916077 | time: 8.909156560897827
+[2024-12-08 11:48:43,725][root][INFO] - Epoch 698
+[2024-12-08 11:48:53,161][root][INFO] - train_loss: 18.86660349369049 | time: 9.437420129776001
+[2024-12-08 11:48:53,165][root][INFO] - Epoch 699
+[2024-12-08 11:49:02,044][root][INFO] - train_loss: 17.450578808784485 | time: 8.880428075790405
+[2024-12-08 11:49:02,046][root][INFO] - Epoch 700
+[2024-12-08 11:49:10,994][root][INFO] - train_loss: 18.07213020324707 | time: 8.948894262313843
+[2024-12-08 11:49:10,996][root][INFO] - Epoch 701
+[2024-12-08 11:49:19,968][root][INFO] - train_loss: 17.843026399612427 | time: 8.973908424377441
+[2024-12-08 11:49:19,970][root][INFO] - Epoch 702
+[2024-12-08 11:49:28,870][root][INFO] - train_loss: 18.278039813041687 | time: 8.90147614479065
+[2024-12-08 11:49:28,872][root][INFO] - Epoch 703
+[2024-12-08 11:49:37,764][root][INFO] - train_loss: 18.69991445541382 | time: 8.893472671508789
+[2024-12-08 11:49:37,769][root][INFO] - Epoch 704
+[2024-12-08 11:49:46,645][root][INFO] - train_loss: 19.06523823738098 | time: 8.877731561660767
+[2024-12-08 11:49:46,647][root][INFO] - Epoch 705
+[2024-12-08 11:49:55,546][root][INFO] - train_loss: 18.38042461872101 | time: 8.900014638900757
+[2024-12-08 11:49:55,548][root][INFO] - Epoch 706
+[2024-12-08 11:50:04,469][root][INFO] - train_loss: 18.444039344787598 | time: 8.92220950126648
+[2024-12-08 11:50:04,471][root][INFO] - Epoch 707
+[2024-12-08 11:50:13,355][root][INFO] - train_loss: 18.87862980365753 | time: 8.8850576877594
+[2024-12-08 11:50:13,359][root][INFO] - Epoch 708
+[2024-12-08 11:50:22,097][root][INFO] - train_loss: 19.54145050048828 | time: 8.73919153213501
+[2024-12-08 11:50:22,098][root][INFO] - Epoch 709
+[2024-12-08 11:50:30,785][root][INFO] - train_loss: 18.41766655445099 | time: 8.688027620315552
+[2024-12-08 11:50:30,786][root][INFO] - Epoch 710
+[2024-12-08 11:50:39,379][root][INFO] - train_loss: 18.068023085594177 | time: 8.593551874160767
+[2024-12-08 11:50:39,380][root][INFO] - Epoch 711
+[2024-12-08 11:50:48,042][root][INFO] - train_loss: 18.163004398345947 | time: 8.66269063949585
+[2024-12-08 11:50:48,043][root][INFO] - Epoch 712
+[2024-12-08 11:50:56,601][root][INFO] - train_loss: 17.58401668071747 | time: 8.558964490890503
+[2024-12-08 11:50:56,603][root][INFO] - Epoch 713
+[2024-12-08 11:51:05,272][root][INFO] - train_loss: 18.283304572105408 | time: 8.669161796569824
+[2024-12-08 11:51:05,273][root][INFO] - Epoch 714
+[2024-12-08 11:51:13,841][root][INFO] - train_loss: 18.2893306016922 | time: 8.568899393081665
+[2024-12-08 11:51:13,842][root][INFO] - Epoch 715
+[2024-12-08 11:51:22,706][root][INFO] - train_loss: 19.463705897331238 | time: 8.864408016204834
+[2024-12-08 11:51:22,710][root][INFO] - Epoch 716
+[2024-12-08 11:51:31,556][root][INFO] - train_loss: 17.79070007801056 | time: 8.846547842025757
+[2024-12-08 11:51:31,557][root][INFO] - Epoch 717
+[2024-12-08 11:51:40,445][root][INFO] - train_loss: 17.6061110496521 | time: 8.888592720031738
+[2024-12-08 11:51:40,446][root][INFO] - Epoch 718
+[2024-12-08 11:51:49,239][root][INFO] - train_loss: 18.750506281852722 | time: 8.79425311088562
+[2024-12-08 11:51:49,241][root][INFO] - Epoch 719
+[2024-12-08 11:51:58,275][root][INFO] - train_loss: 18.173914909362793 | time: 9.034727573394775
+[2024-12-08 11:51:58,276][root][INFO] - Epoch 720
+[2024-12-08 11:52:07,429][root][INFO] - train_loss: 18.702276349067688 | time: 9.153802633285522
+[2024-12-08 11:52:07,433][root][INFO] - Epoch 721
+[2024-12-08 11:52:17,011][root][INFO] - train_loss: 17.749918937683105 | time: 9.579650402069092
+[2024-12-08 11:52:17,012][root][INFO] - Epoch 722
+[2024-12-08 11:52:26,000][root][INFO] - train_loss: 18.137385964393616 | time: 8.98870301246643
+[2024-12-08 11:52:26,002][root][INFO] - Epoch 723
+[2024-12-08 11:52:35,054][root][INFO] - train_loss: 18.35549247264862 | time: 9.053373575210571
+[2024-12-08 11:52:35,058][root][INFO] - Epoch 724
+[2024-12-08 11:52:44,077][root][INFO] - train_loss: 17.900483012199402 | time: 9.019982814788818
+[2024-12-08 11:52:44,078][root][INFO] - Epoch 725
+[2024-12-08 11:52:53,110][root][INFO] - train_loss: 17.150623679161072 | time: 9.033308267593384
+[2024-12-08 11:52:53,112][root][INFO] - Epoch 726
+[2024-12-08 11:53:02,142][root][INFO] - train_loss: 16.219240069389343 | time: 9.030578374862671
+[2024-12-08 11:53:02,143][root][INFO] - Epoch 727
+[2024-12-08 11:53:11,115][root][INFO] - train_loss: 16.39271628856659 | time: 8.972606420516968
+[2024-12-08 11:53:11,116][root][INFO] - Epoch 728
+[2024-12-08 11:53:20,399][root][INFO] - train_loss: 16.58395552635193 | time: 9.283275127410889
+[2024-12-08 11:53:20,400][root][INFO] - Epoch 729
+[2024-12-08 11:53:29,355][root][INFO] - train_loss: 16.458741068840027 | time: 8.955784797668457
+[2024-12-08 11:53:29,357][root][INFO] - Epoch 730
+[2024-12-08 11:53:38,416][root][INFO] - train_loss: 17.68265211582184 | time: 9.060143947601318
+[2024-12-08 11:53:38,417][root][INFO] - Epoch 731
+[2024-12-08 11:53:47,889][root][INFO] - train_loss: 16.89200258255005 | time: 9.472493886947632
+[2024-12-08 11:53:47,892][root][INFO] - Epoch 732
+[2024-12-08 11:53:56,977][root][INFO] - train_loss: 16.76326823234558 | time: 9.08606243133545
+[2024-12-08 11:53:56,980][root][INFO] - Epoch 733
+[2024-12-08 11:54:05,985][root][INFO] - train_loss: 17.565294981002808 | time: 9.00609564781189
+[2024-12-08 11:54:05,987][root][INFO] - Epoch 734
+[2024-12-08 11:54:14,949][root][INFO] - train_loss: 17.27097451686859 | time: 8.96393370628357
+[2024-12-08 11:54:14,951][root][INFO] - Epoch 735
+[2024-12-08 11:54:23,873][root][INFO] - train_loss: 16.819451451301575 | time: 8.923277378082275
+[2024-12-08 11:54:23,876][root][INFO] - Epoch 736
+[2024-12-08 11:54:32,965][root][INFO] - train_loss: 17.134928226470947 | time: 9.090147256851196
+[2024-12-08 11:54:32,968][root][INFO] - Epoch 737
+[2024-12-08 11:54:41,980][root][INFO] - train_loss: 16.810259342193604 | time: 9.013528823852539
+[2024-12-08 11:54:41,981][root][INFO] - Epoch 738
+[2024-12-08 11:54:50,602][root][INFO] - train_loss: 16.383383631706238 | time: 8.621588230133057
+[2024-12-08 11:54:50,603][root][INFO] - Epoch 739
+[2024-12-08 11:54:59,202][root][INFO] - train_loss: 16.399861335754395 | time: 8.598915815353394
+[2024-12-08 11:54:59,203][root][INFO] - Epoch 740
+[2024-12-08 11:55:07,733][root][INFO] - train_loss: 16.49866509437561 | time: 8.531384944915771
+[2024-12-08 11:55:07,734][root][INFO] - Epoch 741
+[2024-12-08 11:55:16,399][root][INFO] - train_loss: 16.302321672439575 | time: 8.665703535079956
+[2024-12-08 11:55:16,400][root][INFO] - Epoch 742
+[2024-12-08 11:55:25,017][root][INFO] - train_loss: 16.18675422668457 | time: 8.61697268486023
+[2024-12-08 11:55:25,018][root][INFO] - Epoch 743
+[2024-12-08 11:55:33,696][root][INFO] - train_loss: 16.40570080280304 | time: 8.678410530090332
+[2024-12-08 11:55:33,699][root][INFO] - Epoch 744
+[2024-12-08 11:55:42,380][root][INFO] - train_loss: 16.44573473930359 | time: 8.681994915008545
+[2024-12-08 11:55:42,381][root][INFO] - Epoch 745
+[2024-12-08 11:55:51,332][root][INFO] - train_loss: 16.829768538475037 | time: 8.951797246932983
+[2024-12-08 11:55:51,333][root][INFO] - Epoch 746
+[2024-12-08 11:55:59,941][root][INFO] - train_loss: 17.14461624622345 | time: 8.60897183418274
+[2024-12-08 11:55:59,942][root][INFO] - Epoch 747
+[2024-12-08 11:56:08,503][root][INFO] - train_loss: 17.466198086738586 | time: 8.560713052749634
+[2024-12-08 11:56:08,505][root][INFO] - Epoch 748
+[2024-12-08 11:56:17,120][root][INFO] - train_loss: 17.541033625602722 | time: 8.615922212600708
+[2024-12-08 11:56:17,122][root][INFO] - Epoch 749
+[2024-12-08 11:56:25,971][root][INFO] - train_loss: 16.713648319244385 | time: 8.84921407699585
+[2024-12-08 11:56:25,973][root][INFO] - Epoch 750
+[2024-12-08 11:56:34,578][root][INFO] - train_loss: 17.066444516181946 | time: 8.606952428817749
+[2024-12-08 11:56:34,579][root][INFO] - Epoch 751
+[2024-12-08 11:56:43,129][root][INFO] - train_loss: 16.480135798454285 | time: 8.550767421722412
+[2024-12-08 11:56:43,130][root][INFO] - Epoch 752
+[2024-12-08 11:56:51,991][root][INFO] - train_loss: 16.92672049999237 | time: 8.86139464378357
+[2024-12-08 11:56:51,994][root][INFO] - Epoch 753
+[2024-12-08 11:57:00,513][root][INFO] - train_loss: 17.327152132987976 | time: 8.519886493682861
+[2024-12-08 11:57:00,514][root][INFO] - Epoch 754
+[2024-12-08 11:57:09,069][root][INFO] - train_loss: 17.522927045822144 | time: 8.554919004440308
+[2024-12-08 11:57:09,070][root][INFO] - Epoch 755
+[2024-12-08 11:57:17,940][root][INFO] - train_loss: 17.033411979675293 | time: 8.871239185333252
+[2024-12-08 11:57:17,942][root][INFO] - Epoch 756
+[2024-12-08 11:57:26,919][root][INFO] - train_loss: 16.15458333492279 | time: 8.978635311126709
+[2024-12-08 11:57:26,922][root][INFO] - Epoch 757
+[2024-12-08 11:57:35,851][root][INFO] - train_loss: 16.52841591835022 | time: 8.929229974746704
+[2024-12-08 11:57:35,852][root][INFO] - Epoch 758
+[2024-12-08 11:57:44,793][root][INFO] - train_loss: 17.122244715690613 | time: 8.941272497177124
+[2024-12-08 11:57:44,795][root][INFO] - Epoch 759
+[2024-12-08 11:57:53,759][root][INFO] - train_loss: 16.89053440093994 | time: 8.96581768989563
+[2024-12-08 11:57:53,761][root][INFO] - Epoch 760
+[2024-12-08 11:58:02,659][root][INFO] - train_loss: 16.775227189064026 | time: 8.899205446243286
+[2024-12-08 11:58:02,675][root][INFO] - Epoch 761
+[2024-12-08 11:58:11,932][root][INFO] - train_loss: 15.977229237556458 | time: 9.258413791656494
+[2024-12-08 11:58:11,934][root][INFO] - Epoch 762
+[2024-12-08 11:58:20,850][root][INFO] - train_loss: 16.58681607246399 | time: 8.916879177093506
+[2024-12-08 11:58:20,851][root][INFO] - Epoch 763
+[2024-12-08 11:58:29,750][root][INFO] - train_loss: 17.77508771419525 | time: 8.899717092514038
+[2024-12-08 11:58:29,752][root][INFO] - Epoch 764
+[2024-12-08 11:58:39,027][root][INFO] - train_loss: 17.51702904701233 | time: 9.276049852371216
+[2024-12-08 11:58:39,031][root][INFO] - Epoch 765
+[2024-12-08 11:58:47,922][root][INFO] - train_loss: 15.893710255622864 | time: 8.891814708709717
+[2024-12-08 11:58:47,923][root][INFO] - Epoch 766
+[2024-12-08 11:58:56,823][root][INFO] - train_loss: 16.558969140052795 | time: 8.901450872421265
+[2024-12-08 11:58:56,824][root][INFO] - Epoch 767
+[2024-12-08 11:59:05,536][root][INFO] - train_loss: 16.629361510276794 | time: 8.711848020553589
+[2024-12-08 11:59:05,539][root][INFO] - Epoch 768
+[2024-12-08 11:59:14,177][root][INFO] - train_loss: 16.860451817512512 | time: 8.640530586242676
+[2024-12-08 11:59:14,178][root][INFO] - Epoch 769
+[2024-12-08 11:59:23,001][root][INFO] - train_loss: 15.524618983268738 | time: 8.824355840682983
+[2024-12-08 11:59:23,004][root][INFO] - Epoch 770
+[2024-12-08 11:59:31,588][root][INFO] - train_loss: 15.906169652938843 | time: 8.584292888641357
+[2024-12-08 11:59:31,589][root][INFO] - Epoch 771
+[2024-12-08 11:59:40,240][root][INFO] - train_loss: 16.001859188079834 | time: 8.651535987854004
+[2024-12-08 11:59:40,241][root][INFO] - Epoch 772
+[2024-12-08 11:59:48,834][root][INFO] - train_loss: 15.98657488822937 | time: 8.59397292137146
+[2024-12-08 11:59:48,836][root][INFO] - Epoch 773
+[2024-12-08 11:59:57,512][root][INFO] - train_loss: 16.458667993545532 | time: 8.677443742752075
+[2024-12-08 11:59:57,513][root][INFO] - Epoch 774
+[2024-12-08 12:00:06,230][root][INFO] - train_loss: 16.232555747032166 | time: 8.717216730117798
+[2024-12-08 12:00:06,233][root][INFO] - Epoch 775
+[2024-12-08 12:00:14,825][root][INFO] - train_loss: 16.328784584999084 | time: 8.595332384109497
+[2024-12-08 12:00:14,826][root][INFO] - Epoch 776
+[2024-12-08 12:00:23,368][root][INFO] - train_loss: 15.858361840248108 | time: 8.541872024536133
+[2024-12-08 12:00:23,369][root][INFO] - Epoch 777
+[2024-12-08 12:00:32,072][root][INFO] - train_loss: 15.862174272537231 | time: 8.704346895217896
+[2024-12-08 12:00:32,073][root][INFO] - Epoch 778
+[2024-12-08 12:00:40,553][root][INFO] - train_loss: 15.727661967277527 | time: 8.480366468429565
+[2024-12-08 12:00:40,556][root][INFO] - Epoch 779
+[2024-12-08 12:00:49,049][root][INFO] - train_loss: 15.219888925552368 | time: 8.49383020401001
+[2024-12-08 12:00:49,050][root][INFO] - Epoch 780
+[2024-12-08 12:00:57,602][root][INFO] - train_loss: 14.796007812023163 | time: 8.552291631698608
+[2024-12-08 12:00:57,603][root][INFO] - Epoch 781
+[2024-12-08 12:01:06,246][root][INFO] - train_loss: 16.863515257835388 | time: 8.643713474273682
+[2024-12-08 12:01:06,247][root][INFO] - Epoch 782
+[2024-12-08 12:01:14,972][root][INFO] - train_loss: 15.796323895454407 | time: 8.725677728652954
+[2024-12-08 12:01:14,974][root][INFO] - Epoch 783
+[2024-12-08 12:01:23,459][root][INFO] - train_loss: 15.264965295791626 | time: 8.485876083374023
+[2024-12-08 12:01:23,460][root][INFO] - Epoch 784
+[2024-12-08 12:01:32,060][root][INFO] - train_loss: 15.246972680091858 | time: 8.600502014160156
+[2024-12-08 12:01:32,061][root][INFO] - Epoch 785
+[2024-12-08 12:01:40,814][root][INFO] - train_loss: 15.667108178138733 | time: 8.75454044342041
+[2024-12-08 12:01:40,816][root][INFO] - Epoch 786
+[2024-12-08 12:01:49,313][root][INFO] - train_loss: 16.492023944854736 | time: 8.497875690460205
+[2024-12-08 12:01:49,314][root][INFO] - Epoch 787
+[2024-12-08 12:01:57,957][root][INFO] - train_loss: 15.371826887130737 | time: 8.643843650817871
+[2024-12-08 12:01:57,959][root][INFO] - Epoch 788
+[2024-12-08 12:02:06,818][root][INFO] - train_loss: 16.669529795646667 | time: 8.860584497451782
+[2024-12-08 12:02:06,820][root][INFO] - Epoch 789
+[2024-12-08 12:02:15,494][root][INFO] - train_loss: 15.774306654930115 | time: 8.675729751586914
+[2024-12-08 12:02:15,496][root][INFO] - Epoch 790
+[2024-12-08 12:02:24,126][root][INFO] - train_loss: 14.435909271240234 | time: 8.63065767288208
+[2024-12-08 12:02:24,127][root][INFO] - Epoch 791
+[2024-12-08 12:02:32,901][root][INFO] - train_loss: 15.307222604751587 | time: 8.775235652923584
+[2024-12-08 12:02:32,903][root][INFO] - Epoch 792
+[2024-12-08 12:02:41,748][root][INFO] - train_loss: 15.903850197792053 | time: 8.845848083496094
+[2024-12-08 12:02:41,750][root][INFO] - Epoch 793
+[2024-12-08 12:02:50,629][root][INFO] - train_loss: 15.569915533065796 | time: 8.880454540252686
+[2024-12-08 12:02:50,630][root][INFO] - Epoch 794
+[2024-12-08 12:02:59,460][root][INFO] - train_loss: 15.781057953834534 | time: 8.831100463867188
+[2024-12-08 12:02:59,462][root][INFO] - Epoch 795
+[2024-12-08 12:03:08,277][root][INFO] - train_loss: 15.586154699325562 | time: 8.816239595413208
+[2024-12-08 12:03:08,278][root][INFO] - Epoch 796
+[2024-12-08 12:03:17,127][root][INFO] - train_loss: 15.122218608856201 | time: 8.84888482093811
+[2024-12-08 12:03:17,128][root][INFO] - Epoch 797
+[2024-12-08 12:03:25,966][root][INFO] - train_loss: 15.471464157104492 | time: 8.83899736404419
+[2024-12-08 12:03:25,968][root][INFO] - Epoch 798
+[2024-12-08 12:03:34,806][root][INFO] - train_loss: 15.875196099281311 | time: 8.838860511779785
+[2024-12-08 12:03:34,809][root][INFO] - Epoch 799
+[2024-12-08 12:03:43,625][root][INFO] - train_loss: 15.329164266586304 | time: 8.816556930541992
+[2024-12-08 12:03:43,626][root][INFO] - Epoch 800
+[2024-12-08 12:03:52,459][root][INFO] - train_loss: 14.958521127700806 | time: 8.833892822265625
+[2024-12-08 12:03:52,461][root][INFO] - Epoch 801
+[2024-12-08 12:04:01,301][root][INFO] - train_loss: 15.019717931747437 | time: 8.840867280960083
+[2024-12-08 12:04:01,303][root][INFO] - Epoch 802
+[2024-12-08 12:04:10,152][root][INFO] - train_loss: 14.903255224227905 | time: 8.850297927856445
+[2024-12-08 12:04:10,154][root][INFO] - Epoch 803
+[2024-12-08 12:04:19,280][root][INFO] - train_loss: 15.506931900978088 | time: 9.127216100692749
+[2024-12-08 12:04:19,281][root][INFO] - Epoch 804
+[2024-12-08 12:04:28,082][root][INFO] - train_loss: 14.838291764259338 | time: 8.80194902420044
+[2024-12-08 12:04:28,084][root][INFO] - Epoch 805
+[2024-12-08 12:04:36,939][root][INFO] - train_loss: 14.75879430770874 | time: 8.855894327163696
+[2024-12-08 12:04:36,942][root][INFO] - Epoch 806
+[2024-12-08 12:04:45,787][root][INFO] - train_loss: 16.109148025512695 | time: 8.846067428588867
+[2024-12-08 12:04:45,789][root][INFO] - Epoch 807
+[2024-12-08 12:04:54,635][root][INFO] - train_loss: 15.436035513877869 | time: 8.847773790359497
+[2024-12-08 12:04:54,637][root][INFO] - Epoch 808
+[2024-12-08 12:05:03,463][root][INFO] - train_loss: 15.162304282188416 | time: 8.827533721923828
+[2024-12-08 12:05:03,466][root][INFO] - Epoch 809
+[2024-12-08 12:05:12,265][root][INFO] - train_loss: 16.08743941783905 | time: 8.80123782157898
+[2024-12-08 12:05:12,269][root][INFO] - Epoch 810
+[2024-12-08 12:05:21,151][root][INFO] - train_loss: 15.000653624534607 | time: 8.883765459060669
+[2024-12-08 12:05:21,153][root][INFO] - Epoch 811
+[2024-12-08 12:05:29,988][root][INFO] - train_loss: 14.973956525325775 | time: 8.835776567459106
+[2024-12-08 12:05:29,990][root][INFO] - Epoch 812
+[2024-12-08 12:05:38,831][root][INFO] - train_loss: 14.730459094047546 | time: 8.842859745025635
+[2024-12-08 12:05:38,833][root][INFO] - Epoch 813
+[2024-12-08 12:05:47,769][root][INFO] - train_loss: 15.65755558013916 | time: 8.937262535095215
+[2024-12-08 12:05:47,771][root][INFO] - Epoch 814
+[2024-12-08 12:05:56,620][root][INFO] - train_loss: 15.81252110004425 | time: 8.849701881408691
+[2024-12-08 12:05:56,622][root][INFO] - Epoch 815
+[2024-12-08 12:06:05,464][root][INFO] - train_loss: 14.37197595834732 | time: 8.843406677246094
+[2024-12-08 12:06:05,467][root][INFO] - Epoch 816
+[2024-12-08 12:06:14,272][root][INFO] - train_loss: 15.6370450258255 | time: 8.807272672653198
+[2024-12-08 12:06:14,273][root][INFO] - Epoch 817
+[2024-12-08 12:06:23,057][root][INFO] - train_loss: 14.594570696353912 | time: 8.784019708633423
+[2024-12-08 12:06:23,059][root][INFO] - Epoch 818
+[2024-12-08 12:06:31,907][root][INFO] - train_loss: 16.09914243221283 | time: 8.848944187164307
+[2024-12-08 12:06:31,912][root][INFO] - Epoch 819
+[2024-12-08 12:06:40,779][root][INFO] - train_loss: 16.041269779205322 | time: 8.868883848190308
+[2024-12-08 12:06:40,781][root][INFO] - Epoch 820
+[2024-12-08 12:06:49,658][root][INFO] - train_loss: 14.362569093704224 | time: 8.878679275512695
+[2024-12-08 12:06:49,661][root][INFO] - Epoch 821
+[2024-12-08 12:06:58,845][root][INFO] - train_loss: 14.065049350261688 | time: 9.18622636795044
+[2024-12-08 12:06:58,847][root][INFO] - Epoch 822
+[2024-12-08 12:07:07,863][root][INFO] - train_loss: 15.609193086624146 | time: 9.017394065856934
+[2024-12-08 12:07:07,867][root][INFO] - Epoch 823
+[2024-12-08 12:07:16,951][root][INFO] - train_loss: 14.67228889465332 | time: 9.085165739059448
+[2024-12-08 12:07:16,953][root][INFO] - Epoch 824
+[2024-12-08 12:07:25,883][root][INFO] - train_loss: 15.163485646247864 | time: 8.931498527526855
+[2024-12-08 12:07:25,884][root][INFO] - Epoch 825
+[2024-12-08 12:07:34,794][root][INFO] - train_loss: 14.730185627937317 | time: 8.910651445388794
+[2024-12-08 12:07:34,795][root][INFO] - Epoch 826
+[2024-12-08 12:07:43,651][root][INFO] - train_loss: 13.840259850025177 | time: 8.856617450714111
+[2024-12-08 12:07:43,652][root][INFO] - Epoch 827
+[2024-12-08 12:07:52,441][root][INFO] - train_loss: 15.055422067642212 | time: 8.78935194015503
+[2024-12-08 12:07:52,442][root][INFO] - Epoch 828
+[2024-12-08 12:08:01,289][root][INFO] - train_loss: 15.314486801624298 | time: 8.847388505935669
+[2024-12-08 12:08:01,290][root][INFO] - Epoch 829
+[2024-12-08 12:08:10,103][root][INFO] - train_loss: 15.204797744750977 | time: 8.813705444335938
+[2024-12-08 12:08:10,106][root][INFO] - Epoch 830
+[2024-12-08 12:08:18,955][root][INFO] - train_loss: 14.615046679973602 | time: 8.850097894668579
+[2024-12-08 12:08:18,956][root][INFO] - Epoch 831
+[2024-12-08 12:08:27,811][root][INFO] - train_loss: 15.250594139099121 | time: 8.855078935623169
+[2024-12-08 12:08:27,812][root][INFO] - Epoch 832
+[2024-12-08 12:08:36,691][root][INFO] - train_loss: 15.338886260986328 | time: 8.879769802093506
+[2024-12-08 12:08:36,692][root][INFO] - Epoch 833
+[2024-12-08 12:08:45,635][root][INFO] - train_loss: 14.821274042129517 | time: 8.943864345550537
+[2024-12-08 12:08:45,637][root][INFO] - Epoch 834
+[2024-12-08 12:08:54,434][root][INFO] - train_loss: 15.049523830413818 | time: 8.796987533569336
+[2024-12-08 12:08:54,435][root][INFO] - Epoch 835
+[2024-12-08 12:09:03,231][root][INFO] - train_loss: 15.470109224319458 | time: 8.797330617904663
+[2024-12-08 12:09:03,232][root][INFO] - Epoch 836
+[2024-12-08 12:09:11,991][root][INFO] - train_loss: 15.180060148239136 | time: 8.759764194488525
+[2024-12-08 12:09:11,993][root][INFO] - Epoch 837
+[2024-12-08 12:09:20,841][root][INFO] - train_loss: 15.61491596698761 | time: 8.849016427993774
+[2024-12-08 12:09:20,845][root][INFO] - Epoch 838
+[2024-12-08 12:09:29,626][root][INFO] - train_loss: 15.073455929756165 | time: 8.781798124313354
+[2024-12-08 12:09:29,627][root][INFO] - Epoch 839
+[2024-12-08 12:09:38,404][root][INFO] - train_loss: 15.49962604045868 | time: 8.778107166290283
+[2024-12-08 12:09:38,405][root][INFO] - Epoch 840
+[2024-12-08 12:09:47,664][root][INFO] - train_loss: 15.052505612373352 | time: 9.259039402008057
+[2024-12-08 12:09:47,665][root][INFO] - Epoch 841
+[2024-12-08 12:09:56,459][root][INFO] - train_loss: 14.514094114303589 | time: 8.795310020446777
+[2024-12-08 12:09:56,462][root][INFO] - Epoch 842
+[2024-12-08 12:10:05,681][root][INFO] - train_loss: 15.09074753522873 | time: 9.219237565994263
+[2024-12-08 12:10:05,683][root][INFO] - Epoch 843
+[2024-12-08 12:10:14,787][root][INFO] - train_loss: 15.212924003601074 | time: 9.10549783706665
+[2024-12-08 12:10:14,788][root][INFO] - Epoch 844
+[2024-12-08 12:10:23,647][root][INFO] - train_loss: 14.79230111837387 | time: 8.859316349029541
+[2024-12-08 12:10:23,649][root][INFO] - Epoch 845
+[2024-12-08 12:10:32,696][root][INFO] - train_loss: 15.170320987701416 | time: 9.048998594284058
+[2024-12-08 12:10:32,700][root][INFO] - Epoch 846
+[2024-12-08 12:10:41,636][root][INFO] - train_loss: 14.313673615455627 | time: 8.936500310897827
+[2024-12-08 12:10:41,637][root][INFO] - Epoch 847
+[2024-12-08 12:10:50,455][root][INFO] - train_loss: 14.072394907474518 | time: 8.819188833236694
+[2024-12-08 12:10:50,457][root][INFO] - Epoch 848
+[2024-12-08 12:10:59,303][root][INFO] - train_loss: 15.312548041343689 | time: 8.846726417541504
+[2024-12-08 12:10:59,304][root][INFO] - Epoch 849
+[2024-12-08 12:11:08,613][root][INFO] - train_loss: 16.440981149673462 | time: 9.309742212295532
+[2024-12-08 12:11:08,619][root][INFO] - Epoch 850
+[2024-12-08 12:11:17,473][root][INFO] - train_loss: 16.631298542022705 | time: 8.855456352233887
+[2024-12-08 12:11:17,474][root][INFO] - Epoch 851
+[2024-12-08 12:11:26,314][root][INFO] - train_loss: 14.811365008354187 | time: 8.84059453010559
+[2024-12-08 12:11:26,316][root][INFO] - Epoch 852
+[2024-12-08 12:11:35,433][root][INFO] - train_loss: 15.151171743869781 | time: 9.118396520614624
+[2024-12-08 12:11:35,435][root][INFO] - Epoch 853
+[2024-12-08 12:11:44,354][root][INFO] - train_loss: 15.144059896469116 | time: 8.919713735580444
+[2024-12-08 12:11:44,358][root][INFO] - Epoch 854
+[2024-12-08 12:11:53,276][root][INFO] - train_loss: 14.965242326259613 | time: 8.919285774230957
+[2024-12-08 12:11:53,278][root][INFO] - Epoch 855
+[2024-12-08 12:12:02,103][root][INFO] - train_loss: 14.793114423751831 | time: 8.826205968856812
+[2024-12-08 12:12:02,104][root][INFO] - Epoch 856
+[2024-12-08 12:12:10,970][root][INFO] - train_loss: 15.651355862617493 | time: 8.866342782974243
+[2024-12-08 12:12:10,971][root][INFO] - Epoch 857
+[2024-12-08 12:12:19,804][root][INFO] - train_loss: 15.42193078994751 | time: 8.833228349685669
+[2024-12-08 12:12:19,805][root][INFO] - Epoch 858
+[2024-12-08 12:12:28,660][root][INFO] - train_loss: 15.04630732536316 | time: 8.855522632598877
+[2024-12-08 12:12:28,661][root][INFO] - Epoch 859
+[2024-12-08 12:12:37,490][root][INFO] - train_loss: 14.312770247459412 | time: 8.829755306243896
+[2024-12-08 12:12:37,492][root][INFO] - Epoch 860
+[2024-12-08 12:12:46,512][root][INFO] - train_loss: 15.027953386306763 | time: 9.021234512329102
+[2024-12-08 12:12:46,517][root][INFO] - Epoch 861
+[2024-12-08 12:12:55,389][root][INFO] - train_loss: 14.528188586235046 | time: 8.874398231506348
+[2024-12-08 12:12:55,391][root][INFO] - Epoch 862
+[2024-12-08 12:13:04,274][root][INFO] - train_loss: 14.436287641525269 | time: 8.884099245071411
+[2024-12-08 12:13:04,278][root][INFO] - Epoch 863
+[2024-12-08 12:13:12,907][root][INFO] - train_loss: 15.102811574935913 | time: 8.631322383880615
+[2024-12-08 12:13:12,909][root][INFO] - Epoch 864
+[2024-12-08 12:13:21,474][root][INFO] - train_loss: 14.957011222839355 | time: 8.56643271446228
+[2024-12-08 12:13:21,476][root][INFO] - Epoch 865
+[2024-12-08 12:13:30,125][root][INFO] - train_loss: 14.12018758058548 | time: 8.64884066581726
+[2024-12-08 12:13:30,126][root][INFO] - Epoch 866
+[2024-12-08 12:13:38,765][root][INFO] - train_loss: 14.3677117228508 | time: 8.640050649642944
+[2024-12-08 12:13:38,773][root][INFO] - Epoch 867
+[2024-12-08 12:13:47,583][root][INFO] - train_loss: 15.405876636505127 | time: 8.81166958808899
+[2024-12-08 12:13:47,584][root][INFO] - Epoch 868
+[2024-12-08 12:13:56,355][root][INFO] - train_loss: 14.367891192436218 | time: 8.771409273147583
+[2024-12-08 12:13:56,356][root][INFO] - Epoch 869
+[2024-12-08 12:14:05,182][root][INFO] - train_loss: 13.522077322006226 | time: 8.826782703399658
+[2024-12-08 12:14:05,183][root][INFO] - Epoch 870
+[2024-12-08 12:14:13,999][root][INFO] - train_loss: 13.38137024641037 | time: 8.816823959350586
+[2024-12-08 12:14:14,001][root][INFO] - Epoch 871
+[2024-12-08 12:14:22,843][root][INFO] - train_loss: 14.37633353471756 | time: 8.843178987503052
+[2024-12-08 12:14:22,844][root][INFO] - Epoch 872
+[2024-12-08 12:14:31,694][root][INFO] - train_loss: 14.60381931066513 | time: 8.850190877914429
+[2024-12-08 12:14:31,696][root][INFO] - Epoch 873
+[2024-12-08 12:14:40,675][root][INFO] - train_loss: 14.42154848575592 | time: 8.980309963226318
+[2024-12-08 12:14:40,676][root][INFO] - Epoch 874
+[2024-12-08 12:14:49,797][root][INFO] - train_loss: 13.696483969688416 | time: 9.121267557144165
+[2024-12-08 12:14:49,800][root][INFO] - Epoch 875
+[2024-12-08 12:14:58,557][root][INFO] - train_loss: 14.687999486923218 | time: 8.75782322883606
+[2024-12-08 12:14:58,558][root][INFO] - Epoch 876
+[2024-12-08 12:15:07,266][root][INFO] - train_loss: 16.014496088027954 | time: 8.709432601928711
+[2024-12-08 12:15:07,269][root][INFO] - Epoch 877
+[2024-12-08 12:15:15,927][root][INFO] - train_loss: 14.351664543151855 | time: 8.659136533737183
+[2024-12-08 12:15:15,928][root][INFO] - Epoch 878
+[2024-12-08 12:15:24,516][root][INFO] - train_loss: 13.878977477550507 | time: 8.588088274002075
+[2024-12-08 12:15:24,517][root][INFO] - Epoch 879
+[2024-12-08 12:15:33,033][root][INFO] - train_loss: 13.851320087909698 | time: 8.517021894454956
+[2024-12-08 12:15:33,036][root][INFO] - Epoch 880
+[2024-12-08 12:15:41,758][root][INFO] - train_loss: 14.241055309772491 | time: 8.722899675369263
+[2024-12-08 12:15:41,761][root][INFO] - Epoch 881
+[2024-12-08 12:15:50,778][root][INFO] - train_loss: 13.798467516899109 | time: 9.018128633499146
+[2024-12-08 12:15:50,780][root][INFO] - Epoch 882
+[2024-12-08 12:15:59,722][root][INFO] - train_loss: 14.653934359550476 | time: 8.943883180618286
+[2024-12-08 12:15:59,725][root][INFO] - Epoch 883
+[2024-12-08 12:16:08,729][root][INFO] - train_loss: 15.02770471572876 | time: 9.005499839782715
+[2024-12-08 12:16:08,732][root][INFO] - Epoch 884
+[2024-12-08 12:16:17,943][root][INFO] - train_loss: 14.688011527061462 | time: 9.212900638580322
+[2024-12-08 12:16:17,946][root][INFO] - Epoch 885
+[2024-12-08 12:16:27,205][root][INFO] - train_loss: 14.455039083957672 | time: 9.26029634475708
+[2024-12-08 12:16:27,209][root][INFO] - Epoch 886
+[2024-12-08 12:16:36,217][root][INFO] - train_loss: 13.669411063194275 | time: 9.009978294372559
+[2024-12-08 12:16:36,220][root][INFO] - Epoch 887
+[2024-12-08 12:16:45,207][root][INFO] - train_loss: 13.683095633983612 | time: 8.988271474838257
+[2024-12-08 12:16:45,210][root][INFO] - Epoch 888
+[2024-12-08 12:16:54,211][root][INFO] - train_loss: 13.794382691383362 | time: 9.00201964378357
+[2024-12-08 12:16:54,213][root][INFO] - Epoch 889
+[2024-12-08 12:17:03,219][root][INFO] - train_loss: 14.51683634519577 | time: 9.007692337036133
+[2024-12-08 12:17:03,224][root][INFO] - Epoch 890
+[2024-12-08 12:17:12,237][root][INFO] - train_loss: 14.160743653774261 | time: 9.014613151550293
+[2024-12-08 12:17:12,239][root][INFO] - Epoch 891
+[2024-12-08 12:17:21,136][root][INFO] - train_loss: 14.691027522087097 | time: 8.898241519927979
+[2024-12-08 12:17:21,139][root][INFO] - Epoch 892
+[2024-12-08 12:17:29,997][root][INFO] - train_loss: 15.4099760055542 | time: 8.85925555229187
+[2024-12-08 12:17:30,000][root][INFO] - Epoch 893
+[2024-12-08 12:17:38,919][root][INFO] - train_loss: 15.240606486797333 | time: 8.920102596282959
+[2024-12-08 12:17:38,921][root][INFO] - Epoch 894
+[2024-12-08 12:17:47,862][root][INFO] - train_loss: 15.232174158096313 | time: 8.942720413208008
+[2024-12-08 12:17:47,864][root][INFO] - Epoch 895
+[2024-12-08 12:17:56,718][root][INFO] - train_loss: 14.112382471561432 | time: 8.855621099472046
+[2024-12-08 12:17:56,722][root][INFO] - Epoch 896
+[2024-12-08 12:18:05,772][root][INFO] - train_loss: 13.874810099601746 | time: 9.051047563552856
+[2024-12-08 12:18:05,775][root][INFO] - Epoch 897
+[2024-12-08 12:18:14,788][root][INFO] - train_loss: 14.191749215126038 | time: 9.014634609222412
+[2024-12-08 12:18:14,790][root][INFO] - Epoch 898
+[2024-12-08 12:18:23,779][root][INFO] - train_loss: 14.3440021276474 | time: 8.990391492843628
+[2024-12-08 12:18:23,780][root][INFO] - Epoch 899
+[2024-12-08 12:18:32,639][root][INFO] - train_loss: 15.249675273895264 | time: 8.85892915725708
+[2024-12-08 12:18:32,641][root][INFO] - Epoch 900
+[2024-12-08 12:18:41,550][root][INFO] - train_loss: 14.546362459659576 | time: 8.910454273223877
+[2024-12-08 12:18:41,552][root][INFO] - Epoch 901
+[2024-12-08 12:18:50,748][root][INFO] - train_loss: 13.729565978050232 | time: 9.197888374328613
+[2024-12-08 12:18:50,751][root][INFO] - Epoch 902
+[2024-12-08 12:18:59,892][root][INFO] - train_loss: 14.202807009220123 | time: 9.14251446723938
+[2024-12-08 12:18:59,893][root][INFO] - Epoch 903
+[2024-12-08 12:19:09,133][root][INFO] - train_loss: 13.720533907413483 | time: 9.24039888381958
+[2024-12-08 12:19:09,136][root][INFO] - Epoch 904
+[2024-12-08 12:19:18,153][root][INFO] - train_loss: 13.39577454328537 | time: 9.018345355987549
+[2024-12-08 12:19:18,155][root][INFO] - Epoch 905
+[2024-12-08 12:19:26,948][root][INFO] - train_loss: 14.076915383338928 | time: 8.793930053710938
+[2024-12-08 12:19:26,951][root][INFO] - Epoch 906
+[2024-12-08 12:19:35,757][root][INFO] - train_loss: 13.293428301811218 | time: 8.807112216949463
+[2024-12-08 12:19:35,759][root][INFO] - Epoch 907
+[2024-12-08 12:19:44,485][root][INFO] - train_loss: 14.335771322250366 | time: 8.726991176605225
+[2024-12-08 12:19:44,486][root][INFO] - Epoch 908
+[2024-12-08 12:19:53,436][root][INFO] - train_loss: 13.585221529006958 | time: 8.950469017028809
+[2024-12-08 12:19:53,437][root][INFO] - Epoch 909
+[2024-12-08 12:20:02,365][root][INFO] - train_loss: 13.972282826900482 | time: 8.928714990615845
+[2024-12-08 12:20:02,369][root][INFO] - Epoch 910
+[2024-12-08 12:20:11,196][root][INFO] - train_loss: 13.837482690811157 | time: 8.828288793563843
+[2024-12-08 12:20:11,197][root][INFO] - Epoch 911
+[2024-12-08 12:20:20,056][root][INFO] - train_loss: 14.3057199716568 | time: 8.859581708908081
+[2024-12-08 12:20:20,058][root][INFO] - Epoch 912
+[2024-12-08 12:20:29,007][root][INFO] - train_loss: 14.122880697250366 | time: 8.950398206710815
+[2024-12-08 12:20:29,009][root][INFO] - Epoch 913
+[2024-12-08 12:20:37,897][root][INFO] - train_loss: 14.610172033309937 | time: 8.889735221862793
+[2024-12-08 12:20:37,900][root][INFO] - Epoch 914
+[2024-12-08 12:20:46,792][root][INFO] - train_loss: 14.639054715633392 | time: 8.893934726715088
+[2024-12-08 12:20:46,801][root][INFO] - Epoch 915
+[2024-12-08 12:20:55,904][root][INFO] - train_loss: 15.510329604148865 | time: 9.104401588439941
+[2024-12-08 12:20:55,906][root][INFO] - Epoch 916
+[2024-12-08 12:21:04,868][root][INFO] - train_loss: 14.279334425926208 | time: 8.963711738586426
+[2024-12-08 12:21:04,869][root][INFO] - Epoch 917
+[2024-12-08 12:21:13,706][root][INFO] - train_loss: 15.154030203819275 | time: 8.837879657745361
+[2024-12-08 12:21:13,707][root][INFO] - Epoch 918
+[2024-12-08 12:21:22,575][root][INFO] - train_loss: 14.906481385231018 | time: 8.867796421051025
+[2024-12-08 12:21:22,576][root][INFO] - Epoch 919
+[2024-12-08 12:21:31,574][root][INFO] - train_loss: 13.868662893772125 | time: 8.998900651931763
+[2024-12-08 12:21:31,576][root][INFO] - Epoch 920
+[2024-12-08 12:21:40,223][root][INFO] - train_loss: 14.810940682888031 | time: 8.648231506347656
+[2024-12-08 12:21:40,225][root][INFO] - Epoch 921
+[2024-12-08 12:21:48,764][root][INFO] - train_loss: 14.192104041576385 | time: 8.539708375930786
+[2024-12-08 12:21:48,767][root][INFO] - Epoch 922
+[2024-12-08 12:21:57,314][root][INFO] - train_loss: 13.647336661815643 | time: 8.548560380935669
+[2024-12-08 12:21:57,316][root][INFO] - Epoch 923
+[2024-12-08 12:22:05,829][root][INFO] - train_loss: 13.600581705570221 | time: 8.514682531356812
+[2024-12-08 12:22:05,832][root][INFO] - Epoch 924
+[2024-12-08 12:22:14,806][root][INFO] - train_loss: 14.080982208251953 | time: 8.975791931152344
+[2024-12-08 12:22:14,808][root][INFO] - Epoch 925
+[2024-12-08 12:22:23,716][root][INFO] - train_loss: 14.54403167963028 | time: 8.909509658813477
+[2024-12-08 12:22:23,719][root][INFO] - Epoch 926
+[2024-12-08 12:22:32,728][root][INFO] - train_loss: 14.101295590400696 | time: 9.010595321655273
+[2024-12-08 12:22:32,731][root][INFO] - Epoch 927
+[2024-12-08 12:22:41,626][root][INFO] - train_loss: 14.290509045124054 | time: 8.895636558532715
+[2024-12-08 12:22:41,629][root][INFO] - Epoch 928
+[2024-12-08 12:22:50,343][root][INFO] - train_loss: 14.25051200389862 | time: 8.714892625808716
+[2024-12-08 12:22:50,344][root][INFO] - Epoch 929
+[2024-12-08 12:22:58,950][root][INFO] - train_loss: 13.985182046890259 | time: 8.607171535491943
+[2024-12-08 12:22:58,951][root][INFO] - Epoch 930
+[2024-12-08 12:23:07,724][root][INFO] - train_loss: 14.215404987335205 | time: 8.773490905761719
+[2024-12-08 12:23:07,728][root][INFO] - Epoch 931
+[2024-12-08 12:23:16,654][root][INFO] - train_loss: 13.90807032585144 | time: 8.927659511566162
+[2024-12-08 12:23:16,657][root][INFO] - Epoch 932
+[2024-12-08 12:23:25,786][root][INFO] - train_loss: 14.13653814792633 | time: 9.129902601242065
+[2024-12-08 12:23:25,788][root][INFO] - Epoch 933
+[2024-12-08 12:23:34,655][root][INFO] - train_loss: 14.658639550209045 | time: 8.867913246154785
+[2024-12-08 12:23:34,657][root][INFO] - Epoch 934
+[2024-12-08 12:23:43,541][root][INFO] - train_loss: 14.808544099330902 | time: 8.885830402374268
+[2024-12-08 12:23:43,544][root][INFO] - Epoch 935
+[2024-12-08 12:23:52,437][root][INFO] - train_loss: 14.822665929794312 | time: 8.894491195678711
+[2024-12-08 12:23:52,440][root][INFO] - Epoch 936
+[2024-12-08 12:24:01,356][root][INFO] - train_loss: 13.849484741687775 | time: 8.917686700820923
+[2024-12-08 12:24:01,358][root][INFO] - Epoch 937
+[2024-12-08 12:24:10,220][root][INFO] - train_loss: 13.637585818767548 | time: 8.863202571868896
+[2024-12-08 12:24:10,222][root][INFO] - Epoch 938
+[2024-12-08 12:24:19,195][root][INFO] - train_loss: 14.998119235038757 | time: 8.974334478378296
+[2024-12-08 12:24:19,197][root][INFO] - Epoch 939
+[2024-12-08 12:24:28,255][root][INFO] - train_loss: 13.589654743671417 | time: 9.05904507637024
+[2024-12-08 12:24:28,256][root][INFO] - Epoch 940
+[2024-12-08 12:24:37,263][root][INFO] - train_loss: 14.521639347076416 | time: 9.00766921043396
+[2024-12-08 12:24:37,265][root][INFO] - Epoch 941
+[2024-12-08 12:24:46,292][root][INFO] - train_loss: 15.428596675395966 | time: 9.028124332427979
+[2024-12-08 12:24:46,294][root][INFO] - Epoch 942
+[2024-12-08 12:24:55,318][root][INFO] - train_loss: 13.959733486175537 | time: 9.025398015975952
+[2024-12-08 12:24:55,321][root][INFO] - Epoch 943
+[2024-12-08 12:25:04,319][root][INFO] - train_loss: 13.737945854663849 | time: 8.998873710632324
+[2024-12-08 12:25:04,321][root][INFO] - Epoch 944
+[2024-12-08 12:25:13,489][root][INFO] - train_loss: 13.04096782207489 | time: 9.169199228286743
+[2024-12-08 12:25:13,491][root][INFO] - Epoch 945
+[2024-12-08 12:25:22,468][root][INFO] - train_loss: 13.607661664485931 | time: 8.978590250015259
+[2024-12-08 12:25:22,470][root][INFO] - Epoch 946
+[2024-12-08 12:25:31,447][root][INFO] - train_loss: 14.569622695446014 | time: 8.97876524925232
+[2024-12-08 12:25:31,452][root][INFO] - Epoch 947
+[2024-12-08 12:25:40,480][root][INFO] - train_loss: 14.013746917247772 | time: 9.030232429504395
+[2024-12-08 12:25:40,482][root][INFO] - Epoch 948
+[2024-12-08 12:25:49,340][root][INFO] - train_loss: 13.342684507369995 | time: 8.859005212783813
+[2024-12-08 12:25:49,341][root][INFO] - Epoch 949
+[2024-12-08 12:25:58,169][root][INFO] - train_loss: 14.512775659561157 | time: 8.828733444213867
+[2024-12-08 12:25:58,170][root][INFO] - Epoch 950
+[2024-12-08 12:26:07,077][root][INFO] - train_loss: 14.128066301345825 | time: 8.907197952270508
+[2024-12-08 12:26:07,079][root][INFO] - Epoch 951
+[2024-12-08 12:26:15,912][root][INFO] - train_loss: 13.983643293380737 | time: 8.833584308624268
+[2024-12-08 12:26:15,914][root][INFO] - Epoch 952
+[2024-12-08 12:26:24,745][root][INFO] - train_loss: 13.839672029018402 | time: 8.832151412963867
+[2024-12-08 12:26:24,747][root][INFO] - Epoch 953
+[2024-12-08 12:26:33,719][root][INFO] - train_loss: 14.442163407802582 | time: 8.97376561164856
+[2024-12-08 12:26:33,721][root][INFO] - Epoch 954
+[2024-12-08 12:26:42,629][root][INFO] - train_loss: 14.860130786895752 | time: 8.908689737319946
+[2024-12-08 12:26:42,632][root][INFO] - Epoch 955
+[2024-12-08 12:26:51,522][root][INFO] - train_loss: 14.332751035690308 | time: 8.890559196472168
+[2024-12-08 12:26:51,524][root][INFO] - Epoch 956
+[2024-12-08 12:27:00,411][root][INFO] - train_loss: 15.17229962348938 | time: 8.888105869293213
+[2024-12-08 12:27:00,412][root][INFO] - Epoch 957
+[2024-12-08 12:27:09,253][root][INFO] - train_loss: 15.119417548179626 | time: 8.840899229049683
+[2024-12-08 12:27:09,256][root][INFO] - Epoch 958
+[2024-12-08 12:27:17,924][root][INFO] - train_loss: 14.701537847518921 | time: 8.669338941574097
+[2024-12-08 12:27:17,926][root][INFO] - Epoch 959
+[2024-12-08 12:27:26,497][root][INFO] - train_loss: 13.916050255298615 | time: 8.571729898452759
+[2024-12-08 12:27:26,498][root][INFO] - Epoch 960
+[2024-12-08 12:27:35,077][root][INFO] - train_loss: 14.507117629051208 | time: 8.579246520996094
+[2024-12-08 12:27:35,078][root][INFO] - Epoch 961
+[2024-12-08 12:27:43,815][root][INFO] - train_loss: 14.983121275901794 | time: 8.737888813018799
+[2024-12-08 12:27:43,817][root][INFO] - Epoch 962
+[2024-12-08 12:27:52,681][root][INFO] - train_loss: 15.033687114715576 | time: 8.865150690078735
+[2024-12-08 12:27:52,684][root][INFO] - Epoch 963
+[2024-12-08 12:28:01,668][root][INFO] - train_loss: 13.83935284614563 | time: 8.985712051391602
+[2024-12-08 12:28:01,671][root][INFO] - Epoch 964
+[2024-12-08 12:28:10,720][root][INFO] - train_loss: 13.489159882068634 | time: 9.04996371269226
+[2024-12-08 12:28:10,722][root][INFO] - Epoch 965
+[2024-12-08 12:28:19,791][root][INFO] - train_loss: 13.420600533485413 | time: 9.070205926895142
+[2024-12-08 12:28:19,792][root][INFO] - Epoch 966
+[2024-12-08 12:28:28,815][root][INFO] - train_loss: 13.58389687538147 | time: 9.024042844772339
+[2024-12-08 12:28:28,818][root][INFO] - Epoch 967
+[2024-12-08 12:28:37,899][root][INFO] - train_loss: 14.148122668266296 | time: 9.082390308380127
+[2024-12-08 12:28:37,901][root][INFO] - Epoch 968
+[2024-12-08 12:28:46,790][root][INFO] - train_loss: 13.578687369823456 | time: 8.8902108669281
+[2024-12-08 12:28:46,792][root][INFO] - Epoch 969
+[2024-12-08 12:28:55,625][root][INFO] - train_loss: 12.71970671415329 | time: 8.83329153060913
+[2024-12-08 12:28:55,627][root][INFO] - Epoch 970
+[2024-12-08 12:29:04,233][root][INFO] - train_loss: 12.733067989349365 | time: 8.607989311218262
+[2024-12-08 12:29:04,236][root][INFO] - Epoch 971
+[2024-12-08 12:29:13,032][root][INFO] - train_loss: 13.404389798641205 | time: 8.79691743850708
+[2024-12-08 12:29:13,033][root][INFO] - Epoch 972
+[2024-12-08 12:29:21,833][root][INFO] - train_loss: 14.514376699924469 | time: 8.801078081130981
+[2024-12-08 12:29:21,834][root][INFO] - Epoch 973
+[2024-12-08 12:29:30,803][root][INFO] - train_loss: 14.330261647701263 | time: 8.969650030136108
+[2024-12-08 12:29:30,806][root][INFO] - Epoch 974
+[2024-12-08 12:29:39,633][root][INFO] - train_loss: 14.40344774723053 | time: 8.827662706375122
+[2024-12-08 12:29:39,635][root][INFO] - Epoch 975
+[2024-12-08 12:29:48,458][root][INFO] - train_loss: 13.395541310310364 | time: 8.823180675506592
+[2024-12-08 12:29:48,459][root][INFO] - Epoch 976
+[2024-12-08 12:29:57,312][root][INFO] - train_loss: 14.032315731048584 | time: 8.853899240493774
+[2024-12-08 12:29:57,313][root][INFO] - Epoch 977
+[2024-12-08 12:30:06,094][root][INFO] - train_loss: 13.620163083076477 | time: 8.781867027282715
+[2024-12-08 12:30:06,095][root][INFO] - Epoch 978
+[2024-12-08 12:30:14,975][root][INFO] - train_loss: 14.097910106182098 | time: 8.880681037902832
+[2024-12-08 12:30:14,977][root][INFO] - Epoch 979
+[2024-12-08 12:30:23,817][root][INFO] - train_loss: 13.6732417345047 | time: 8.841876745223999
+[2024-12-08 12:30:23,819][root][INFO] - Epoch 980
+[2024-12-08 12:30:32,822][root][INFO] - train_loss: 14.192915499210358 | time: 9.004316091537476
+[2024-12-08 12:30:32,824][root][INFO] - Epoch 981
+[2024-12-08 12:30:41,824][root][INFO] - train_loss: 14.265541434288025 | time: 9.000800848007202
+[2024-12-08 12:30:41,826][root][INFO] - Epoch 982
+[2024-12-08 12:30:50,820][root][INFO] - train_loss: 14.139589548110962 | time: 8.995246410369873
+[2024-12-08 12:30:50,823][root][INFO] - Epoch 983
+[2024-12-08 12:30:59,725][root][INFO] - train_loss: 14.601159036159515 | time: 8.902886390686035
+[2024-12-08 12:30:59,726][root][INFO] - Epoch 984
+[2024-12-08 12:31:08,482][root][INFO] - train_loss: 14.99943333864212 | time: 8.756441831588745
+[2024-12-08 12:31:08,485][root][INFO] - Epoch 985
+[2024-12-08 12:31:17,364][root][INFO] - train_loss: 14.146785080432892 | time: 8.881641864776611
+[2024-12-08 12:31:17,366][root][INFO] - Epoch 986
+[2024-12-08 12:31:26,164][root][INFO] - train_loss: 13.269976556301117 | time: 8.798887729644775
+[2024-12-08 12:31:26,165][root][INFO] - Epoch 987
+[2024-12-08 12:31:34,997][root][INFO] - train_loss: 14.708915829658508 | time: 8.8325355052948
+[2024-12-08 12:31:34,998][root][INFO] - Epoch 988
+[2024-12-08 12:31:43,827][root][INFO] - train_loss: 14.324300944805145 | time: 8.830242395401001
+[2024-12-08 12:31:43,829][root][INFO] - Epoch 989
+[2024-12-08 12:31:52,965][root][INFO] - train_loss: 13.469739854335785 | time: 9.136837720870972
+[2024-12-08 12:31:52,969][root][INFO] - Epoch 990
+[2024-12-08 12:32:01,527][root][INFO] - train_loss: 14.396972894668579 | time: 8.55849552154541
+[2024-12-08 12:32:01,528][root][INFO] - Epoch 991
+[2024-12-08 12:32:10,100][root][INFO] - train_loss: 14.507228553295135 | time: 8.57252025604248
+[2024-12-08 12:32:10,102][root][INFO] - Epoch 992
+[2024-12-08 12:32:18,945][root][INFO] - train_loss: 14.024875819683075 | time: 8.843852996826172
+[2024-12-08 12:32:18,946][root][INFO] - Epoch 993
+[2024-12-08 12:32:27,751][root][INFO] - train_loss: 14.453218638896942 | time: 8.806198596954346
+[2024-12-08 12:32:27,753][root][INFO] - Epoch 994
+[2024-12-08 12:32:37,173][root][INFO] - train_loss: 15.4368816614151 | time: 9.420744180679321
+[2024-12-08 12:32:37,175][root][INFO] - Epoch 995
+[2024-12-08 12:32:46,203][root][INFO] - train_loss: 14.925352990627289 | time: 9.029394626617432
+[2024-12-08 12:32:46,205][root][INFO] - Epoch 996
+[2024-12-08 12:32:55,061][root][INFO] - train_loss: 15.703057527542114 | time: 8.856703996658325
+[2024-12-08 12:32:55,063][root][INFO] - Epoch 997
+[2024-12-08 12:33:03,958][root][INFO] - train_loss: 13.766839683055878 | time: 8.897017478942871
+[2024-12-08 12:33:03,961][root][INFO] - Epoch 998
+[2024-12-08 12:33:12,893][root][INFO] - train_loss: 13.881766140460968 | time: 8.933517217636108
+[2024-12-08 12:33:12,895][root][INFO] - Epoch 999
+[2024-12-08 12:33:21,853][root][INFO] - train_loss: 12.28028279542923 | time: 8.959221124649048
+[2024-12-08 12:33:21,856][root][INFO] - Epoch 1000
+[2024-12-08 12:33:30,781][root][INFO] - train_loss: 13.291488885879517 | time: 8.925824165344238
+[2024-12-08 12:33:30,883][accelerate.accelerator][INFO] - Model weights saved in /cluster/scratch/ckeusch/dsl-as24-challenge-3/outputs/2024-12-08/10-04-03/1000/pytorch_model.bin
+[2024-12-08 12:33:30,885][root][INFO] - Epoch 1001
+[2024-12-08 12:33:39,781][root][INFO] - train_loss: 14.431109428405762 | time: 8.897312879562378
+[2024-12-08 12:33:39,783][root][INFO] - Epoch 1002
+[2024-12-08 12:33:48,808][root][INFO] - train_loss: 13.980724811553955 | time: 9.026557445526123
+[2024-12-08 12:33:48,811][root][INFO] - Epoch 1003
+[2024-12-08 12:33:57,834][root][INFO] - train_loss: 13.76127403974533 | time: 9.024295806884766
+[2024-12-08 12:33:57,839][root][INFO] - Epoch 1004
+[2024-12-08 12:34:06,868][root][INFO] - train_loss: 14.54774159193039 | time: 9.0314199924469
+[2024-12-08 12:34:06,870][root][INFO] - Epoch 1005
+[2024-12-08 12:34:15,756][root][INFO] - train_loss: 12.928041815757751 | time: 8.887269496917725
+[2024-12-08 12:34:15,758][root][INFO] - Epoch 1006
+[2024-12-08 12:34:24,707][root][INFO] - train_loss: 14.92994999885559 | time: 8.949661016464233
+[2024-12-08 12:34:24,708][root][INFO] - Epoch 1007
+[2024-12-08 12:34:33,586][root][INFO] - train_loss: 14.591571629047394 | time: 8.878857135772705
+[2024-12-08 12:34:33,589][root][INFO] - Epoch 1008
+[2024-12-08 12:34:42,520][root][INFO] - train_loss: 13.319083273410797 | time: 8.931541204452515
+[2024-12-08 12:34:42,522][root][INFO] - Epoch 1009
+[2024-12-08 12:34:51,725][root][INFO] - train_loss: 13.427698850631714 | time: 9.204300165176392
+[2024-12-08 12:34:51,727][root][INFO] - Epoch 1010
+[2024-12-08 12:35:00,804][root][INFO] - train_loss: 13.78163754940033 | time: 9.07846736907959
+[2024-12-08 12:35:00,806][root][INFO] - Epoch 1011
+[2024-12-08 12:35:09,932][root][INFO] - train_loss: 13.380273461341858 | time: 9.11962890625
+[2024-12-08 12:35:09,935][root][INFO] - Epoch 1012
+[2024-12-08 12:35:19,091][root][INFO] - train_loss: 13.826396882534027 | time: 9.157602071762085
+[2024-12-08 12:35:19,095][root][INFO] - Epoch 1013
+[2024-12-08 12:35:28,116][root][INFO] - train_loss: 13.549119472503662 | time: 9.022106647491455
+[2024-12-08 12:35:28,120][root][INFO] - Epoch 1014
+[2024-12-08 12:35:37,331][root][INFO] - train_loss: 14.308164656162262 | time: 9.2122642993927
+[2024-12-08 12:35:37,332][root][INFO] - Epoch 1015
+[2024-12-08 12:35:46,396][root][INFO] - train_loss: 12.796635746955872 | time: 9.065129518508911
+[2024-12-08 12:35:46,398][root][INFO] - Epoch 1016
+[2024-12-08 12:35:55,351][root][INFO] - train_loss: 13.457189738750458 | time: 8.954064846038818
+[2024-12-08 12:35:55,353][root][INFO] - Epoch 1017
+[2024-12-08 12:36:04,361][root][INFO] - train_loss: 12.75113308429718 | time: 9.009086608886719
+[2024-12-08 12:36:04,365][root][INFO] - Epoch 1018
+[2024-12-08 12:36:13,316][root][INFO] - train_loss: 14.240504026412964 | time: 8.95236325263977
+[2024-12-08 12:36:13,320][root][INFO] - Epoch 1019
+[2024-12-08 12:36:22,282][root][INFO] - train_loss: 14.087971568107605 | time: 8.963365316390991
+[2024-12-08 12:36:22,284][root][INFO] - Epoch 1020
+[2024-12-08 12:36:31,176][root][INFO] - train_loss: 13.54253226518631 | time: 8.892773389816284
+[2024-12-08 12:36:31,177][root][INFO] - Epoch 1021
+[2024-12-08 12:36:40,102][root][INFO] - train_loss: 13.650200724601746 | time: 8.926020860671997
+[2024-12-08 12:36:40,104][root][INFO] - Epoch 1022
+[2024-12-08 12:36:49,018][root][INFO] - train_loss: 13.424312472343445 | time: 8.914805173873901
+[2024-12-08 12:36:49,022][root][INFO] - Epoch 1023
+[2024-12-08 12:36:57,985][root][INFO] - train_loss: 12.654711902141571 | time: 8.964349269866943
+[2024-12-08 12:36:57,987][root][INFO] - Epoch 1024
+[2024-12-08 12:37:06,667][root][INFO] - train_loss: 14.185035347938538 | time: 8.681268692016602
+[2024-12-08 12:37:06,669][root][INFO] - Epoch 1025
+[2024-12-08 12:37:15,588][root][INFO] - train_loss: 13.41943222284317 | time: 8.920419692993164
+[2024-12-08 12:37:15,594][root][INFO] - Epoch 1026
+[2024-12-08 12:37:24,541][root][INFO] - train_loss: 13.67467999458313 | time: 8.948574781417847
+[2024-12-08 12:37:24,545][root][INFO] - Epoch 1027
+[2024-12-08 12:37:33,502][root][INFO] - train_loss: 13.435239434242249 | time: 8.958478927612305
+[2024-12-08 12:37:33,504][root][INFO] - Epoch 1028
+[2024-12-08 12:37:42,559][root][INFO] - train_loss: 14.086683452129364 | time: 9.056252241134644
+[2024-12-08 12:37:42,561][root][INFO] - Epoch 1029
+[2024-12-08 12:37:51,453][root][INFO] - train_loss: 13.071319878101349 | time: 8.893496990203857
+[2024-12-08 12:37:51,455][root][INFO] - Epoch 1030
+[2024-12-08 12:38:00,358][root][INFO] - train_loss: 14.489173889160156 | time: 8.90447473526001
+[2024-12-08 12:38:00,362][root][INFO] - Epoch 1031
+[2024-12-08 12:38:09,255][root][INFO] - train_loss: 13.194769740104675 | time: 8.894576072692871
+[2024-12-08 12:38:09,257][root][INFO] - Epoch 1032
+[2024-12-08 12:38:18,167][root][INFO] - train_loss: 13.31843113899231 | time: 8.910966157913208
+[2024-12-08 12:38:18,168][root][INFO] - Epoch 1033
+[2024-12-08 12:38:26,992][root][INFO] - train_loss: 12.657399535179138 | time: 8.825259685516357
+[2024-12-08 12:38:26,994][root][INFO] - Epoch 1034
+[2024-12-08 12:38:35,834][root][INFO] - train_loss: 13.09555834531784 | time: 8.840914487838745
+[2024-12-08 12:38:35,836][root][INFO] - Epoch 1035
+[2024-12-08 12:38:44,871][root][INFO] - train_loss: 13.016342520713806 | time: 9.036766052246094
+[2024-12-08 12:38:44,873][root][INFO] - Epoch 1036
+[2024-12-08 12:38:53,746][root][INFO] - train_loss: 15.020388126373291 | time: 8.873625040054321
+[2024-12-08 12:38:53,747][root][INFO] - Epoch 1037
+[2024-12-08 12:39:02,662][root][INFO] - train_loss: 13.319250702857971 | time: 8.915771245956421
+[2024-12-08 12:39:02,664][root][INFO] - Epoch 1038
+[2024-12-08 12:39:11,608][root][INFO] - train_loss: 13.14633595943451 | time: 8.94521164894104
+[2024-12-08 12:39:11,612][root][INFO] - Epoch 1039
+[2024-12-08 12:39:20,516][root][INFO] - train_loss: 12.084246277809143 | time: 8.905081987380981
+[2024-12-08 12:39:20,517][root][INFO] - Epoch 1040
+[2024-12-08 12:39:29,365][root][INFO] - train_loss: 12.668211579322815 | time: 8.848817586898804
+[2024-12-08 12:39:29,366][root][INFO] - Epoch 1041
+[2024-12-08 12:39:38,637][root][INFO] - train_loss: 13.405836641788483 | time: 9.271579504013062
+[2024-12-08 12:39:38,640][root][INFO] - Epoch 1042
+[2024-12-08 12:39:47,502][root][INFO] - train_loss: 14.152102172374725 | time: 8.863975763320923
+[2024-12-08 12:39:47,503][root][INFO] - Epoch 1043
+[2024-12-08 12:39:56,344][root][INFO] - train_loss: 13.368686437606812 | time: 8.841497659683228
+[2024-12-08 12:39:56,347][root][INFO] - Epoch 1044
+[2024-12-08 12:40:05,410][root][INFO] - train_loss: 12.499925434589386 | time: 9.063526391983032
+[2024-12-08 12:40:05,412][root][INFO] - Epoch 1045
+[2024-12-08 12:40:14,428][root][INFO] - train_loss: 13.26387083530426 | time: 9.017772674560547
+[2024-12-08 12:40:14,430][root][INFO] - Epoch 1046
+[2024-12-08 12:40:23,423][root][INFO] - train_loss: 13.321078360080719 | time: 8.993746280670166
+[2024-12-08 12:40:23,425][root][INFO] - Epoch 1047
+[2024-12-08 12:40:32,542][root][INFO] - train_loss: 13.327642142772675 | time: 9.118862628936768
+[2024-12-08 12:40:32,546][root][INFO] - Epoch 1048
+[2024-12-08 12:40:41,655][root][INFO] - train_loss: 13.479089438915253 | time: 9.110033512115479
+[2024-12-08 12:40:41,656][root][INFO] - Epoch 1049
+[2024-12-08 12:40:50,674][root][INFO] - train_loss: 13.692378401756287 | time: 9.019033670425415
+[2024-12-08 12:40:50,676][root][INFO] - Epoch 1050
+[2024-12-08 12:40:59,644][root][INFO] - train_loss: 13.290292382240295 | time: 8.969529390335083
+[2024-12-08 12:40:59,646][root][INFO] - Epoch 1051
+[2024-12-08 12:41:08,663][root][INFO] - train_loss: 13.909318745136261 | time: 9.018005132675171
+[2024-12-08 12:41:08,666][root][INFO] - Epoch 1052
+[2024-12-08 12:41:17,830][root][INFO] - train_loss: 12.865105509757996 | time: 9.16523814201355
+[2024-12-08 12:41:17,831][root][INFO] - Epoch 1053
+[2024-12-08 12:41:26,659][root][INFO] - train_loss: 12.661023914813995 | time: 8.828531742095947
+[2024-12-08 12:41:26,663][root][INFO] - Epoch 1054
+[2024-12-08 12:41:35,639][root][INFO] - train_loss: 13.154412746429443 | time: 8.977015972137451
+[2024-12-08 12:41:35,641][root][INFO] - Epoch 1055
+[2024-12-08 12:41:44,618][root][INFO] - train_loss: 14.42962235212326 | time: 8.978527307510376
+[2024-12-08 12:41:44,620][root][INFO] - Epoch 1056
+[2024-12-08 12:41:53,609][root][INFO] - train_loss: 15.65087342262268 | time: 8.989899158477783
+[2024-12-08 12:41:53,611][root][INFO] - Epoch 1057
+[2024-12-08 12:42:02,506][root][INFO] - train_loss: 15.066166698932648 | time: 8.89565372467041
+[2024-12-08 12:42:02,508][root][INFO] - Epoch 1058
+[2024-12-08 12:42:11,501][root][INFO] - train_loss: 13.192577481269836 | time: 8.994302034378052
+[2024-12-08 12:42:11,505][root][INFO] - Epoch 1059
+[2024-12-08 12:42:20,466][root][INFO] - train_loss: 13.236885488033295 | time: 8.962157487869263
+[2024-12-08 12:42:20,467][root][INFO] - Epoch 1060
+[2024-12-08 12:42:29,114][root][INFO] - train_loss: 13.469683766365051 | time: 8.647406339645386
+[2024-12-08 12:42:29,117][root][INFO] - Epoch 1061
+[2024-12-08 12:42:37,907][root][INFO] - train_loss: 12.929293513298035 | time: 8.790890216827393
+[2024-12-08 12:42:37,908][root][INFO] - Epoch 1062
+[2024-12-08 12:42:46,551][root][INFO] - train_loss: 13.092290759086609 | time: 8.643828630447388
+[2024-12-08 12:42:46,554][root][INFO] - Epoch 1063
+[2024-12-08 12:42:55,182][root][INFO] - train_loss: 13.074516952037811 | time: 8.629018306732178
+[2024-12-08 12:42:55,184][root][INFO] - Epoch 1064
+[2024-12-08 12:43:03,777][root][INFO] - train_loss: 13.909098505973816 | time: 8.594397783279419
+[2024-12-08 12:43:03,780][root][INFO] - Epoch 1065
+[2024-12-08 12:43:12,432][root][INFO] - train_loss: 15.334517657756805 | time: 8.652541637420654
+[2024-12-08 12:43:12,433][root][INFO] - Epoch 1066
+[2024-12-08 12:43:21,244][root][INFO] - train_loss: 13.85189014673233 | time: 8.811899185180664
+[2024-12-08 12:43:21,246][root][INFO] - Epoch 1067
+[2024-12-08 12:43:30,454][root][INFO] - train_loss: 14.131028831005096 | time: 9.208367347717285
+[2024-12-08 12:43:30,456][root][INFO] - Epoch 1068
+[2024-12-08 12:43:39,622][root][INFO] - train_loss: 13.432945311069489 | time: 9.167364597320557
+[2024-12-08 12:43:39,626][root][INFO] - Epoch 1069
+[2024-12-08 12:43:48,714][root][INFO] - train_loss: 15.814399719238281 | time: 9.089380741119385
+[2024-12-08 12:43:48,716][root][INFO] - Epoch 1070
+[2024-12-08 12:43:57,894][root][INFO] - train_loss: 14.284189224243164 | time: 9.179942607879639
+[2024-12-08 12:43:57,901][root][INFO] - Epoch 1071
+[2024-12-08 12:44:07,202][root][INFO] - train_loss: 13.20751953125 | time: 9.30302882194519
+[2024-12-08 12:44:07,204][root][INFO] - Epoch 1072
+[2024-12-08 12:44:16,351][root][INFO] - train_loss: 13.394820988178253 | time: 9.148323059082031
+[2024-12-08 12:44:16,353][root][INFO] - Epoch 1073
+[2024-12-08 12:44:25,422][root][INFO] - train_loss: 13.316843807697296 | time: 9.070028305053711
+[2024-12-08 12:44:25,424][root][INFO] - Epoch 1074
+[2024-12-08 12:44:34,557][root][INFO] - train_loss: 14.073122024536133 | time: 9.134675025939941
+[2024-12-08 12:44:34,561][root][INFO] - Epoch 1075
+[2024-12-08 12:44:43,648][root][INFO] - train_loss: 13.755654215812683 | time: 9.08806300163269
+[2024-12-08 12:44:43,650][root][INFO] - Epoch 1076
+[2024-12-08 12:44:52,762][root][INFO] - train_loss: 13.277216136455536 | time: 9.113016128540039
+[2024-12-08 12:44:52,765][root][INFO] - Epoch 1077
+[2024-12-08 12:45:01,672][root][INFO] - train_loss: 13.44108533859253 | time: 8.908110857009888
+[2024-12-08 12:45:01,673][root][INFO] - Epoch 1078
+[2024-12-08 12:45:10,711][root][INFO] - train_loss: 13.58579808473587 | time: 9.038200616836548
+[2024-12-08 12:45:10,713][root][INFO] - Epoch 1079
+[2024-12-08 12:45:19,790][root][INFO] - train_loss: 13.746286034584045 | time: 9.077593803405762
+[2024-12-08 12:45:19,791][root][INFO] - Epoch 1080
+[2024-12-08 12:45:28,870][root][INFO] - train_loss: 13.574791193008423 | time: 9.079435110092163
+[2024-12-08 12:45:28,873][root][INFO] - Epoch 1081
+[2024-12-08 12:45:38,232][root][INFO] - train_loss: 13.49188369512558 | time: 9.360518217086792
+[2024-12-08 12:45:38,236][root][INFO] - Epoch 1082
+[2024-12-08 12:45:47,559][root][INFO] - train_loss: 12.900729715824127 | time: 9.324739694595337
+[2024-12-08 12:45:47,562][root][INFO] - Epoch 1083
+[2024-12-08 12:45:56,664][root][INFO] - train_loss: 13.98396772146225 | time: 9.103326320648193
+[2024-12-08 12:45:56,668][root][INFO] - Epoch 1084
+[2024-12-08 12:46:05,791][root][INFO] - train_loss: 13.628262877464294 | time: 9.123949527740479
+[2024-12-08 12:46:05,794][root][INFO] - Epoch 1085
+[2024-12-08 12:46:14,924][root][INFO] - train_loss: 12.746508538722992 | time: 9.132055044174194
+[2024-12-08 12:46:14,929][root][INFO] - Epoch 1086
+[2024-12-08 12:46:23,981][root][INFO] - train_loss: 12.369009912014008 | time: 9.053929567337036
+[2024-12-08 12:46:23,986][root][INFO] - Epoch 1087
+[2024-12-08 12:46:33,112][root][INFO] - train_loss: 12.09869384765625 | time: 9.127122163772583
+[2024-12-08 12:46:33,113][root][INFO] - Epoch 1088
+[2024-12-08 12:46:42,416][root][INFO] - train_loss: 12.773424983024597 | time: 9.303932666778564
+[2024-12-08 12:46:42,418][root][INFO] - Epoch 1089
+[2024-12-08 12:46:51,532][root][INFO] - train_loss: 12.758457124233246 | time: 9.115639686584473
+[2024-12-08 12:46:51,538][root][INFO] - Epoch 1090
+[2024-12-08 12:47:00,556][root][INFO] - train_loss: 13.477720081806183 | time: 9.019357204437256
+[2024-12-08 12:47:00,558][root][INFO] - Epoch 1091
+[2024-12-08 12:47:09,731][root][INFO] - train_loss: 13.752145051956177 | time: 9.174176454544067
+[2024-12-08 12:47:09,736][root][INFO] - Epoch 1092
+[2024-12-08 12:47:18,850][root][INFO] - train_loss: 12.84614896774292 | time: 9.11539912223816
+[2024-12-08 12:47:18,852][root][INFO] - Epoch 1093
+[2024-12-08 12:47:28,246][root][INFO] - train_loss: 13.881903350353241 | time: 9.395444393157959
+[2024-12-08 12:47:28,250][root][INFO] - Epoch 1094
+[2024-12-08 12:47:37,440][root][INFO] - train_loss: 13.397965133190155 | time: 9.191922664642334
+[2024-12-08 12:47:37,442][root][INFO] - Epoch 1095
+[2024-12-08 12:47:46,326][root][INFO] - train_loss: 12.91953319311142 | time: 8.884886264801025
+[2024-12-08 12:47:46,328][root][INFO] - Epoch 1096
+[2024-12-08 12:47:55,368][root][INFO] - train_loss: 12.711145281791687 | time: 9.040946245193481
+[2024-12-08 12:47:55,370][root][INFO] - Epoch 1097
+[2024-12-08 12:48:04,351][root][INFO] - train_loss: 14.216908633708954 | time: 8.982491731643677
+[2024-12-08 12:48:04,353][root][INFO] - Epoch 1098
+[2024-12-08 12:48:13,091][root][INFO] - train_loss: 13.015535116195679 | time: 8.73843789100647
+[2024-12-08 12:48:13,093][root][INFO] - Epoch 1099
+[2024-12-08 12:48:21,779][root][INFO] - train_loss: 13.887091159820557 | time: 8.687329769134521
+[2024-12-08 12:48:21,794][root][INFO] - Epoch 1100
+[2024-12-08 12:48:30,507][root][INFO] - train_loss: 12.853150188922882 | time: 8.713704347610474
+[2024-12-08 12:48:30,508][root][INFO] - Epoch 1101
+[2024-12-08 12:48:39,126][root][INFO] - train_loss: 14.034580886363983 | time: 8.618724822998047
+[2024-12-08 12:48:39,128][root][INFO] - Epoch 1102
+[2024-12-08 12:48:47,974][root][INFO] - train_loss: 12.750258564949036 | time: 8.847425699234009
+[2024-12-08 12:48:47,976][root][INFO] - Epoch 1103
+[2024-12-08 12:48:56,936][root][INFO] - train_loss: 13.373298227787018 | time: 8.961203336715698
+[2024-12-08 12:48:56,943][root][INFO] - Epoch 1104
+[2024-12-08 12:49:05,815][root][INFO] - train_loss: 12.083342373371124 | time: 8.873108148574829
+[2024-12-08 12:49:05,817][root][INFO] - Epoch 1105
+[2024-12-08 12:49:14,713][root][INFO] - train_loss: 13.589514911174774 | time: 8.89774227142334
+[2024-12-08 12:49:14,717][root][INFO] - Epoch 1106
+[2024-12-08 12:49:23,698][root][INFO] - train_loss: 13.070168733596802 | time: 8.98148798942566
+[2024-12-08 12:49:23,699][root][INFO] - Epoch 1107
+[2024-12-08 12:49:32,891][root][INFO] - train_loss: 13.488097131252289 | time: 9.1932692527771
+[2024-12-08 12:49:32,894][root][INFO] - Epoch 1108
+[2024-12-08 12:49:42,065][root][INFO] - train_loss: 13.525229930877686 | time: 9.173273086547852
+[2024-12-08 12:49:42,067][root][INFO] - Epoch 1109
+[2024-12-08 12:49:51,165][root][INFO] - train_loss: 13.742667198181152 | time: 9.098942279815674
+[2024-12-08 12:49:51,169][root][INFO] - Epoch 1110
+[2024-12-08 12:50:00,277][root][INFO] - train_loss: 14.196325123310089 | time: 9.108577728271484
+[2024-12-08 12:50:00,278][root][INFO] - Epoch 1111
+[2024-12-08 12:50:09,315][root][INFO] - train_loss: 12.810270488262177 | time: 9.03739333152771
+[2024-12-08 12:50:09,316][root][INFO] - Epoch 1112
+[2024-12-08 12:50:18,359][root][INFO] - train_loss: 12.298758208751678 | time: 9.043694257736206
+[2024-12-08 12:50:18,360][root][INFO] - Epoch 1113
+[2024-12-08 12:50:27,354][root][INFO] - train_loss: 14.10919064283371 | time: 8.994298219680786
+[2024-12-08 12:50:27,357][root][INFO] - Epoch 1114
+[2024-12-08 12:50:36,269][root][INFO] - train_loss: 12.871729791164398 | time: 8.913409233093262
+[2024-12-08 12:50:36,271][root][INFO] - Epoch 1115
+[2024-12-08 12:50:45,269][root][INFO] - train_loss: 12.851781487464905 | time: 8.999276638031006
+[2024-12-08 12:50:45,271][root][INFO] - Epoch 1116
+[2024-12-08 12:50:54,283][root][INFO] - train_loss: 13.521170854568481 | time: 9.013161420822144
+[2024-12-08 12:50:54,285][root][INFO] - Epoch 1117
+[2024-12-08 12:51:03,235][root][INFO] - train_loss: 13.06982433795929 | time: 8.951855659484863
+[2024-12-08 12:51:03,237][root][INFO] - Epoch 1118
+[2024-12-08 12:51:12,125][root][INFO] - train_loss: 13.437874019145966 | time: 8.888651847839355
+[2024-12-08 12:51:12,127][root][INFO] - Epoch 1119
+[2024-12-08 12:51:21,235][root][INFO] - train_loss: 13.793471992015839 | time: 9.109203577041626
+[2024-12-08 12:51:21,240][root][INFO] - Epoch 1120
+[2024-12-08 12:51:30,335][root][INFO] - train_loss: 13.188551902770996 | time: 9.096874237060547
+[2024-12-08 12:51:30,337][root][INFO] - Epoch 1121
+[2024-12-08 12:51:39,290][root][INFO] - train_loss: 13.386627197265625 | time: 8.953883171081543
+[2024-12-08 12:51:39,292][root][INFO] - Epoch 1122
+[2024-12-08 12:51:48,365][root][INFO] - train_loss: 12.14464271068573 | time: 9.073687314987183
+[2024-12-08 12:51:48,367][root][INFO] - Epoch 1123
+[2024-12-08 12:51:57,345][root][INFO] - train_loss: 13.204914569854736 | time: 8.979745626449585
+[2024-12-08 12:51:57,348][root][INFO] - Epoch 1124
+[2024-12-08 12:52:06,358][root][INFO] - train_loss: 12.611801266670227 | time: 9.010661363601685
+[2024-12-08 12:52:06,360][root][INFO] - Epoch 1125
+[2024-12-08 12:52:15,691][root][INFO] - train_loss: 12.69907832145691 | time: 9.332511901855469
+[2024-12-08 12:52:15,694][root][INFO] - Epoch 1126
+[2024-12-08 12:52:24,568][root][INFO] - train_loss: 12.29554808139801 | time: 8.875090599060059
+[2024-12-08 12:52:24,570][root][INFO] - Epoch 1127
+[2024-12-08 12:52:33,646][root][INFO] - train_loss: 13.558783411979675 | time: 9.077558517456055
+[2024-12-08 12:52:33,647][root][INFO] - Epoch 1128
+[2024-12-08 12:52:42,594][root][INFO] - train_loss: 13.065940916538239 | time: 8.947219848632812
+[2024-12-08 12:52:42,596][root][INFO] - Epoch 1129
+[2024-12-08 12:52:51,788][root][INFO] - train_loss: 12.727972984313965 | time: 9.193467378616333
+[2024-12-08 12:52:51,792][root][INFO] - Epoch 1130
+[2024-12-08 12:53:00,786][root][INFO] - train_loss: 12.838456153869629 | time: 8.995508909225464
+[2024-12-08 12:53:00,792][root][INFO] - Epoch 1131
+[2024-12-08 12:53:09,768][root][INFO] - train_loss: 12.440890610218048 | time: 8.978559494018555
+[2024-12-08 12:53:09,772][root][INFO] - Epoch 1132
+[2024-12-08 12:53:18,718][root][INFO] - train_loss: 13.135333716869354 | time: 8.947242975234985
+[2024-12-08 12:53:18,722][root][INFO] - Epoch 1133
+[2024-12-08 12:53:27,671][root][INFO] - train_loss: 14.301251590251923 | time: 8.950126647949219
+[2024-12-08 12:53:27,672][root][INFO] - Epoch 1134
+[2024-12-08 12:53:36,675][root][INFO] - train_loss: 12.870724141597748 | time: 9.004163026809692
+[2024-12-08 12:53:36,682][root][INFO] - Epoch 1135
+[2024-12-08 12:53:45,502][root][INFO] - train_loss: 12.791092932224274 | time: 8.821923971176147
+[2024-12-08 12:53:45,504][root][INFO] - Epoch 1136
+[2024-12-08 12:53:54,479][root][INFO] - train_loss: 12.908387064933777 | time: 8.975781440734863
+[2024-12-08 12:53:54,481][root][INFO] - Epoch 1137
+[2024-12-08 12:54:03,850][root][INFO] - train_loss: 13.607672572135925 | time: 9.370853900909424
+[2024-12-08 12:54:03,852][root][INFO] - Epoch 1138
+[2024-12-08 12:54:12,844][root][INFO] - train_loss: 12.955229341983795 | time: 8.993058204650879
+[2024-12-08 12:54:12,849][root][INFO] - Epoch 1139
+[2024-12-08 12:54:21,796][root][INFO] - train_loss: 13.485807299613953 | time: 8.948946714401245
+[2024-12-08 12:54:21,800][root][INFO] - Epoch 1140
+[2024-12-08 12:54:30,777][root][INFO] - train_loss: 14.074637353420258 | time: 8.977877855300903
+[2024-12-08 12:54:30,780][root][INFO] - Epoch 1141
+[2024-12-08 12:54:40,004][root][INFO] - train_loss: 12.675935328006744 | time: 9.225581645965576
+[2024-12-08 12:54:40,007][root][INFO] - Epoch 1142
+[2024-12-08 12:54:49,074][root][INFO] - train_loss: 11.822611391544342 | time: 9.068233966827393
+[2024-12-08 12:54:49,076][root][INFO] - Epoch 1143
+[2024-12-08 12:54:58,011][root][INFO] - train_loss: 12.789120018482208 | time: 8.937144756317139
+[2024-12-08 12:54:58,013][root][INFO] - Epoch 1144
+[2024-12-08 12:55:07,017][root][INFO] - train_loss: 12.101718783378601 | time: 9.00527548789978
+[2024-12-08 12:55:07,021][root][INFO] - Epoch 1145
+[2024-12-08 12:55:15,979][root][INFO] - train_loss: 12.583176016807556 | time: 8.959536790847778
+[2024-12-08 12:55:15,981][root][INFO] - Epoch 1146
+[2024-12-08 12:55:24,946][root][INFO] - train_loss: 13.585603773593903 | time: 8.965510845184326
+[2024-12-08 12:55:24,948][root][INFO] - Epoch 1147
+[2024-12-08 12:55:33,863][root][INFO] - train_loss: 43.100739657878876 | time: 8.916388511657715
+[2024-12-08 12:55:33,865][root][INFO] - Epoch 1148
+[2024-12-08 12:55:42,887][root][INFO] - train_loss: 132.73420906066895 | time: 9.023494720458984
+[2024-12-08 12:55:42,890][root][INFO] - Epoch 1149
+[2024-12-08 12:55:52,117][root][INFO] - train_loss: 159.70409297943115 | time: 9.228434324264526
+[2024-12-08 12:55:52,121][root][INFO] - Epoch 1150
+[2024-12-08 12:56:01,195][root][INFO] - train_loss: 816.6353378295898 | time: 9.075490474700928
+[2024-12-08 12:56:01,198][root][INFO] - Epoch 1151
+[2024-12-08 12:56:10,192][root][INFO] - train_loss: 571.2310562133789 | time: 8.996081113815308
+[2024-12-08 12:56:10,196][root][INFO] - Epoch 1152
+[2024-12-08 12:56:19,161][root][INFO] - train_loss: 776.2236213684082 | time: 8.966437578201294
+[2024-12-08 12:56:19,162][root][INFO] - Epoch 1153
+[2024-12-08 12:56:28,086][root][INFO] - train_loss: 869.4527053833008 | time: 8.92473316192627
+[2024-12-08 12:56:28,088][root][INFO] - Epoch 1154
+[2024-12-08 12:56:37,058][root][INFO] - train_loss: 4382.349334716797 | time: 8.971084356307983
+[2024-12-08 12:56:37,061][root][INFO] - Epoch 1155
+[2024-12-08 12:56:46,012][root][INFO] - train_loss: 1832.0724258422852 | time: 8.951825618743896
+[2024-12-08 12:56:46,013][root][INFO] - Epoch 1156
+[2024-12-08 12:56:54,901][root][INFO] - train_loss: 3650.226760864258 | time: 8.888394832611084
+[2024-12-08 12:56:54,903][root][INFO] - Epoch 1157
+[2024-12-08 12:57:03,754][root][INFO] - train_loss: 6131.9454345703125 | time: 8.852981805801392
+[2024-12-08 12:57:03,757][root][INFO] - Epoch 1158
+[2024-12-08 12:57:07,780][root][INFO] - Terminated on NaN/INF triggered.
+[2024-12-08 12:57:07,780][root][INFO] - Terminated on NaN/INF triggered.
+[2024-12-08 12:57:07,780][root][INFO] - Terminated on NaN/INF triggered.
+[2024-12-08 12:57:07,781][root][INFO] - train_loss: 3939.5022888183594 | time: 4.026712656021118
+[2024-12-08 12:57:07,782][root][INFO] - Total time: 10365.560314893723
+[2024-12-08 12:57:07,787][root][INFO] - Total time: 10365.564794063568
+[2024-12-08 12:57:07,787][root][INFO] - Total time: 10365.567260980606

@@ -1,0 +1,185 @@
+The following values were not passed to `accelerate launch` and had defaults used instead:
+	`--num_processes` was set to a value of `4`
+	`--num_machines` was set to a value of `1`
+	`--dynamo_backend` was set to a value of `'no'`
+To avoid this warning pass in values for each of the problematic parameters or run `accelerate config`.
+2024-12-08 10:03:51.715035: E external/local_xla/xla/stream_executor/cuda/cuda_fft.cc:477] Unable to register cuFFT factory: Attempting to register factory for plugin cuFFT when one has already been registered
+2024-12-08 10:03:51.715035: E external/local_xla/xla/stream_executor/cuda/cuda_fft.cc:477] Unable to register cuFFT factory: Attempting to register factory for plugin cuFFT when one has already been registered
+2024-12-08 10:03:51.715037: E external/local_xla/xla/stream_executor/cuda/cuda_fft.cc:477] Unable to register cuFFT factory: Attempting to register factory for plugin cuFFT when one has already been registered
+2024-12-08 10:03:51.715037: E external/local_xla/xla/stream_executor/cuda/cuda_fft.cc:477] Unable to register cuFFT factory: Attempting to register factory for plugin cuFFT when one has already been registered
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+E0000 00:00:1733648631.784485 1251316 cuda_dnn.cc:8310] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered
+E0000 00:00:1733648631.784490 1251313 cuda_dnn.cc:8310] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered
+E0000 00:00:1733648631.784490 1251314 cuda_dnn.cc:8310] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered
+E0000 00:00:1733648631.784482 1251315 cuda_dnn.cc:8310] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered
+E0000 00:00:1733648631.805529 1251315 cuda_blas.cc:1418] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
+E0000 00:00:1733648631.805537 1251314 cuda_blas.cc:1418] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
+E0000 00:00:1733648631.805538 1251313 cuda_blas.cc:1418] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
+E0000 00:00:1733648631.805545 1251316 cuda_blas.cc:1418] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
+/cluster/home/ckeusch/miniconda3/envs/CDiffSD/lib/python3.11/site-packages/torch/nn/modules/conv.py:306: UserWarning: Applied workaround for CuDNN issue, install nvrtc.so (Triggered internally at /opt/conda/conda-bld/pytorch_1708025842427/work/aten/src/ATen/native/cudnn/Conv_v8.cpp:80.)
+  return F.conv1d(input, weight, bias, self.stride,
+/cluster/home/ckeusch/miniconda3/envs/CDiffSD/lib/python3.11/site-packages/torch/nn/modules/conv.py:306: UserWarning: Applied workaround for CuDNN issue, install nvrtc.so (Triggered internally at /opt/conda/conda-bld/pytorch_1708025842427/work/aten/src/ATen/native/cudnn/Conv_v8.cpp:80.)
+  return F.conv1d(input, weight, bias, self.stride,
+/cluster/home/ckeusch/miniconda3/envs/CDiffSD/lib/python3.11/site-packages/torch/nn/modules/conv.py:306: UserWarning: Applied workaround for CuDNN issue, install nvrtc.so (Triggered internally at /opt/conda/conda-bld/pytorch_1708025842427/work/aten/src/ATen/native/cudnn/Conv_v8.cpp:80.)
+  return F.conv1d(input, weight, bias, self.stride,
+/cluster/home/ckeusch/miniconda3/envs/CDiffSD/lib/python3.11/site-packages/torch/nn/modules/conv.py:306: UserWarning: Applied workaround for CuDNN issue, install nvrtc.so (Triggered internally at /opt/conda/conda-bld/pytorch_1708025842427/work/aten/src/ATen/native/cudnn/Conv_v8.cpp:80.)
+  return F.conv1d(input, weight, bias, self.stride,
+/cluster/home/ckeusch/miniconda3/envs/CDiffSD/lib/python3.11/site-packages/torch/functional.py:660: UserWarning: stft with return_complex=False is deprecated. In a future pytorch release, stft will return complex tensors for all inputs, and return_complex=False will raise an error.
+Note: you can still call torch.view_as_real on the complex output to recover the old return format. (Triggered internally at /opt/conda/conda-bld/pytorch_1708025842427/work/aten/src/ATen/native/SpectralOps.cpp:874.)
+  return _VF.stft(input, n_fft, hop_length, win_length, window,  # type: ignore[attr-defined]
+/cluster/home/ckeusch/miniconda3/envs/CDiffSD/lib/python3.11/site-packages/torch/functional.py:660: UserWarning: stft with return_complex=False is deprecated. In a future pytorch release, stft will return complex tensors for all inputs, and return_complex=False will raise an error.
+Note: you can still call torch.view_as_real on the complex output to recover the old return format. (Triggered internally at /opt/conda/conda-bld/pytorch_1708025842427/work/aten/src/ATen/native/SpectralOps.cpp:874.)
+  return _VF.stft(input, n_fft, hop_length, win_length, window,  # type: ignore[attr-defined]
+/cluster/home/ckeusch/miniconda3/envs/CDiffSD/lib/python3.11/site-packages/torch/functional.py:660: UserWarning: stft with return_complex=False is deprecated. In a future pytorch release, stft will return complex tensors for all inputs, and return_complex=False will raise an error.
+Note: you can still call torch.view_as_real on the complex output to recover the old return format. (Triggered internally at /opt/conda/conda-bld/pytorch_1708025842427/work/aten/src/ATen/native/SpectralOps.cpp:874.)
+  return _VF.stft(input, n_fft, hop_length, win_length, window,  # type: ignore[attr-defined]
+/cluster/home/ckeusch/miniconda3/envs/CDiffSD/lib/python3.11/site-packages/torch/functional.py:660: UserWarning: stft with return_complex=False is deprecated. In a future pytorch release, stft will return complex tensors for all inputs, and return_complex=False will raise an error.
+Note: you can still call torch.view_as_real on the complex output to recover the old return format. (Triggered internally at /opt/conda/conda-bld/pytorch_1708025842427/work/aten/src/ATen/native/SpectralOps.cpp:874.)
+  return _VF.stft(input, n_fft, hop_length, win_length, window,  # type: ignore[attr-defined]
+[rank1]:[E ProcessGroupNCCL.cpp:523] [Rank 1] Watchdog caught collective operation timeout: WorkNCCL(SeqNum=64877, OpType=ALLREDUCE, NumelIn=1, NumelOut=1, Timeout(ms)=600000) ran for 600120 milliseconds before timing out.
+[rank2]:[E ProcessGroupNCCL.cpp:523] [Rank 2] Watchdog caught collective operation timeout: WorkNCCL(SeqNum=64877, OpType=ALLREDUCE, NumelIn=1, NumelOut=1, Timeout(ms)=600000) ran for 600121 milliseconds before timing out.
+Error executing job with overrides: []
+Error executing job with overrides: []
+[rank2]:[E ProcessGroupNCCL.cpp:537] Some NCCL operations have failed or timed out. Due to the asynchronous nature of CUDA kernels, subsequent GPU operations might run on corrupted/incomplete data.
+[rank2]:[E ProcessGroupNCCL.cpp:543] To avoid data inconsistency, we are taking the entire process down.
+[rank0]:[E ProcessGroupNCCL.cpp:523] [Rank 0] Watchdog caught collective operation timeout: WorkNCCL(SeqNum=64877, OpType=ALLREDUCE, NumelIn=1, NumelOut=1, Timeout(ms)=600000) ran for 600390 milliseconds before timing out.
+[rank2]:[E ProcessGroupNCCL.cpp:1182] [Rank 2] NCCL watchdog thread terminated with exception: [Rank 2] Watchdog caught collective operation timeout: WorkNCCL(SeqNum=64877, OpType=ALLREDUCE, NumelIn=1, NumelOut=1, Timeout(ms)=600000) ran for 600121 milliseconds before timing out.
+Exception raised from checkTimeout at /opt/conda/conda-bld/pytorch_1708025842427/work/torch/csrc/distributed/c10d/ProcessGroupNCCL.cpp:525 (most recent call first):
+frame #0: c10::Error::Error(c10::SourceLocation, std::string) + 0x57 (0x146e940fbd87 in /cluster/home/ckeusch/miniconda3/envs/CDiffSD/lib/python3.11/site-packages/torch/lib/libc10.so)
+frame #1: c10d::ProcessGroupNCCL::WorkNCCL::checkTimeout(std::optional<std::chrono::duration<long, std::ratio<1l, 1000l> > >) + 0x1e6 (0x146e31552d26 in /cluster/home/ckeusch/miniconda3/envs/CDiffSD/lib/python3.11/site-packages/torch/lib/libtorch_cuda.so)
+frame #2: c10d::ProcessGroupNCCL::workCleanupLoop() + 0x19d (0x146e3155627d in /cluster/home/ckeusch/miniconda3/envs/CDiffSD/lib/python3.11/site-packages/torch/lib/libtorch_cuda.so)
+frame #3: c10d::ProcessGroupNCCL::ncclCommWatchdog() + 0x119 (0x146e31556e79 in /cluster/home/ckeusch/miniconda3/envs/CDiffSD/lib/python3.11/site-packages/torch/lib/libtorch_cuda.so)
+frame #4: <unknown function> + 0xd3e95 (0x146f01470e95 in /cluster/home/ckeusch/miniconda3/envs/CDiffSD/bin/../lib/libstdc++.so.6)
+frame #5: <unknown function> + 0x94ac3 (0x146f01c50ac3 in /lib/x86_64-linux-gnu/libc.so.6)
+frame #6: <unknown function> + 0x126850 (0x146f01ce2850 in /lib/x86_64-linux-gnu/libc.so.6)
+
+terminate called after throwing an instance of 'c10::DistBackendError'
+  what():  [Rank 2] NCCL watchdog thread terminated with exception: [Rank 2] Watchdog caught collective operation timeout: WorkNCCL(SeqNum=64877, OpType=ALLREDUCE, NumelIn=1, NumelOut=1, Timeout(ms)=600000) ran for 600121 milliseconds before timing out.
+Exception raised from checkTimeout at /opt/conda/conda-bld/pytorch_1708025842427/work/torch/csrc/distributed/c10d/ProcessGroupNCCL.cpp:525 (most recent call first):
+frame #0: c10::Error::Error(c10::SourceLocation, std::string) + 0x57 (0x146e940fbd87 in /cluster/home/ckeusch/miniconda3/envs/CDiffSD/lib/python3.11/site-packages/torch/lib/libc10.so)
+frame #1: c10d::ProcessGroupNCCL::WorkNCCL::checkTimeout(std::optional<std::chrono::duration<long, std::ratio<1l, 1000l> > >) + 0x1e6 (0x146e31552d26 in /cluster/home/ckeusch/miniconda3/envs/CDiffSD/lib/python3.11/site-packages/torch/lib/libtorch_cuda.so)
+frame #2: c10d::ProcessGroupNCCL::workCleanupLoop() + 0x19d (0x146e3155627d in /cluster/home/ckeusch/miniconda3/envs/CDiffSD/lib/python3.11/site-packages/torch/lib/libtorch_cuda.so)
+frame #3: c10d::ProcessGroupNCCL::ncclCommWatchdog() + 0x119 (0x146e31556e79 in /cluster/home/ckeusch/miniconda3/envs/CDiffSD/lib/python3.11/site-packages/torch/lib/libtorch_cuda.so)
+frame #4: <unknown function> + 0xd3e95 (0x146f01470e95 in /cluster/home/ckeusch/miniconda3/envs/CDiffSD/bin/../lib/libstdc++.so.6)
+frame #5: <unknown function> + 0x94ac3 (0x146f01c50ac3 in /lib/x86_64-linux-gnu/libc.so.6)
+frame #6: <unknown function> + 0x126850 (0x146f01ce2850 in /lib/x86_64-linux-gnu/libc.so.6)
+
+Exception raised from ncclCommWatchdog at /opt/conda/conda-bld/pytorch_1708025842427/work/torch/csrc/distributed/c10d/ProcessGroupNCCL.cpp:1186 (most recent call first):
+frame #0: c10::Error::Error(c10::SourceLocation, std::string) + 0x57 (0x146e940fbd87 in /cluster/home/ckeusch/miniconda3/envs/CDiffSD/lib/python3.11/site-packages/torch/lib/libc10.so)
+frame #1: <unknown function> + 0xdef733 (0x146e312ad733 in /cluster/home/ckeusch/miniconda3/envs/CDiffSD/lib/python3.11/site-packages/torch/lib/libtorch_cuda.so)
+frame #2: <unknown function> + 0xd3e95 (0x146f01470e95 in /cluster/home/ckeusch/miniconda3/envs/CDiffSD/bin/../lib/libstdc++.so.6)
+frame #3: <unknown function> + 0x94ac3 (0x146f01c50ac3 in /lib/x86_64-linux-gnu/libc.so.6)
+frame #4: <unknown function> + 0x126850 (0x146f01ce2850 in /lib/x86_64-linux-gnu/libc.so.6)
+
+[rank1]:[E ProcessGroupNCCL.cpp:537] Some NCCL operations have failed or timed out. Due to the asynchronous nature of CUDA kernels, subsequent GPU operations might run on corrupted/incomplete data.
+[rank1]:[E ProcessGroupNCCL.cpp:543] To avoid data inconsistency, we are taking the entire process down.
+[rank1]:[E ProcessGroupNCCL.cpp:1182] [Rank 1] NCCL watchdog thread terminated with exception: [Rank 1] Watchdog caught collective operation timeout: WorkNCCL(SeqNum=64877, OpType=ALLREDUCE, NumelIn=1, NumelOut=1, Timeout(ms)=600000) ran for 600120 milliseconds before timing out.
+Exception raised from checkTimeout at /opt/conda/conda-bld/pytorch_1708025842427/work/torch/csrc/distributed/c10d/ProcessGroupNCCL.cpp:525 (most recent call first):
+frame #0: c10::Error::Error(c10::SourceLocation, std::string) + 0x57 (0x14f42217bd87 in /cluster/home/ckeusch/miniconda3/envs/CDiffSD/lib/python3.11/site-packages/torch/lib/libc10.so)
+frame #1: c10d::ProcessGroupNCCL::WorkNCCL::checkTimeout(std::optional<std::chrono::duration<long, std::ratio<1l, 1000l> > >) + 0x1e6 (0x14f3c4f52d26 in /cluster/home/ckeusch/miniconda3/envs/CDiffSD/lib/python3.11/site-packages/torch/lib/libtorch_cuda.so)
+frame #2: c10d::ProcessGroupNCCL::workCleanupLoop() + 0x19d (0x14f3c4f5627d in /cluster/home/ckeusch/miniconda3/envs/CDiffSD/lib/python3.11/site-packages/torch/lib/libtorch_cuda.so)
+frame #3: c10d::ProcessGroupNCCL::ncclCommWatchdog() + 0x119 (0x14f3c4f56e79 in /cluster/home/ckeusch/miniconda3/envs/CDiffSD/lib/python3.11/site-packages/torch/lib/libtorch_cuda.so)
+frame #4: <unknown function> + 0xd3e95 (0x14f494e59e95 in /cluster/home/ckeusch/miniconda3/envs/CDiffSD/bin/../lib/libstdc++.so.6)
+frame #5: <unknown function> + 0x94ac3 (0x14f495639ac3 in /lib/x86_64-linux-gnu/libc.so.6)
+frame #6: <unknown function> + 0x126850 (0x14f4956cb850 in /lib/x86_64-linux-gnu/libc.so.6)
+
+terminate called after throwing an instance of 'c10::DistBackendError'
+  what():  [Rank 1] NCCL watchdog thread terminated with exception: [Rank 1] Watchdog caught collective operation timeout: WorkNCCL(SeqNum=64877, OpType=ALLREDUCE, NumelIn=1, NumelOut=1, Timeout(ms)=600000) ran for 600120 milliseconds before timing out.
+Exception raised from checkTimeout at /opt/conda/conda-bld/pytorch_1708025842427/work/torch/csrc/distributed/c10d/ProcessGroupNCCL.cpp:525 (most recent call first):
+frame #0: c10::Error::Error(c10::SourceLocation, std::string) + 0x57 (0x14f42217bd87 in /cluster/home/ckeusch/miniconda3/envs/CDiffSD/lib/python3.11/site-packages/torch/lib/libc10.so)
+frame #1: c10d::ProcessGroupNCCL::WorkNCCL::checkTimeout(std::optional<std::chrono::duration<long, std::ratio<1l, 1000l> > >) + 0x1e6 (0x14f3c4f52d26 in /cluster/home/ckeusch/miniconda3/envs/CDiffSD/lib/python3.11/site-packages/torch/lib/libtorch_cuda.so)
+frame #2: c10d::ProcessGroupNCCL::workCleanupLoop() + 0x19d (0x14f3c4f5627d in /cluster/home/ckeusch/miniconda3/envs/CDiffSD/lib/python3.11/site-packages/torch/lib/libtorch_cuda.so)
+frame #3: c10d::ProcessGroupNCCL::ncclCommWatchdog() + 0x119 (0x14f3c4f56e79 in /cluster/home/ckeusch/miniconda3/envs/CDiffSD/lib/python3.11/site-packages/torch/lib/libtorch_cuda.so)
+frame #4: <unknown function> + 0xd3e95 (0x14f494e59e95 in /cluster/home/ckeusch/miniconda3/envs/CDiffSD/bin/../lib/libstdc++.so.6)
+frame #5: <unknown function> + 0x94ac3 (0x14f495639ac3 in /lib/x86_64-linux-gnu/libc.so.6)
+frame #6: <unknown function> + 0x126850 (0x14f4956cb850 in /lib/x86_64-linux-gnu/libc.so.6)
+
+Exception raised from ncclCommWatchdog at /opt/conda/conda-bld/pytorch_1708025842427/work/torch/csrc/distributed/c10d/ProcessGroupNCCL.cpp:1186 (most recent call first):
+frame #0: c10::Error::Error(c10::SourceLocation, std::string) + 0x57 (0x14f42217bd87 in /cluster/home/ckeusch/miniconda3/envs/CDiffSD/lib/python3.11/site-packages/torch/lib/libc10.so)
+frame #1: <unknown function> + 0xdef733 (0x14f3c4cad733 in /cluster/home/ckeusch/miniconda3/envs/CDiffSD/lib/python3.11/site-packages/torch/lib/libtorch_cuda.so)
+frame #2: <unknown function> + 0xd3e95 (0x14f494e59e95 in /cluster/home/ckeusch/miniconda3/envs/CDiffSD/bin/../lib/libstdc++.so.6)
+frame #3: <unknown function> + 0x94ac3 (0x14f495639ac3 in /lib/x86_64-linux-gnu/libc.so.6)
+frame #4: <unknown function> + 0x126850 (0x14f4956cb850 in /lib/x86_64-linux-gnu/libc.so.6)
+
+[rank0]:[E ProcessGroupNCCL.cpp:537] Some NCCL operations have failed or timed out. Due to the asynchronous nature of CUDA kernels, subsequent GPU operations might run on corrupted/incomplete data.
+[rank0]:[E ProcessGroupNCCL.cpp:543] To avoid data inconsistency, we are taking the entire process down.
+[rank0]:[E ProcessGroupNCCL.cpp:1182] [Rank 0] NCCL watchdog thread terminated with exception: [Rank 0] Watchdog caught collective operation timeout: WorkNCCL(SeqNum=64877, OpType=ALLREDUCE, NumelIn=1, NumelOut=1, Timeout(ms)=600000) ran for 600390 milliseconds before timing out.
+Exception raised from checkTimeout at /opt/conda/conda-bld/pytorch_1708025842427/work/torch/csrc/distributed/c10d/ProcessGroupNCCL.cpp:525 (most recent call first):
+frame #0: c10::Error::Error(c10::SourceLocation, std::string) + 0x57 (0x153357380d87 in /cluster/home/ckeusch/miniconda3/envs/CDiffSD/lib/python3.11/site-packages/torch/lib/libc10.so)
+frame #1: c10d::ProcessGroupNCCL::WorkNCCL::checkTimeout(std::optional<std::chrono::duration<long, std::ratio<1l, 1000l> > >) + 0x1e6 (0x1532fa552d26 in /cluster/home/ckeusch/miniconda3/envs/CDiffSD/lib/python3.11/site-packages/torch/lib/libtorch_cuda.so)
+frame #2: c10d::ProcessGroupNCCL::workCleanupLoop() + 0x19d (0x1532fa55627d in /cluster/home/ckeusch/miniconda3/envs/CDiffSD/lib/python3.11/site-packages/torch/lib/libtorch_cuda.so)
+frame #3: c10d::ProcessGroupNCCL::ncclCommWatchdog() + 0x119 (0x1532fa556e79 in /cluster/home/ckeusch/miniconda3/envs/CDiffSD/lib/python3.11/site-packages/torch/lib/libtorch_cuda.so)
+frame #4: <unknown function> + 0xd3e95 (0x1533ca3a8e95 in /cluster/home/ckeusch/miniconda3/envs/CDiffSD/bin/../lib/libstdc++.so.6)
+frame #5: <unknown function> + 0x94ac3 (0x1533cab88ac3 in /lib/x86_64-linux-gnu/libc.so.6)
+frame #6: <unknown function> + 0x126850 (0x1533cac1a850 in /lib/x86_64-linux-gnu/libc.so.6)
+
+terminate called after throwing an instance of 'c10::DistBackendError'
+  what():  [Rank 0] NCCL watchdog thread terminated with exception: [Rank 0] Watchdog caught collective operation timeout: WorkNCCL(SeqNum=64877, OpType=ALLREDUCE, NumelIn=1, NumelOut=1, Timeout(ms)=600000) ran for 600390 milliseconds before timing out.
+Exception raised from checkTimeout at /opt/conda/conda-bld/pytorch_1708025842427/work/torch/csrc/distributed/c10d/ProcessGroupNCCL.cpp:525 (most recent call first):
+frame #0: c10::Error::Error(c10::SourceLocation, std::string) + 0x57 (0x153357380d87 in /cluster/home/ckeusch/miniconda3/envs/CDiffSD/lib/python3.11/site-packages/torch/lib/libc10.so)
+frame #1: c10d::ProcessGroupNCCL::WorkNCCL::checkTimeout(std::optional<std::chrono::duration<long, std::ratio<1l, 1000l> > >) + 0x1e6 (0x1532fa552d26 in /cluster/home/ckeusch/miniconda3/envs/CDiffSD/lib/python3.11/site-packages/torch/lib/libtorch_cuda.so)
+frame #2: c10d::ProcessGroupNCCL::workCleanupLoop() + 0x19d (0x1532fa55627d in /cluster/home/ckeusch/miniconda3/envs/CDiffSD/lib/python3.11/site-packages/torch/lib/libtorch_cuda.so)
+frame #3: c10d::ProcessGroupNCCL::ncclCommWatchdog() + 0x119 (0x1532fa556e79 in /cluster/home/ckeusch/miniconda3/envs/CDiffSD/lib/python3.11/site-packages/torch/lib/libtorch_cuda.so)
+frame #4: <unknown function> + 0xd3e95 (0x1533ca3a8e95 in /cluster/home/ckeusch/miniconda3/envs/CDiffSD/bin/../lib/libstdc++.so.6)
+frame #5: <unknown function> + 0x94ac3 (0x1533cab88ac3 in /lib/x86_64-linux-gnu/libc.so.6)
+frame #6: <unknown function> + 0x126850 (0x1533cac1a850 in /lib/x86_64-linux-gnu/libc.so.6)
+
+Exception raised from ncclCommWatchdog at /opt/conda/conda-bld/pytorch_1708025842427/work/torch/csrc/distributed/c10d/ProcessGroupNCCL.cpp:1186 (most recent call first):
+frame #0: c10::Error::Error(c10::SourceLocation, std::string) + 0x57 (0x153357380d87 in /cluster/home/ckeusch/miniconda3/envs/CDiffSD/lib/python3.11/site-packages/torch/lib/libc10.so)
+frame #1: <unknown function> + 0xdef733 (0x1532fa2ad733 in /cluster/home/ckeusch/miniconda3/envs/CDiffSD/lib/python3.11/site-packages/torch/lib/libtorch_cuda.so)
+frame #2: <unknown function> + 0xd3e95 (0x1533ca3a8e95 in /cluster/home/ckeusch/miniconda3/envs/CDiffSD/bin/../lib/libstdc++.so.6)
+frame #3: <unknown function> + 0x94ac3 (0x1533cab88ac3 in /lib/x86_64-linux-gnu/libc.so.6)
+frame #4: <unknown function> + 0x126850 (0x1533cac1a850 in /lib/x86_64-linux-gnu/libc.so.6)
+
+[rank3]:[E ProcessGroupNCCL.cpp:523] [Rank 3] Watchdog caught collective operation timeout: WorkNCCL(SeqNum=64877, OpType=ALLREDUCE, NumelIn=337219, NumelOut=337219, Timeout(ms)=600000) ran for 600690 milliseconds before timing out.
+[2024-12-08 13:07:10,525] torch.distributed.elastic.multiprocessing.api: [WARNING] Sending process 1251316 closing signal SIGTERM
+[2024-12-08 13:07:11,492] torch.distributed.elastic.multiprocessing.api: [ERROR] failed (exitcode: -6) local_rank: 0 (pid: 1251313) of binary: /cluster/home/ckeusch/miniconda3/envs/CDiffSD/bin/python3.11
+Traceback (most recent call last):
+  File "/cluster/home/ckeusch/miniconda3/envs/CDiffSD/bin/accelerate", line 10, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "/cluster/home/ckeusch/miniconda3/envs/CDiffSD/lib/python3.11/site-packages/accelerate/commands/accelerate_cli.py", line 46, in main
+    args.func(args)
+  File "/cluster/home/ckeusch/miniconda3/envs/CDiffSD/lib/python3.11/site-packages/accelerate/commands/launch.py", line 1066, in launch_command
+    multi_gpu_launcher(args)
+  File "/cluster/home/ckeusch/miniconda3/envs/CDiffSD/lib/python3.11/site-packages/accelerate/commands/launch.py", line 711, in multi_gpu_launcher
+    distrib_run.run(args)
+  File "/cluster/home/ckeusch/miniconda3/envs/CDiffSD/lib/python3.11/site-packages/torch/distributed/run.py", line 803, in run
+    elastic_launch(
+  File "/cluster/home/ckeusch/miniconda3/envs/CDiffSD/lib/python3.11/site-packages/torch/distributed/launcher/api.py", line 135, in __call__
+    return launch_agent(self._config, self._entrypoint, list(args))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/cluster/home/ckeusch/miniconda3/envs/CDiffSD/lib/python3.11/site-packages/torch/distributed/launcher/api.py", line 268, in launch_agent
+    raise ChildFailedError(
+torch.distributed.elastic.multiprocessing.errors.ChildFailedError: 
+========================================================
+src/main.py FAILED
+--------------------------------------------------------
+Failures:
+[1]:
+  time      : 2024-12-08_13:07:10
+  host      : eu-g3-071.euler.ethz.ch
+  rank      : 1 (local_rank: 1)
+  exitcode  : -6 (pid: 1251314)
+  error_file: <N/A>
+  traceback : Signal 6 (SIGABRT) received by PID 1251314
+[2]:
+  time      : 2024-12-08_13:07:10
+  host      : eu-g3-071.euler.ethz.ch
+  rank      : 2 (local_rank: 2)
+  exitcode  : -6 (pid: 1251315)
+  error_file: <N/A>
+  traceback : Signal 6 (SIGABRT) received by PID 1251315
+--------------------------------------------------------
+Root Cause (first observed failure):
+[0]:
+  time      : 2024-12-08_13:07:10
+  host      : eu-g3-071.euler.ethz.ch
+  rank      : 0 (local_rank: 0)
+  exitcode  : -6 (pid: 1251313)
+  error_file: <N/A>
+  traceback : Signal 6 (SIGABRT) received by PID 1251313
+========================================================

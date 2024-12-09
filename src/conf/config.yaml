@@ -7,6 +7,9 @@ tuner: False
 use_optuna: False
 n_trials: 100
 training: True
+# can be 'accelerate', 'dataparallel' or null
+multi_gpu: 'accelerate'
+# multi_gpu: null 
 test: False
 plot:
   metrics: False
@@ -18,17 +21,6 @@ snrs: [0.1, 0.3, 0.5, 0.7, 1.0, 1.2, 1.5, 1.8, 2.0, 2.5, 3.5]
 size_testset: 500
 
 
-"""
-launcher:
-    _target_: submitit.SlurmLauncher
-    partition: ${slurm.partition}
-    gpus_per_node: ${slurm.gpus_per_node}
-    nodes: ${slurm.nodes}
-    time: ${slurm.time}
-    # cpus_per_task: 8  # Adjust as needed
-    # mem: 32GB         # Memory per task
-    # mem-per-cpu: 40g
-"""
 
 
 
