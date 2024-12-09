@@ -26,7 +26,10 @@ def create_model_and_optimizer(cfg):
     model = Unet1D(
         dim = cfg.model.dim,
         dim_mults = cfg.model.dim_multiples,
-        channels = cfg.model.channels
+        channels = cfg.model.channels,
+        learned_sinusoidal_cond = cfg.model.learned_sinusoidal_cond,
+        attn_dim_head = cfg.model.attn_dim_head,
+        attn_heads = cfg.model.attn_heads,
     )
     if cfg.model.continue_from_pretrained:
         model.load_state_dict(torch.load(cfg.model.pretrained_path, map_location=device, weights_only=True))
@@ -44,7 +47,14 @@ def load_model_and_weights(path_model, cfg):
     Returns:
         model (Unet1D): The model with loaded weights.
     '''
-    model = Unet1D(dim=cfg.model.dim, dim_mults=cfg.model.dim_multiples, channels=3)
+    model = Unet1D(
+        dim = cfg.model.dim,
+        dim_mults = cfg.model.dim_multiples,
+        channels = cfg.model.channels,
+        learned_sinusoidal_cond = cfg.model.learned_sinusoidal_cond,
+        attn_dim_head = cfg.model.attn_dim_head,
+        attn_heads = cfg.model.attn_heads,
+    )
     model.load_state_dict(torch.load(path_model, map_location=device, weights_only=True))
     return model
 
