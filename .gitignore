@@ -1,4 +1,5 @@
 src/tests.ipynb
+metrics/*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
