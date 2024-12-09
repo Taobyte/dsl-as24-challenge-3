@@ -2,7 +2,7 @@
 
 #SBATCH --gpus 1
 #SBATCH --cpus-per-gpu 2
-#SBATCH --time=1440
+#SBATCH --time=105
 #SBATCH --account=dl_jobs
 #SBATCH --output=sbatched.out
 

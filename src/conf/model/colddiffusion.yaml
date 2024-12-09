@@ -14,7 +14,7 @@ signal_length: 4096
 
 # training 
 continue_from_pretrained: True
-pretrained_path: "/home/tlauner/DSLab/dsl-as24-challenge-3/outputs/2024-12-08/16-13-03/chkpt_epoch_21_20_cosine_cold_diffusion.pth"
+pretrained_path: "/home/tlauner/DSLab/dsl-as24-challenge-3/outputs/2024-12-08/17-51-16/chkpt_epoch_15_20_cosine_cold_diffusion.pth"
 batch_size: 32 
 num_workers: 2
 lr: 0.001

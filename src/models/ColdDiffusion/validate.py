@@ -50,14 +50,12 @@ def get_metrics_cold_diffusion(
     onsets= []
 
     def compute_metrs(eq_batch, prediction, shifts):
-        eq_batch = eq_batch.cpu().numpy()
-        prediction = np.array(prediction.cpu())
         corr = [
             cross_correlation(a, b)
             for a, b in zip(eq_batch[:, idx, :], prediction[:, idx, :])
         ]
         max_amplitude_differences = [
-            max_amplitude_difference(a, b)
+            max_amplitude_difference(a, b).cpu().numpy()
             for a, b in zip(eq_batch[:, idx, :], prediction[:, idx, :])
         ]
         onset = [
@@ -72,37 +70,35 @@ def get_metrics_cold_diffusion(
         for eq_batch, noise_batch, shifts in test_dl:
 
             # get predictions
+            eq_batch = eq_batch * snr
             eq_in = eq_batch.to(device)
             noise_real = noise_batch.to(device)
-            signal_noisy = eq_in * snr + noise_real
-            t = torch.Tensor([cfg.model.T - 1]).long().to(device)
+            signal_noisy = eq_in + noise_real
             
-            restored_dir = testing.direct_denoising(model, signal_noisy.to(device).float(), t)
-
-            t = cfg.model.T - 1
-            restored_sample = testing.sample(
-                                            model,
-                                            signal_noisy.float(),
-                                            t,
-                                            batch_size=signal_noisy.shape[0]
-                                            )
-
             # compute metrics
             shifts = np.array(shifts, dtype=int)
 
-            corr, max_amplitude_differences, onset = compute_metrs(eq_batch, restored_sample, shifts)
-            ccs_sample.extend(corr)
-            amplitudes_sample.extend(max_amplitude_differences)
-            onsets_sample.extend(onset)
-            corr, max_amplitude_differences, onset = compute_metrs(eq_batch, restored_dir, shifts)
-            ccs.extend(corr)
-            amplitudes.extend(max_amplitude_differences)
-            onsets.extend(onset)
-    
-    if cfg.model.sampling:
-        return np.array(ccs_sample), np.array(amplitudes_sample), np.array(onsets_sample)
-    else:
-        return np.array(ccs), np.array(amplitudes), np.array(onsets)
+            if not cfg.model.sampling:
+                t = torch.Tensor([cfg.model.T - 1]).long().to(device)
+                restored_dir = testing.direct_denoising(model, signal_noisy.to(device).float(), t).cpu()
+                corr, max_amplitude_differences, onset = compute_metrs(eq_batch.numpy(), restored_dir.numpy(), shifts)
+                ccs.append(corr)
+                amplitudes.extend(max_amplitude_differences)
+                onsets.extend(onset)
+                return np.array(ccs), np.array(amplitudes), np.array(onsets)
+            else:
+                t = cfg.model.T - 1
+                restored_sample = testing.sample(
+                                                model,
+                                                signal_noisy.float(),
+                                                t,
+                                                batch_size=signal_noisy.shape[0]
+                                                ).cpu()
+                corr, max_amplitude_differences, onset = compute_metrs(eq_batch.numpy(), restored_sample.numpy(), shifts)
+                ccs_sample.extend(corr)
+                amplitudes_sample.extend(max_amplitude_differences)
+                onsets_sample.extend(onset)
+                return np.array(ccs_sample), np.array(amplitudes_sample), np.array(onsets_sample)
 
 
 def visualize_predictions_cold_diffusion(cfg):
@@ -128,7 +124,7 @@ def visualize_predictions_cold_diffusion(cfg):
             channel = cfg.user.plot_channel
             eq, noise, _ = next(iter(test_dl))
             noisy = eq * snr + noise
-            ground_truth = eq
+            ground_truth = eq * snr
             t = torch.Tensor([cfg.model.T - 1]).long().to(device)
             
             restored_dir = testing.direct_denoising(model, noisy.to(device).float(), t).cpu()
@@ -136,7 +132,7 @@ def visualize_predictions_cold_diffusion(cfg):
             t = cfg.model.T - 1
             restored_sample = testing.sample(
                                             model,
-                                            noisy.float(),
+                                            noisy.to(device).float(),
                                             t,
                                             batch_size=noisy.shape[0]
                                             ).cpu()

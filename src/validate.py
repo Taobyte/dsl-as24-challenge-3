@@ -157,7 +157,7 @@ def get_bandpass_results(assoc, snr, idx=0):
         )
 
         ccs.append(cross_correlation(eq_batch, filtered))
-        amplitudes.append(max_amplitude_difference(eq_batch, filtered))
+        amplitudes.append(max_amplitude_difference(eq_batch, filtered).cpu().numpy())
         onsets.append(p_wave_onset_difference(eq_batch, filtered, shift=shifts))
 
     amplitudes = np.array(amplitudes)
