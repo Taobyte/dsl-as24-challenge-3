@@ -2,7 +2,7 @@ model_name: "ColdDiffusion"
 use_csv: True
 # architecture
 dim: 16
-dim_multiples: [1, 2, 4, 8]
+dim_multiples: [1, 2, 4, 4, 8]
 attn_dim_head: 32
 attn_heads: 4
 resnet_norm_groups: 8
@@ -13,12 +13,12 @@ resnet_norm_groups: 8
 signal_length: 4096
 
 # training 
-continue_from_pretrained: False
-pretrained_path: "/home/tlauner/DSLab/dsl-as24-challenge-3/outputs/2024-11-21/14-38-30/ColdDiffusion_lr_0.0005_e3.keras"
+continue_from_pretrained: True
+pretrained_path: "/home/tlauner/DSLab/dsl-as24-challenge-3/outputs/2024-12-08/16-13-03/chkpt_epoch_21_20_cosine_cold_diffusion.pth"
 batch_size: 32 
 num_workers: 2
-lr: 0.003
-epochs: 27
+lr: 0.001
+epochs: 25
 seed: 123
 
 # testing
