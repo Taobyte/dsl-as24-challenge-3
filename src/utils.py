@@ -1,9 +1,15 @@
 import logging
+import pathlib
+import time
 from math import cos, pi
 
-
 import torch
+from torch.utils.data import DataLoader
 import numpy as np
+import pandas as pd
+import omegaconf
+import hydra
+from scipy.stats import wilcoxon
 
 from enum import Enum
 
@@ -25,17 +31,7 @@ class Model(Enum):
     CleanUNet2 = "clean_unet2"
 
 
-def log_gradient_stats(model):
-    total_grad_norm = 0
-    for param in model.parameters():
-        if param.grad is not None:
-            param_norm = param.grad.detach().norm(2)
-            total_grad_norm += param_norm.item()
-
-    logger.info(f"Total Gradient Norm: {total_grad_norm}")
-
-
-def log_model_size(net):
+def log_model_size(net: torch.nn.Module) -> int:
     """
     Print the number of parameters of a network
     """
@@ -47,6 +43,91 @@ def log_model_size(net):
         logger.info(
             "{} Parameters: {:.6f}M".format(net.__class__.__name__, params / 1e6)
         )
+    return params
+
+
+def log_inference_speed(net: torch.nn.Module, test_dl: DataLoader) -> float:
+    """
+    Measures the inference speed of a PyTorch model on a test DataLoader.
+
+    Args:
+        net (torch.nn.Module): The PyTorch model to evaluate.
+        cfg (omegaconf.DictConfig): Configuration object (optional use).
+        test_dl (DataLoader): DataLoader containing test data.
+
+    Returns:
+        float: Inference speed in samples per second.
+    """
+
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    net.eval()
+    net.to(device)
+
+    logger.info(f"Using device {device} for inference speed calculation.")
+
+    warmup_iterations = 5
+    timing_iterations = 20
+
+    # Warm-up
+    with torch.no_grad():
+        for _ in range(warmup_iterations):
+            for batch in test_dl:
+                inputs = batch[0].to(device)
+                _ = net(inputs)
+                break
+
+    start_time = time.perf_counter()
+    total_samples = 0
+
+    with torch.no_grad():
+        for _ in range(timing_iterations):
+            for batch in test_dl:
+                inputs = batch[0].to(device)
+                _ = net(inputs)
+                total_samples += inputs.size(0)
+                break
+
+    end_time = time.perf_counter()
+    elapsed_time = end_time - start_time
+
+    # Calculate samples per second
+    inference_speed = total_samples / elapsed_time
+    logger.info(f"Inference Speed: {inference_speed:.2f} samples/sec")
+
+    return inference_speed
+
+
+def wilcoxon_test(
+    metrics_deepdenoiser_path: str, metrics_model_path: str, model_name: str
+) -> pd.DataFrame:
+    """
+    Compute wilcoxon significance test for baseline DeepDenoiser against trained model
+
+    Args:
+        metrics_deepdenoiser_path (str): path to folder containing deepdenoiser metrics (cc.csv, mar.csv, pw.csv)
+        metrics_model_path (str): path to folder containing model metrics (cc.csv, mar.csv, pw.csv)
+        model_name (str): name of the model used in the wilcoxon significance test
+
+    Returns:
+        pd.DataFrame: DataFrame storing p-values for each snr and metric
+    """
+    output_dir = pathlib.Path(
+        hydra.core.hydra_config.HydraConfig.get().runtime.output_dir
+    )
+    metrics = ["cc", "mar", "pw"]
+    p_values = {}
+    for metric in metrics:
+        deep_df = pd.read_csv(metrics_deepdenoiser_path + f"/{metric}.csv")
+        model_df = pd.read_csv(metrics_model_path + f"/{metric}.csv")
+        p = {}
+        for column in deep_df.columns:
+            p[column] = wilcoxon(deep_df[column], model_df[column])
+        p_values[metric] = p
+
+    df = pd.DataFrame(p_values)
+    df.to_csv(output_dir / f"p_values_{model_name}.csv")
+
+    return df
 
 
 ####################### lr scheduler: Linear Warmup then Cosine Decay #############################

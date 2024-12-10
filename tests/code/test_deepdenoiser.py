@@ -34,6 +34,6 @@ def test_upsampling():
 
 def test_deepdenoiser():
     model = DeepDenoiser(3, 5, 8, 0.0)
-    input = torch.randn((1, 3, 6120))
+    input = torch.randn((5, 3, 6120))
     output = model(input)
-    assert output.shape == (1, 6, 64, 256)
+    assert output.shape == (5, 6, 64, 256)

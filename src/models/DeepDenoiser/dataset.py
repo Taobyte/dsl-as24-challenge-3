@@ -6,12 +6,14 @@ import einops
 import keras
 import omegaconf
 import torch as th
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import Dataset, DataLoader, Subset
 import pandas as pd
 import numpy as np
 from numpy import ndarray
 
 from src.utils import Mode
+from torch import Tensor
+from typing import Union
 
 logger = logging.getLogger()
 
@@ -423,6 +425,7 @@ class CSVDatasetPytorch(Dataset):
         snr_upper: float,
         mode: Mode,
         window="hann_window",
+        random: bool = True,
     ):
         logger.info(f"start loading pickle files for {mode}")
         if mode == Mode.TRAIN:
@@ -447,16 +450,20 @@ class CSVDatasetPytorch(Dataset):
         self.n_fft = 126
         self.window = getattr(th, window)(self.win_length)
 
+        self.random = random
+
     def __len__(self) -> int:
         return len(self.signal_df)
 
-    def __getitem__(self, idx) -> tuple[ndarray, ndarray]:
+    def __getitem__(self, idx) -> tuple[Tensor, Tensor]:
         eq = self.signal_df.iloc[idx]
-        random_noise_idx = np.random.randint(len(self.noise_df))
+        random_noise_idx = np.random.randint(len(self.noise_df)) if self.random else idx
         noise = self.noise_df.iloc[random_noise_idx]
         assert self.snr_lower <= self.snr_upper
-        snr_random = np.random.uniform(self.snr_lower, self.snr_upper)
-        event_shift = np.random.randint(1000, 6000)
+        snr_random = (
+            np.random.uniform(self.snr_lower, self.snr_upper) if self.random else 1.0
+        )
+        event_shift = np.random.randint(1000, 6000) if self.random else 3000
 
         Z_eq = eq["Z"][event_shift : event_shift + self.signal_length]
         N_eq = eq["N"][event_shift : event_shift + self.signal_length]
@@ -478,7 +485,7 @@ class CSVDatasetPytorch(Dataset):
         noise_std = np.std(
             noise_stacked[:, 6000 - event_shift : 6500 - event_shift], axis=1
         ).reshape(-1, 1)
-        snr_original = signal_std / (noise_std + 1e-10)
+        snr_original = signal_std / (noise_std + 1e-12)
 
         # change the SNR
         noise_stacked = noise_stacked * snr_original  # rescale noise so that SNR=1
@@ -499,7 +506,6 @@ class CSVDatasetPytorch(Dataset):
         )
         real = eq_stft[..., 0]
         imag = eq_stft[..., 1]
-
         stft_eq = th.cat([real, imag], dim=0)
 
         noise_stft = th.stft(
@@ -512,15 +518,16 @@ class CSVDatasetPytorch(Dataset):
         )
         real = noise_stft[..., 0]
         imag = noise_stft[..., 1]
-
         stft_noise = th.cat([real, imag], dim=0)
 
-        mask = th.abs(stft_eq) / (th.abs(stft_noise) + np.abs(stft_eq) + 1e-12)
+        mask = th.abs(stft_eq) / (th.abs(stft_noise) + th.abs(stft_eq) + 1e-12)
 
         return noisy_eq.float(), mask.float()
 
 
-def get_dataloaders_pytorch(cfg: omegaconf.DictConfig, return_test=False):
+def get_dataloaders_pytorch(
+    cfg: omegaconf.DictConfig, return_test=False, subset=None
+) -> Union[DataLoader, tuple[DataLoader, DataLoader]]:
     if return_test:
         test_dataset = CSVDatasetPytorch(
             cfg.user.data.csv_path,
@@ -528,9 +535,10 @@ def get_dataloaders_pytorch(cfg: omegaconf.DictConfig, return_test=False):
             cfg.model.snr_lower,
             cfg.model.snr_upper,
             Mode.TEST,
+            random=cfg.model.random,
         )
         test_dl = th.utils.data.DataLoader(
-            test_dataset, batch_size=cfg.plot.n_examples, num_workers=8
+            test_dataset, batch_size=cfg.plot.n_examples, num_workers=1
         )
         return test_dl
 
@@ -540,6 +548,7 @@ def get_dataloaders_pytorch(cfg: omegaconf.DictConfig, return_test=False):
         cfg.model.snr_lower,
         cfg.model.snr_upper,
         Mode.TRAIN,
+        random=cfg.model.random,
     )
     val_dataset = CSVDatasetPytorch(
         cfg.user.data.csv_path,
@@ -547,13 +556,17 @@ def get_dataloaders_pytorch(cfg: omegaconf.DictConfig, return_test=False):
         cfg.model.snr_lower,
         cfg.model.snr_upper,
         Mode.VALIDATION,
+        random=cfg.model.random,
     )
 
+    if subset:
+        train_dataset = Subset(train_dataset, indices=range(subset))
+
     train_dl = th.utils.data.DataLoader(
-        train_dataset, batch_size=cfg.model.batch_size, num_workers=8
+        train_dataset, batch_size=cfg.model.batch_size, num_workers=4
     )
     val_dl = th.utils.data.DataLoader(
-        val_dataset, batch_size=cfg.model.batch_size, num_workers=8
+        val_dataset, batch_size=cfg.model.batch_size, num_workers=4
     )
 
     return train_dl, val_dl

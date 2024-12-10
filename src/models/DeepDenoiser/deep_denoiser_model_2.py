@@ -171,7 +171,7 @@ class UNet(keras.models.Model):
         )
         self.batchnorm1 = keras.layers.BatchNormalization()
         self.batchnorm_middle = keras.layers.BatchNormalization()
-        self.dropout_layer = keras.layers.Dropout
+        self.dropout_layer = keras.layers.Dropout()
         self.relu = keras.layers.ReLU()
 
         self.output_layer = keras.layers.Conv2D(

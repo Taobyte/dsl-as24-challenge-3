@@ -1,7 +1,11 @@
 model_name: "DeepDenoiser"
 
+subset: null
+random: True
+
 snr_lower: 0.1
 snr_upper: 2.0
+
 
 architecture:
   n_channels: 3
@@ -16,8 +20,8 @@ architecture:
 
 # Training parameters
 batch_size: 256
-epochs: 100
+epochs: 1000
 lr: 0.001
 clip_norm: 1e9
 
-val_freq: 1
+val_freq: 100

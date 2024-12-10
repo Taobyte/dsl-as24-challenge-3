@@ -12,7 +12,7 @@ import hydra
 import omegaconf
 from tqdm import tqdm
 
-from src.utils import Mode
+from src.utils import Mode, log_model_size
 from torch.utils.tensorboard import SummaryWriter
 
 from models.DeepDenoiser.deep_denoiser_model_2 import UNet
@@ -147,10 +147,13 @@ def fit_deep_denoiser_pytorch(cfg: omegaconf.DictConfig) -> torch.nn.Module:
     tb = SummaryWriter(output_dir)
 
     model = DeepDenoiser(**cfg.model.architecture).to(device)
+    log_model_size(model)
 
     optimizer = torch.optim.AdamW(model.parameters(), cfg.model.lr)
-    bce_loss = torch.nn.BCELoss()
-    train_dl, val_dl = get_dataloaders_pytorch(cfg)
+    bce_loss = torch.nn.BCEWithLogitsLoss()
+    train_dl, val_dl = get_dataloaders_pytorch(cfg, subset=cfg.model.subset)
+    if cfg.model.subset:
+        logger.info(f"using {cfg.model.subset} data points for training")
 
     logger.info("Start training DeepDenoiser")
     best_val_loss = float("inf")
@@ -196,7 +199,8 @@ def fit_deep_denoiser_pytorch(cfg: omegaconf.DictConfig) -> torch.nn.Module:
 
                 if val_loss < best_val_loss:
                     torch.save(
-                        model.state_dict(), output_dir / f"checkpoints/{epoch}.pth"
+                        model.state_dict(),
+                        output_dir / f"checkpoints/epoch_{epoch}.pth",
                     )
                     best_val_loss = val_loss
                     logger.info(

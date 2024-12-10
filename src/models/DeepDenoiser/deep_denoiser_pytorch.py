@@ -44,7 +44,7 @@ class UpsamplingBlock(nn.Module):
     def __init__(self, channel_dim: int, dropout: float):
         super().__init__()
 
-        self.upsampling = nn.UpsamplingBilinear2d(scale_factor=2)
+        self.upsampling = nn.Upsample(scale_factor=2)
 
         self.conv_2d_1 = nn.ConvTranspose2d(
             4 * channel_dim, channel_dim, 5, padding=2, bias=False
@@ -97,7 +97,7 @@ class DeepDenoiser(nn.Module):
         self.register_buffer("window", getattr(torch, window)(win_length))
 
         self.inital_conv2d = nn.Conv2d(
-            int(2 * n_channels), channel_base, kernel_size=3, stride=1, padding="same"
+            int(2 * n_channels), channel_base, kernel_size=1, stride=1
         )
 
         dims = [int(channel_base * 2**i) for i in range(n_layers)]
@@ -110,6 +110,7 @@ class DeepDenoiser(nn.Module):
             kernel_size=3,
             stride=1,
             padding="same",
+            bias=False,
         )
         self.batch_norm = nn.BatchNorm2d(channel_base * 2 ** (n_layers))
         self.relu = nn.ReLU()
@@ -119,10 +120,8 @@ class DeepDenoiser(nn.Module):
         self.decoder = nn.ModuleList([UpsamplingBlock(dim, dropout) for dim in dims])
 
         self.final_conv2d = nn.Conv2d(
-            channel_base, int(2 * n_channels), kernel_size=3, stride=1, padding="same"
+            channel_base, int(2 * n_channels), kernel_size=1, stride=1
         )
-
-        self.sigmoid = nn.Sigmoid()
 
     def forward(self, x) -> Tensor:
         _, C, _ = x.shape
@@ -138,8 +137,12 @@ class DeepDenoiser(nn.Module):
         real = x_stft[..., 0]
         imag = x_stft[..., 1]
 
+        print(real.shape)
+
         x = torch.cat([real, imag], dim=0)
+        print(x.shape)
         x = einops.rearrange(x, "(b c) w h -> b c w h", c=int(2 * C))
+        print(x.shape)
 
         x = self.inital_conv2d(x)
 
@@ -158,6 +161,5 @@ class DeepDenoiser(nn.Module):
             x = block(x, skip)
 
         x = self.final_conv2d(x)
-        x = self.sigmoid(x)
 
         return x
