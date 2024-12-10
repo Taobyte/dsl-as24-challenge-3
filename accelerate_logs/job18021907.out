@@ -1,0 +1,647 @@
+[2024-12-10 23:23:37,082][root][INFO] - seed: 123
+trace_length: 6120
+tuner: false
+use_optuna: false
+n_trials: 100
+training: true
+multi_gpu: accelerate
+test: false
+plot:
+  metrics: false
+  visualization: false
+  n_examples: 10
+  vis_freq: 5
+snrs:
+- 0.1
+- 0.3
+- 0.5
+- 0.7
+- 1.0
+- 1.2
+- 1.5
+- 1.8
+- 2.0
+- 2.5
+- 3.5
+size_testset: 500
+model:
+  model_name: CleanUNet
+  use_csv: true
+  train_pytorch: true
+  tune_stft: false
+  use_metrics: false
+  use_baseline: false
+  load_dummy: false
+  save_model: true
+  seed: 123
+  snr_lower: 0.1
+  snr_upper: 2.0
+  event_shift_start: 5000
+  random: true
+  subset: null
+  pure_noise: true
+  batch_size: 512
+  lr: 1.0e-05
+  epochs: 5000
+  clipnorm: 1000000000.0
+  checkpoint_model: null
+  patience: null
+  log_checkpoints: true
+  checkpoint_freq: 100
+  lr_schedule: true
+  decay_steps: 8000
+  warmup_target: 0.0002
+  alpha: 0.0
+  warmup_steps: 80
+  reduce_lr_plateau: false
+  min_lr: 0.0001
+  factor: 0.2
+  plateau_patience: 3
+  validation: false
+  val_freq: 1000000000.0
+  snrs: null
+  loss: clean_unet_loss
+  use_log_norm: false
+  signal_length: 6120
+  frame_lengths:
+  - 100
+  frame_steps:
+  - 24
+  fft_sizes:
+  - 126
+  stft_lambda: 1.0
+  sc_lambda: 0.5
+  mag_lambda: 0.5
+  channels_input: 3
+  channels_output: 3
+  dropout: 0.0
+  use_raglu: false
+  channels_H: 8
+  encoder_n_layers: 8
+  kernel_size: 4
+  stride: 2
+  max_H: 768
+  kernel_sizes:
+  - 9
+  - 9
+  - 7
+  - 7
+  - 5
+  - 5
+  - 3
+  - 3
+  tsfm_n_layers: 3
+  tsfm_n_head: 4
+  tsfm_d_model: 128
+  tsfm_d_inner: 512
+  channel_base: 8
+  channel_dims:
+  - 1
+  - 2
+  - 4
+  - 8
+  bottleneck: lstm
+user:
+  data:
+    signal_path: /cluster/scratch/ckeusch/data/signal/
+    noise_path: /cluster/scratch/ckeusch/data/noise/
+    csv_path: /cluster/scratch/ckeusch/dsl-as24-challenge-3/data/
+  model_path: /cluster/scratch/ckeusch/dsl-as24-challenge-3/outputs/2024-12-10/22-01-03/500/model.safetensors
+  metrics_model_path: /cluster/scratch/ckeusch/dsl-as24-challenge-3/outputs/2024-12-06/11-02-09/metrics_model.csv
+  metrics_butterworth_path: /cluster/scratch/ckeusch/dsl-as24-challenge-3/outputs/2024-12-03/10-59-47/metrics_butterworth.csv
+  metrics_deepdenoiser_path: /cluster/scratch/ckeusch/dsl-as24-challenge-3/outputs/2024-11-08/DeepDenoiser
+    Metrics/metrics_model.csv
+  wandb: false
+
+[2024-12-10 23:23:37,086][root][INFO] - seed: 123
+trace_length: 6120
+tuner: false
+use_optuna: false
+n_trials: 100
+training: true
+multi_gpu: accelerate
+test: false
+plot:
+  metrics: false
+  visualization: false
+  n_examples: 10
+  vis_freq: 5
+snrs:
+- 0.1
+- 0.3
+- 0.5
+- 0.7
+- 1.0
+- 1.2
+- 1.5
+- 1.8
+- 2.0
+- 2.5
+- 3.5
+size_testset: 500
+model:
+  model_name: CleanUNet
+  use_csv: true
+  train_pytorch: true
+  tune_stft: false
+  use_metrics: false
+  use_baseline: false
+  load_dummy: false
+  save_model: true
+  seed: 123
+  snr_lower: 0.1
+  snr_upper: 2.0
+  event_shift_start: 5000
+  random: true
+  subset: null
+  pure_noise: true
+  batch_size: 512
+  lr: 1.0e-05
+  epochs: 5000
+  clipnorm: 1000000000.0
+  checkpoint_model: null
+  patience: null
+  log_checkpoints: true
+  checkpoint_freq: 100
+  lr_schedule: true
+  decay_steps: 8000
+  warmup_target: 0.0002
+  alpha: 0.0
+  warmup_steps: 80
+  reduce_lr_plateau: false
+  min_lr: 0.0001
+  factor: 0.2
+  plateau_patience: 3
+  validation: false
+  val_freq: 1000000000.0
+  snrs: null
+  loss: clean_unet_loss
+  use_log_norm: false
+  signal_length: 6120
+  frame_lengths:
+  - 100
+  frame_steps:
+  - 24
+  fft_sizes:
+  - 126
+  stft_lambda: 1.0
+  sc_lambda: 0.5
+  mag_lambda: 0.5
+  channels_input: 3
+  channels_output: 3
+  dropout: 0.0
+  use_raglu: false
+  channels_H: 8
+  encoder_n_layers: 8
+  kernel_size: 4
+  stride: 2
+  max_H: 768
+  kernel_sizes:
+  - 9
+  - 9
+  - 7
+  - 7
+  - 5
+  - 5
+  - 3
+  - 3
+  tsfm_n_layers: 3
+  tsfm_n_head: 4
+  tsfm_d_model: 128
+  tsfm_d_inner: 512
+  channel_base: 8
+  channel_dims:
+  - 1
+  - 2
+  - 4
+  - 8
+  bottleneck: lstm
+user:
+  data:
+    signal_path: /cluster/scratch/ckeusch/data/signal/
+    noise_path: /cluster/scratch/ckeusch/data/noise/
+    csv_path: /cluster/scratch/ckeusch/dsl-as24-challenge-3/data/
+  model_path: /cluster/scratch/ckeusch/dsl-as24-challenge-3/outputs/2024-12-10/22-01-03/500/model.safetensors
+  metrics_model_path: /cluster/scratch/ckeusch/dsl-as24-challenge-3/outputs/2024-12-06/11-02-09/metrics_model.csv
+  metrics_butterworth_path: /cluster/scratch/ckeusch/dsl-as24-challenge-3/outputs/2024-12-03/10-59-47/metrics_butterworth.csv
+  metrics_deepdenoiser_path: /cluster/scratch/ckeusch/dsl-as24-challenge-3/outputs/2024-11-08/DeepDenoiser
+    Metrics/metrics_model.csv
+  wandb: false
+
+[2024-12-10 23:23:37,087][root][INFO] - seed: 123
+trace_length: 6120
+tuner: false
+use_optuna: false
+n_trials: 100
+training: true
+multi_gpu: accelerate
+test: false
+plot:
+  metrics: false
+  visualization: false
+  n_examples: 10
+  vis_freq: 5
+snrs:
+- 0.1
+- 0.3
+- 0.5
+- 0.7
+- 1.0
+- 1.2
+- 1.5
+- 1.8
+- 2.0
+- 2.5
+- 3.5
+size_testset: 500
+model:
+  model_name: CleanUNet
+  use_csv: true
+  train_pytorch: true
+  tune_stft: false
+  use_metrics: false
+  use_baseline: false
+  load_dummy: false
+  save_model: true
+  seed: 123
+  snr_lower: 0.1
+  snr_upper: 2.0
+  event_shift_start: 5000
+  random: true
+  subset: null
+  pure_noise: true
+  batch_size: 512
+  lr: 1.0e-05
+  epochs: 5000
+  clipnorm: 1000000000.0
+  checkpoint_model: null
+  patience: null
+  log_checkpoints: true
+  checkpoint_freq: 100
+  lr_schedule: true
+  decay_steps: 8000
+  warmup_target: 0.0002
+  alpha: 0.0
+  warmup_steps: 80
+  reduce_lr_plateau: false
+  min_lr: 0.0001
+  factor: 0.2
+  plateau_patience: 3
+  validation: false
+  val_freq: 1000000000.0
+  snrs: null
+  loss: clean_unet_loss
+  use_log_norm: false
+  signal_length: 6120
+  frame_lengths:
+  - 100
+  frame_steps:
+  - 24
+  fft_sizes:
+  - 126
+  stft_lambda: 1.0
+  sc_lambda: 0.5
+  mag_lambda: 0.5
+  channels_input: 3
+  channels_output: 3
+  dropout: 0.0
+  use_raglu: false
+  channels_H: 8
+  encoder_n_layers: 8
+  kernel_size: 4
+  stride: 2
+  max_H: 768
+  kernel_sizes:
+  - 9
+  - 9
+  - 7
+  - 7
+  - 5
+  - 5
+  - 3
+  - 3
+  tsfm_n_layers: 3
+  tsfm_n_head: 4
+  tsfm_d_model: 128
+  tsfm_d_inner: 512
+  channel_base: 8
+  channel_dims:
+  - 1
+  - 2
+  - 4
+  - 8
+  bottleneck: lstm
+user:
+  data:
+    signal_path: /cluster/scratch/ckeusch/data/signal/
+    noise_path: /cluster/scratch/ckeusch/data/noise/
+    csv_path: /cluster/scratch/ckeusch/dsl-as24-challenge-3/data/
+  model_path: /cluster/scratch/ckeusch/dsl-as24-challenge-3/outputs/2024-12-10/22-01-03/500/model.safetensors
+  metrics_model_path: /cluster/scratch/ckeusch/dsl-as24-challenge-3/outputs/2024-12-06/11-02-09/metrics_model.csv
+  metrics_butterworth_path: /cluster/scratch/ckeusch/dsl-as24-challenge-3/outputs/2024-12-03/10-59-47/metrics_butterworth.csv
+  metrics_deepdenoiser_path: /cluster/scratch/ckeusch/dsl-as24-challenge-3/outputs/2024-11-08/DeepDenoiser
+    Metrics/metrics_model.csv
+  wandb: false
+
+[2024-12-10 23:23:37,088][root][INFO] - seed: 123
+trace_length: 6120
+tuner: false
+use_optuna: false
+n_trials: 100
+training: true
+multi_gpu: accelerate
+test: false
+plot:
+  metrics: false
+  visualization: false
+  n_examples: 10
+  vis_freq: 5
+snrs:
+- 0.1
+- 0.3
+- 0.5
+- 0.7
+- 1.0
+- 1.2
+- 1.5
+- 1.8
+- 2.0
+- 2.5
+- 3.5
+size_testset: 500
+model:
+  model_name: CleanUNet
+  use_csv: true
+  train_pytorch: true
+  tune_stft: false
+  use_metrics: false
+  use_baseline: false
+  load_dummy: false
+  save_model: true
+  seed: 123
+  snr_lower: 0.1
+  snr_upper: 2.0
+  event_shift_start: 5000
+  random: true
+  subset: null
+  pure_noise: true
+  batch_size: 512
+  lr: 1.0e-05
+  epochs: 5000
+  clipnorm: 1000000000.0
+  checkpoint_model: null
+  patience: null
+  log_checkpoints: true
+  checkpoint_freq: 100
+  lr_schedule: true
+  decay_steps: 8000
+  warmup_target: 0.0002
+  alpha: 0.0
+  warmup_steps: 80
+  reduce_lr_plateau: false
+  min_lr: 0.0001
+  factor: 0.2
+  plateau_patience: 3
+  validation: false
+  val_freq: 1000000000.0
+  snrs: null
+  loss: clean_unet_loss
+  use_log_norm: false
+  signal_length: 6120
+  frame_lengths:
+  - 100
+  frame_steps:
+  - 24
+  fft_sizes:
+  - 126
+  stft_lambda: 1.0
+  sc_lambda: 0.5
+  mag_lambda: 0.5
+  channels_input: 3
+  channels_output: 3
+  dropout: 0.0
+  use_raglu: false
+  channels_H: 8
+  encoder_n_layers: 8
+  kernel_size: 4
+  stride: 2
+  max_H: 768
+  kernel_sizes:
+  - 9
+  - 9
+  - 7
+  - 7
+  - 5
+  - 5
+  - 3
+  - 3
+  tsfm_n_layers: 3
+  tsfm_n_head: 4
+  tsfm_d_model: 128
+  tsfm_d_inner: 512
+  channel_base: 8
+  channel_dims:
+  - 1
+  - 2
+  - 4
+  - 8
+  bottleneck: lstm
+user:
+  data:
+    signal_path: /cluster/scratch/ckeusch/data/signal/
+    noise_path: /cluster/scratch/ckeusch/data/noise/
+    csv_path: /cluster/scratch/ckeusch/dsl-as24-challenge-3/data/
+  model_path: /cluster/scratch/ckeusch/dsl-as24-challenge-3/outputs/2024-12-10/22-01-03/500/model.safetensors
+  metrics_model_path: /cluster/scratch/ckeusch/dsl-as24-challenge-3/outputs/2024-12-06/11-02-09/metrics_model.csv
+  metrics_butterworth_path: /cluster/scratch/ckeusch/dsl-as24-challenge-3/outputs/2024-12-03/10-59-47/metrics_butterworth.csv
+  metrics_deepdenoiser_path: /cluster/scratch/ckeusch/dsl-as24-challenge-3/outputs/2024-11-08/DeepDenoiser
+    Metrics/metrics_model.csv
+  wandb: false
+
+Im in fit_clean_unet
+start loading pickle files
+Im in fit_clean_unetIm in fit_clean_unet
+
+start loading pickle filesstart loading pickle files
+
+Im in fit_clean_unet
+start loading pickle files
+finished loading pickle files
+finished loading pickle files
+finished loading pickle files
+finished loading pickle files
+[2024-12-10 23:23:57,454][root][INFO] - CleanUNetPytorch Parameters: 9.101971M
+[2024-12-10 23:23:57,454][root][INFO] - CleanUNetPytorch Parameters: 9.101971M
+[2024-12-10 23:23:57,456][root][INFO] - CleanUNetPytorch Parameters: 9.101971M
+[2024-12-10 23:23:57,456][root][INFO] - CleanUNetPytorch Parameters: 9.101971M
+[2024-12-10 23:23:57,915][root][INFO] - Epoch 0
+[2024-12-10 23:24:02,262][root][INFO] - train_loss: 41.1917085647583 | time: 4.348517894744873
+[2024-12-10 23:24:02,263][root][INFO] - Epoch 1
+[2024-12-10 23:24:05,340][root][INFO] - train_loss: 37.318819522857666 | time: 3.078007459640503
+[2024-12-10 23:24:05,341][root][INFO] - Epoch 2
+[2024-12-10 23:24:08,356][root][INFO] - train_loss: 37.5819935798645 | time: 3.015817642211914
+[2024-12-10 23:24:08,359][root][INFO] - Epoch 3
+[2024-12-10 23:24:11,380][root][INFO] - train_loss: 36.80598211288452 | time: 3.023120403289795
+[2024-12-10 23:24:11,381][root][INFO] - Epoch 4
+[2024-12-10 23:24:14,406][root][INFO] - train_loss: 36.94664263725281 | time: 3.0261242389678955
+[2024-12-10 23:24:14,407][root][INFO] - Epoch 5
+[2024-12-10 23:24:17,429][root][INFO] - train_loss: 37.25991654396057 | time: 3.0221340656280518
+[2024-12-10 23:24:17,430][root][INFO] - Epoch 6
+[2024-12-10 23:24:20,490][root][INFO] - train_loss: 41.806267738342285 | time: 3.060847520828247
+[2024-12-10 23:24:20,491][root][INFO] - Epoch 7
+[2024-12-10 23:24:23,505][root][INFO] - train_loss: 48.21279978752136 | time: 3.014906883239746
+[2024-12-10 23:24:23,506][root][INFO] - Epoch 8
+[2024-12-10 23:24:26,522][root][INFO] - train_loss: 43.97377920150757 | time: 3.01678466796875
+[2024-12-10 23:24:26,523][root][INFO] - Epoch 9
+[2024-12-10 23:24:29,553][root][INFO] - train_loss: 37.05171275138855 | time: 3.0302982330322266
+[2024-12-10 23:24:29,555][root][INFO] - Epoch 10
+[2024-12-10 23:24:32,593][root][INFO] - train_loss: 42.21074557304382 | time: 3.039865016937256
+[2024-12-10 23:24:32,595][root][INFO] - Epoch 11
+[2024-12-10 23:24:35,623][root][INFO] - train_loss: 40.67436957359314 | time: 3.0294580459594727
+[2024-12-10 23:24:35,625][root][INFO] - Epoch 12
+[2024-12-10 23:24:38,648][root][INFO] - train_loss: 37.703409910202026 | time: 3.024648666381836
+[2024-12-10 23:24:38,650][root][INFO] - Epoch 13
+[2024-12-10 23:24:41,674][root][INFO] - train_loss: 36.96367001533508 | time: 3.0251410007476807
+[2024-12-10 23:24:41,675][root][INFO] - Epoch 14
+[2024-12-10 23:24:44,703][root][INFO] - train_loss: 38.27663445472717 | time: 3.0282788276672363
+[2024-12-10 23:24:44,704][root][INFO] - Epoch 15
+[2024-12-10 23:24:47,738][root][INFO] - train_loss: 51.32503819465637 | time: 3.0344130992889404
+[2024-12-10 23:24:47,739][root][INFO] - Epoch 16
+[2024-12-10 23:24:50,795][root][INFO] - train_loss: 37.156636238098145 | time: 3.056525707244873
+[2024-12-10 23:24:50,796][root][INFO] - Epoch 17
+[2024-12-10 23:24:53,823][root][INFO] - train_loss: 37.34200620651245 | time: 3.0278093814849854
+[2024-12-10 23:24:53,824][root][INFO] - Epoch 18
+[2024-12-10 23:24:56,856][root][INFO] - train_loss: 36.691288471221924 | time: 3.03300142288208
+[2024-12-10 23:24:56,858][root][INFO] - Epoch 19
+[2024-12-10 23:24:59,882][root][INFO] - train_loss: 36.891117811203 | time: 3.0250840187072754
+[2024-12-10 23:24:59,883][root][INFO] - Epoch 20
+[2024-12-10 23:25:02,909][root][INFO] - train_loss: 36.90288019180298 | time: 3.026611566543579
+[2024-12-10 23:25:02,910][root][INFO] - Epoch 21
+[2024-12-10 23:25:05,937][root][INFO] - train_loss: 37.12839865684509 | time: 3.0276334285736084
+[2024-12-10 23:25:05,938][root][INFO] - Epoch 22
+[2024-12-10 23:25:08,966][root][INFO] - train_loss: 37.75402498245239 | time: 3.0280539989471436
+[2024-12-10 23:25:08,967][root][INFO] - Epoch 23
+[2024-12-10 23:25:11,998][root][INFO] - train_loss: 37.094951152801514 | time: 3.0322444438934326
+[2024-12-10 23:25:12,000][root][INFO] - Epoch 24
+[2024-12-10 23:25:15,027][root][INFO] - train_loss: 39.178412675857544 | time: 3.0286507606506348
+[2024-12-10 23:25:15,029][root][INFO] - Epoch 25
+[2024-12-10 23:25:18,107][root][INFO] - train_loss: 51.16189765930176 | time: 3.078704595565796
+[2024-12-10 23:25:18,108][root][INFO] - Epoch 26
+[2024-12-10 23:25:21,137][root][INFO] - train_loss: 37.64993715286255 | time: 3.0302274227142334
+[2024-12-10 23:25:21,138][root][INFO] - Epoch 27
+[2024-12-10 23:25:24,159][root][INFO] - train_loss: 42.424811124801636 | time: 3.0214009284973145
+[2024-12-10 23:25:24,160][root][INFO] - Epoch 28
+[2024-12-10 23:25:27,184][root][INFO] - train_loss: 42.141966342926025 | time: 3.024850368499756
+[2024-12-10 23:25:27,186][root][INFO] - Epoch 29
+[2024-12-10 23:25:30,479][root][INFO] - train_loss: 37.18919777870178 | time: 3.294072389602661
+[2024-12-10 23:25:30,482][root][INFO] - Epoch 30
+[2024-12-10 23:25:33,830][root][INFO] - train_loss: 42.73605966567993 | time: 3.351013422012329
+[2024-12-10 23:25:33,832][root][INFO] - Epoch 31
+[2024-12-10 23:25:36,859][root][INFO] - train_loss: 37.69329643249512 | time: 3.0281903743743896
+[2024-12-10 23:25:36,860][root][INFO] - Epoch 32
+[2024-12-10 23:25:39,885][root][INFO] - train_loss: 42.97938418388367 | time: 3.0250985622406006
+[2024-12-10 23:25:39,886][root][INFO] - Epoch 33
+[2024-12-10 23:25:42,906][root][INFO] - train_loss: 37.241300106048584 | time: 3.020538330078125
+[2024-12-10 23:25:42,907][root][INFO] - Epoch 34
+[2024-12-10 23:25:45,944][root][INFO] - train_loss: 37.07414746284485 | time: 3.0378224849700928
+[2024-12-10 23:25:45,945][root][INFO] - Epoch 35
+[2024-12-10 23:25:49,007][root][INFO] - train_loss: 37.180728912353516 | time: 3.0630040168762207
+[2024-12-10 23:25:49,009][root][INFO] - Epoch 36
+[2024-12-10 23:25:52,029][root][INFO] - train_loss: 37.92527651786804 | time: 3.0214951038360596
+[2024-12-10 23:25:52,031][root][INFO] - Epoch 37
+[2024-12-10 23:25:55,058][root][INFO] - train_loss: 36.92216992378235 | time: 3.028437376022339
+[2024-12-10 23:25:55,059][root][INFO] - Epoch 38
+[2024-12-10 23:25:58,098][root][INFO] - train_loss: 56.92080211639404 | time: 3.038933038711548
+[2024-12-10 23:25:58,099][root][INFO] - Epoch 39
+[2024-12-10 23:26:01,125][root][INFO] - train_loss: 51.60225319862366 | time: 3.027106285095215
+[2024-12-10 23:26:01,126][root][INFO] - Epoch 40
+[2024-12-10 23:26:04,158][root][INFO] - train_loss: 37.41493010520935 | time: 3.0322265625
+[2024-12-10 23:26:04,159][root][INFO] - Epoch 41
+[2024-12-10 23:26:07,183][root][INFO] - train_loss: 37.56367468833923 | time: 3.0246193408966064
+[2024-12-10 23:26:07,184][root][INFO] - Epoch 42
+[2024-12-10 23:26:10,228][root][INFO] - train_loss: 36.66089487075806 | time: 3.0451226234436035
+[2024-12-10 23:26:10,230][root][INFO] - Epoch 43
+[2024-12-10 23:26:13,253][root][INFO] - train_loss: 37.46919655799866 | time: 3.024237871170044
+[2024-12-10 23:26:13,254][root][INFO] - Epoch 44
+[2024-12-10 23:26:16,293][root][INFO] - train_loss: 37.00580191612244 | time: 3.039116144180298
+[2024-12-10 23:26:16,294][root][INFO] - Epoch 45
+[2024-12-10 23:26:19,408][root][INFO] - train_loss: 51.3899941444397 | time: 3.11445951461792
+[2024-12-10 23:26:19,409][root][INFO] - Epoch 46
+[2024-12-10 23:26:22,428][root][INFO] - train_loss: 47.168686389923096 | time: 3.0198419094085693
+[2024-12-10 23:26:22,429][root][INFO] - Epoch 47
+[2024-12-10 23:26:25,446][root][INFO] - train_loss: 37.135178565979004 | time: 3.017873764038086
+[2024-12-10 23:26:25,447][root][INFO] - Epoch 48
+[2024-12-10 23:26:28,476][root][INFO] - train_loss: 36.91575765609741 | time: 3.029057502746582
+[2024-12-10 23:26:28,477][root][INFO] - Epoch 49
+[2024-12-10 23:26:31,510][root][INFO] - train_loss: 37.43238711357117 | time: 3.033890962600708
+[2024-12-10 23:26:31,512][root][INFO] - Epoch 50
+[2024-12-10 23:26:34,541][root][INFO] - train_loss: 42.211787939071655 | time: 3.0301716327667236
+[2024-12-10 23:26:34,542][root][INFO] - Epoch 51
+[2024-12-10 23:26:37,565][root][INFO] - train_loss: 78.86363291740417 | time: 3.023883819580078
+[2024-12-10 23:26:37,566][root][INFO] - Epoch 52
+[2024-12-10 23:26:40,596][root][INFO] - train_loss: 36.65458941459656 | time: 3.0306522846221924
+[2024-12-10 23:26:40,597][root][INFO] - Epoch 53
+[2024-12-10 23:26:43,620][root][INFO] - train_loss: 36.80305600166321 | time: 3.023087501525879
+[2024-12-10 23:26:43,621][root][INFO] - Epoch 54
+[2024-12-10 23:26:46,665][root][INFO] - train_loss: 37.39194440841675 | time: 3.045353412628174
+[2024-12-10 23:26:46,667][root][INFO] - Epoch 55
+[2024-12-10 23:26:49,730][root][INFO] - train_loss: 53.83710432052612 | time: 3.0643231868743896
+[2024-12-10 23:26:49,731][root][INFO] - Epoch 56
+[2024-12-10 23:26:52,762][root][INFO] - train_loss: 37.10930347442627 | time: 3.0314838886260986
+[2024-12-10 23:26:52,763][root][INFO] - Epoch 57
+[2024-12-10 23:26:55,787][root][INFO] - train_loss: 42.0085768699646 | time: 3.024837017059326
+[2024-12-10 23:26:55,789][root][INFO] - Epoch 58
+[2024-12-10 23:26:58,809][root][INFO] - train_loss: 43.94698667526245 | time: 3.021411180496216
+[2024-12-10 23:26:58,811][root][INFO] - Epoch 59
+[2024-12-10 23:27:01,838][root][INFO] - train_loss: 41.82394576072693 | time: 3.0281789302825928
+[2024-12-10 23:27:01,839][root][INFO] - Epoch 60
+[2024-12-10 23:27:04,868][root][INFO] - train_loss: 37.06651449203491 | time: 3.0299911499023438
+[2024-12-10 23:27:04,870][root][INFO] - Epoch 61
+[2024-12-10 23:27:07,889][root][INFO] - train_loss: 37.00210380554199 | time: 3.0200319290161133
+[2024-12-10 23:27:07,890][root][INFO] - Epoch 62
+[2024-12-10 23:27:10,917][root][INFO] - train_loss: 36.4637131690979 | time: 3.02719783782959
+[2024-12-10 23:27:10,918][root][INFO] - Epoch 63
+[2024-12-10 23:27:13,943][root][INFO] - train_loss: 37.52971363067627 | time: 3.0262093544006348
+[2024-12-10 23:27:13,944][root][INFO] - Epoch 64
+[2024-12-10 23:27:16,989][root][INFO] - train_loss: 36.71535849571228 | time: 3.0457751750946045
+[2024-12-10 23:27:16,991][root][INFO] - Epoch 65
+[2024-12-10 23:27:20,057][root][INFO] - train_loss: 47.064035415649414 | time: 3.0666465759277344
+[2024-12-10 23:27:20,058][root][INFO] - Epoch 66
+[2024-12-10 23:27:23,090][root][INFO] - train_loss: 36.65912985801697 | time: 3.032790184020996
+[2024-12-10 23:27:23,091][root][INFO] - Epoch 67
+[2024-12-10 23:27:26,123][root][INFO] - train_loss: 36.838303327560425 | time: 3.0322561264038086
+[2024-12-10 23:27:26,124][root][INFO] - Epoch 68
+[2024-12-10 23:27:29,151][root][INFO] - train_loss: 37.396960973739624 | time: 3.0277721881866455
+[2024-12-10 23:27:29,152][root][INFO] - Epoch 69
+[2024-12-10 23:27:32,179][root][INFO] - train_loss: 53.37938117980957 | time: 3.0279245376586914
+[2024-12-10 23:27:32,181][root][INFO] - Epoch 70
+[2024-12-10 23:27:35,222][root][INFO] - train_loss: 37.19890308380127 | time: 3.042597770690918
+[2024-12-10 23:27:35,223][root][INFO] - Epoch 71
+[2024-12-10 23:27:38,250][root][INFO] - train_loss: 37.480924129486084 | time: 3.027355194091797
+[2024-12-10 23:27:38,251][root][INFO] - Epoch 72
+[2024-12-10 23:27:41,287][root][INFO] - train_loss: 37.496917724609375 | time: 3.0370965003967285
+[2024-12-10 23:27:41,289][root][INFO] - Epoch 73
+[2024-12-10 23:27:44,319][root][INFO] - train_loss: 52.05123519897461 | time: 3.0307345390319824
+[2024-12-10 23:27:44,320][root][INFO] - Epoch 74
+[2024-12-10 23:27:47,350][root][INFO] - train_loss: 50.203059673309326 | time: 3.0306649208068848
+[2024-12-10 23:27:47,351][root][INFO] - Epoch 75
+[2024-12-10 23:27:50,401][root][INFO] - train_loss: 43.77580976486206 | time: 3.0503931045532227
+[2024-12-10 23:27:50,402][root][INFO] - Epoch 76
+[2024-12-10 23:27:53,427][root][INFO] - train_loss: 37.15385127067566 | time: 3.0264639854431152
+[2024-12-10 23:27:53,429][root][INFO] - Epoch 77
+[2024-12-10 23:27:56,462][root][INFO] - train_loss: 52.83925151824951 | time: 3.033564329147339
+[2024-12-10 23:27:56,463][root][INFO] - Epoch 78
+[2024-12-10 23:27:59,483][root][INFO] - train_loss: 36.85557150840759 | time: 3.0213160514831543
+[2024-12-10 23:27:59,485][root][INFO] - Epoch 79
+[2024-12-10 23:28:02,516][root][INFO] - train_loss: 37.328372955322266 | time: 3.0319104194641113
+[2024-12-10 23:28:02,517][root][INFO] - Epoch 80
+[2024-12-10 23:28:05,545][root][INFO] - train_loss: 36.7012734413147 | time: 3.0291199684143066
+[2024-12-10 23:28:05,547][root][INFO] - Epoch 81
+[2024-12-10 23:28:08,558][root][INFO] - train_loss: 37.240567207336426 | time: 3.0125951766967773
+[2024-12-10 23:28:08,560][root][INFO] - Epoch 82
+[2024-12-10 23:28:11,586][root][INFO] - train_loss: 37.017935276031494 | time: 3.027162551879883
+[2024-12-10 23:28:11,587][root][INFO] - Epoch 83
+[2024-12-10 23:28:14,604][root][INFO] - train_loss: 37.10977911949158 | time: 3.018071413040161
+[2024-12-10 23:28:14,606][root][INFO] - Epoch 84
+[2024-12-10 23:28:17,651][root][INFO] - train_loss: 37.21227288246155 | time: 3.046006202697754
+[2024-12-10 23:28:17,658][root][INFO] - Epoch 85

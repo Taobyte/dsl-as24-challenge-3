@@ -27,3 +27,4 @@ E0000 00:00:1733864453.445473  972535 cuda_blas.cc:1418] Unable to register cuBL
   return F.conv1d(input, weight, bias, self.stride,
 /cluster/home/ckeusch/miniconda3/envs/CDiffSD/lib/python3.11/site-packages/torch/nn/modules/conv.py:306: UserWarning: Applied workaround for CuDNN issue, install nvrtc.so (Triggered internally at /opt/conda/conda-bld/pytorch_1708025842427/work/aten/src/ATen/native/cudnn/Conv_v8.cpp:80.)
   return F.conv1d(input, weight, bias, self.stride,
+slurmstepd: error: *** JOB 18018024 ON eu-g4-010 CANCELLED AT 2024-12-10T22:54:25 ***

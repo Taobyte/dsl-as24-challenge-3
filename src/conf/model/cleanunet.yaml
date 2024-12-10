@@ -18,8 +18,8 @@ pure_noise: True
 
 # training
 batch_size: 512
-lr: 0.0002
-epochs: 1000
+lr: 0.00001
+epochs: 5000
 clipnorm: 1e9
 # checkpoint_model: '/cluster/scratch/ckeusch/dsl-as24-challenge-3/outputs/2024-12-01/12-02-44/model.pth'
 checkpoint_model: null
@@ -39,7 +39,7 @@ alpha: 0.0
 warmup_steps: 80
 
 # reduce learning rate plateau callback
-reduce_lr_plateau: True
+reduce_lr_plateau: False
 min_lr: 0.0001
 factor: 0.2
 plateau_patience: 3
