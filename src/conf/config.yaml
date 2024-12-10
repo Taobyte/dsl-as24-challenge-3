@@ -1,20 +1,22 @@
 defaults: 
   - _self_
-  - model: deepdenoiser
+  - model: cleanunet
   - user: clemens
+  # - submitit_slurm
+  # - override hydra/launcher: submitit_slurm
 
 seed: 123
 trace_length: 6120
 tuner: False
 use_optuna: False
 n_trials: 100
-training: True
+training: False
 # can be 'accelerate', 'dataparallel' or null
 # multi_gpu: 'accelerate'
 multi_gpu: null 
-test: False
+test: True
 plot:
-  metrics: False
+  metrics: True
   visualization: False
   n_examples: 10
   vis_freq: 5

@@ -20,8 +20,8 @@ architecture:
 
 # Training parameters
 batch_size: 256
-epochs: 1000
+epochs: 20
 lr: 0.001
 clip_norm: 1e9
 
-val_freq: 100
+val_freq: 5

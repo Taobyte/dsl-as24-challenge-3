@@ -14,12 +14,12 @@ snr_upper: 2.0
 event_shift_start: 5000
 random: True
 subset: null
-pure_noise: False
+pure_noise: True
 
 # training
 batch_size: 512
 lr: 0.0002
-epochs: 5000
+epochs: 1000
 clipnorm: 1e9
 # checkpoint_model: '/cluster/scratch/ckeusch/dsl-as24-challenge-3/outputs/2024-12-01/12-02-44/model.pth'
 checkpoint_model: null
@@ -29,7 +29,7 @@ patience: null
 
 # Checkpoint Logger callback
 log_checkpoints: True
-checkpoint_freq: 500
+checkpoint_freq: 100
 
 # learning rate scheduler
 lr_schedule: True
@@ -51,16 +51,16 @@ snrs: null
 # snrs: [0.1, 0.3, 0.5, 0.7, 1.0]
 
 # 'clean_unet_loss' for mae + STFT loss 
-loss: 'mae'
+loss: 'clean_unet_loss'
 use_log_norm: False
 
 signal_length: 6120
-frame_lengths: [23, 46, 10]
-frame_steps: [5, 10, 2]
-fft_sizes: [64, 128, 32]
-# frame_lengths: [100]
-# frame_steps: [24] 
-# fft_sizes: [126]
+# frame_lengths: [23, 46, 10]
+# frame_steps: [5, 10, 2]
+# fft_sizes: [64, 128, 32]
+frame_lengths: [100]
+frame_steps: [24] 
+fft_sizes: [126]
 stft_lambda: 1.0
 sc_lambda: 0.5
 mag_lambda: 0.5

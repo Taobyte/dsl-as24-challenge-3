@@ -161,7 +161,7 @@ def fit_deep_denoiser_pytorch(cfg: omegaconf.DictConfig) -> torch.nn.Module:
         model.train()
         train_loss = 0.0
         time0 = time.time()
-        for noisy_eq, gt_mask in train_dl:
+        for iter, (noisy_eq, gt_mask) in enumerate(train_dl):
             optimizer.zero_grad()
             noisy_eq = noisy_eq.to(device)
             gt_mask = gt_mask.to(device)
@@ -174,6 +174,8 @@ def fit_deep_denoiser_pytorch(cfg: omegaconf.DictConfig) -> torch.nn.Module:
                 model.parameters(), cfg.model.clip_norm
             )
             tb.add_scalar("gradient_norm", grad_norm, epoch)
+            tb.add_scalar("step", loss.item(), epoch)
+            logger.info(f"Loss at step {iter}: {loss.item()}")
         time1 = time.time()
         train_loss /= len(train_dl)
         tb.add_scalar("train_loss", train_loss, epoch)

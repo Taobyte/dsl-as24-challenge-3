@@ -7,7 +7,6 @@ import torch
 from torch.utils.data import DataLoader
 import numpy as np
 import pandas as pd
-import omegaconf
 import hydra
 from scipy.stats import wilcoxon
 
@@ -34,6 +33,12 @@ class Model(Enum):
 def log_model_size(net: torch.nn.Module) -> int:
     """
     Print the number of parameters of a network
+
+    Args:
+        net (torch.nn.Module): The PyTorch model to find parameter count.
+
+    Returns:
+        int: Number of trainable parameters of net.
     """
 
     if net is not None and isinstance(net, torch.nn.Module):

@@ -71,14 +71,7 @@ def compute_metrics(cfg: omegaconf.DictConfig) -> pd.DataFrame:
         "p_wave_mean": [],
         "p_wave_std": [],
     }
-    """
-    if cfg.user.outside_repo:
-        unet = UNet(cfg.model.n_layers, cfg.model.dropout, cfg.model.channel_base)
-        model = keras.saving.load_model(
-            cfg.user.model_path, custom_objects={"Unet": unet}
-        )
-    else:
-    """
+
     if not cfg.model.train_pytorch:
         model = keras.saving.load_model(cfg.user.model_path)
     else:
@@ -94,7 +87,15 @@ def compute_metrics(cfg: omegaconf.DictConfig) -> pd.DataFrame:
             tsfm_d_inner=cfg.model.tsfm_d_inner,
         ).to(device)
 
-        checkpoint = torch.load(cfg.user.model_path, map_location=torch.device("cpu"))
+        if "safetensors" in cfg.user.model_path:
+            from safetensors.torch import load_file
+
+            checkpoint = load_file(cfg.user.model_path)
+        else:
+            checkpoint = torch.load(
+                cfg.user.model_path, map_location=torch.device("cpu")
+            )
+
         if "model_state_dict" in checkpoint.keys():
             model.load_state_dict(checkpoint["model_state_dict"])
         else:

@@ -110,7 +110,7 @@ class DeepDenoiser(nn.Module):
             kernel_size=3,
             stride=1,
             padding="same",
-            bias=False,
+            bias=False,  # TODO: remove bias
         )
         self.batch_norm = nn.BatchNorm2d(channel_base * 2 ** (n_layers))
         self.relu = nn.ReLU()
@@ -124,7 +124,7 @@ class DeepDenoiser(nn.Module):
         )
 
     def forward(self, x) -> Tensor:
-        _, C, _ = x.shape
+        B, C, T = x.shape
         x = einops.rearrange(x, "b c t -> (b c) t")
         x_stft = torch.stft(
             x,
@@ -132,17 +132,10 @@ class DeepDenoiser(nn.Module):
             self.hop_length,
             self.win_length,
             self.window,
-            return_complex=False,
+            return_complex=True,
         )
-        real = x_stft[..., 0]
-        imag = x_stft[..., 1]
-
-        print(real.shape)
-
-        x = torch.cat([real, imag], dim=0)
-        print(x.shape)
-        x = einops.rearrange(x, "(b c) w h -> b c w h", c=int(2 * C))
-        print(x.shape)
+        x = torch.view_as_real(x_stft)
+        x = einops.rearrange(x, "(b c) w h f -> b (c f) w h", f=2, b=B)
 
         x = self.inital_conv2d(x)
 

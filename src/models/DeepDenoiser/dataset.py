@@ -502,11 +502,10 @@ class CSVDatasetPytorch(Dataset):
             self.hop_length,
             self.win_length,
             self.window,
-            return_complex=False,
+            return_complex=True,
         )
-        real = eq_stft[..., 0]
-        imag = eq_stft[..., 1]
-        stft_eq = th.cat([real, imag], dim=0)
+        stft_eq = th.view_as_real(eq_stft)
+        stft_eq = einops.rearrange(stft_eq, "c w h f -> (c f) w h")
 
         noise_stft = th.stft(
             noise_stacked,
@@ -514,13 +513,12 @@ class CSVDatasetPytorch(Dataset):
             self.hop_length,
             self.win_length,
             self.window,
-            return_complex=False,
+            return_complex=True,
         )
-        real = noise_stft[..., 0]
-        imag = noise_stft[..., 1]
-        stft_noise = th.cat([real, imag], dim=0)
+        stft_noise = th.view_as_real(noise_stft)
+        stft_noise = einops.rearrange(stft_noise, "c w h f -> (c f) w h")
 
-        mask = th.abs(stft_eq) / (th.abs(stft_noise) + th.abs(stft_eq) + 1e-12)
+        mask = stft_eq.abs() / (stft_noise.abs() + stft_eq.abs() + 1e-12)
 
         return noisy_eq.float(), mask.float()
 
