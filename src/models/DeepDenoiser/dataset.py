@@ -1,14 +1,19 @@
 import glob
+import logging
 import random
 
+import einops
 import keras
+import omegaconf
 import torch as th
 from torch.utils.data import Dataset, DataLoader
 import pandas as pd
 import numpy as np
 from numpy import ndarray
 
-from src.utils import Mode, Model
+from src.utils import Mode
+
+logger = logging.getLogger()
 
 
 def get_dataloaders(
@@ -377,7 +382,7 @@ class CSVDataset(Dataset):
         E_noise = noise["E"][: self.signal_length]
         noise_stacked = np.stack([Z_noise, N_noise, E_noise], axis=0)
 
-        max_val = max(np.max(np.abs(noise_stacked)), np.max(np.abs(eq_stacked))) + 1e-10
+        max_val = max(np.max(np.abs(noise_stacked)), np.max(np.abs(eq_stacked))) + 1e-12
         eq_stacked /= max_val
         noise_stacked /= max_val
 
@@ -407,3 +412,148 @@ class CSVDataset(Dataset):
         mask = np.abs(stft_eq) / (np.abs(stft_noise) + np.abs(stft_eq) + 1e-10)
 
         return noisy_eq, mask
+
+
+class CSVDatasetPytorch(Dataset):
+    def __init__(
+        self,
+        path: str,
+        signal_length: int,
+        snr_lower: float,
+        snr_upper: float,
+        mode: Mode,
+        window="hann_window",
+    ):
+        logger.info(f"start loading pickle files for {mode}")
+        if mode == Mode.TRAIN:
+            self.signal_df = pd.read_pickle(path + "/signal_train.pkl")
+            self.noise_df = pd.read_pickle(path + "/noise_train.pkl")
+        elif mode == Mode.VALIDATION:
+            self.signal_df = pd.read_pickle(path + "/signal_validation.pkl")
+            self.noise_df = pd.read_pickle(path + "/noise_validation.pkl")
+        elif mode == Mode.TEST:
+            self.signal_df = pd.read_pickle(path + "/signal_validation.pkl")
+            self.noise_df = pd.read_pickle(path + "/noise_validation.pkl")
+
+        logger.info(f"finished loading pickle files for {mode}")
+
+        self.signal_length = signal_length
+        self.snr_lower = snr_lower
+        self.snr_upper = snr_upper
+
+        # STFT parameters
+        self.win_length = 100
+        self.hop_length = 24
+        self.n_fft = 126
+        self.window = getattr(th, window)(self.win_length)
+
+    def __len__(self) -> int:
+        return len(self.signal_df)
+
+    def __getitem__(self, idx) -> tuple[ndarray, ndarray]:
+        eq = self.signal_df.iloc[idx]
+        random_noise_idx = np.random.randint(len(self.noise_df))
+        noise = self.noise_df.iloc[random_noise_idx]
+        assert self.snr_lower <= self.snr_upper
+        snr_random = np.random.uniform(self.snr_lower, self.snr_upper)
+        event_shift = np.random.randint(1000, 6000)
+
+        Z_eq = eq["Z"][event_shift : event_shift + self.signal_length]
+        N_eq = eq["N"][event_shift : event_shift + self.signal_length]
+        E_eq = eq["E"][event_shift : event_shift + self.signal_length]
+        eq_stacked = np.stack([Z_eq, N_eq, E_eq], axis=0)
+
+        Z_noise = noise["Z"][: self.signal_length]
+        N_noise = noise["N"][: self.signal_length]
+        E_noise = noise["E"][: self.signal_length]
+        noise_stacked = np.stack([Z_noise, N_noise, E_noise], axis=0)
+
+        max_val = max(np.max(np.abs(noise_stacked)), np.max(np.abs(eq_stacked))) + 1e-12
+        eq_stacked /= max_val
+        noise_stacked /= max_val
+
+        signal_std = np.std(
+            eq_stacked[:, 6000 - event_shift : 6500 - event_shift], axis=1
+        ).reshape(-1, 1)
+        noise_std = np.std(
+            noise_stacked[:, 6000 - event_shift : 6500 - event_shift], axis=1
+        ).reshape(-1, 1)
+        snr_original = signal_std / (noise_std + 1e-10)
+
+        # change the SNR
+        noise_stacked = noise_stacked * snr_original  # rescale noise so that SNR=1
+        eq_stacked = eq_stacked * snr_random  # rescale event to desired SNR
+        noisy_eq = eq_stacked + noise_stacked  # recombine
+
+        eq_stacked = th.from_numpy(eq_stacked)
+        noise_stacked = th.from_numpy(noise_stacked)
+        noisy_eq = th.from_numpy(noisy_eq)
+
+        eq_stft = th.stft(
+            eq_stacked,
+            self.n_fft,
+            self.hop_length,
+            self.win_length,
+            self.window,
+            return_complex=False,
+        )
+        real = eq_stft[..., 0]
+        imag = eq_stft[..., 1]
+
+        stft_eq = th.cat([real, imag], dim=0)
+
+        noise_stft = th.stft(
+            noise_stacked,
+            self.n_fft,
+            self.hop_length,
+            self.win_length,
+            self.window,
+            return_complex=False,
+        )
+        real = noise_stft[..., 0]
+        imag = noise_stft[..., 1]
+
+        stft_noise = th.cat([real, imag], dim=0)
+
+        mask = th.abs(stft_eq) / (th.abs(stft_noise) + np.abs(stft_eq) + 1e-12)
+
+        return noisy_eq.float(), mask.float()
+
+
+def get_dataloaders_pytorch(cfg: omegaconf.DictConfig, return_test=False):
+    if return_test:
+        test_dataset = CSVDatasetPytorch(
+            cfg.user.data.csv_path,
+            cfg.trace_length,
+            cfg.model.snr_lower,
+            cfg.model.snr_upper,
+            Mode.TEST,
+        )
+        test_dl = th.utils.data.DataLoader(
+            test_dataset, batch_size=cfg.plot.n_examples, num_workers=8
+        )
+        return test_dl
+
+    train_dataset = CSVDatasetPytorch(
+        cfg.user.data.csv_path,
+        cfg.trace_length,
+        cfg.model.snr_lower,
+        cfg.model.snr_upper,
+        Mode.TRAIN,
+    )
+    val_dataset = CSVDatasetPytorch(
+        cfg.user.data.csv_path,
+        cfg.trace_length,
+        cfg.model.snr_lower,
+        cfg.model.snr_upper,
+        Mode.VALIDATION,
+    )
+
+    train_dl = th.utils.data.DataLoader(
+        train_dataset, batch_size=cfg.model.batch_size, num_workers=8
+    )
+    val_dl = th.utils.data.DataLoader(
+        val_dataset, batch_size=cfg.model.batch_size, num_workers=8
+    )
+
+    return train_dl, val_dl

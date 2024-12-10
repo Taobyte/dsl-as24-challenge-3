@@ -28,7 +28,8 @@ from src.models.CleanUNet.dataset import CleanUNetDataset, CleanUNetDatasetCSV
 from src.models.CleanUNet.stft_loss import MultiResolutionSTFTLoss
 from src.models.CleanUNet.utils import CleanUNetLoss
 from src.models.CleanUNet.validate import visualize_predictions_clean_unet
-from src.utils import LinearWarmupCosineDecay, Mode
+from src.utils import LinearWarmupCosineDecay, Mode, log_model_size
+
 
 logger = logging.getLogger()
 
@@ -247,6 +248,8 @@ def fit_clean_unet_pytorch(cfg: omegaconf.DictConfig):
         hydra.core.hydra_config.HydraConfig.get().runtime.output_dir
     )
 
+    print("Im in fit_clean_unet")
+
     if not cfg.model.load_dummy:
         # load training data
         if cfg.model.use_csv:
@@ -337,6 +340,8 @@ def fit_clean_unet_pytorch(cfg: omegaconf.DictConfig):
         tsfm_d_model=cfg.model.tsfm_d_model,
         tsfm_d_inner=cfg.model.tsfm_d_inner,
     ).to(device)
+
+    log_model_size(net)
 
     if cfg.model.checkpoint_model:
         checkpoint = torch.load(cfg.model.checkpoint_model, map_location="cpu")

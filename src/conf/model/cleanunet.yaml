@@ -14,10 +14,10 @@ snr_upper: 2.0
 event_shift_start: 5000
 random: True
 subset: null
-pure_noise: True
+pure_noise: False
 
 # training
-batch_size: 384
+batch_size: 512
 lr: 0.0002
 epochs: 5000
 clipnorm: 1e9
@@ -39,7 +39,7 @@ alpha: 0.0
 warmup_steps: 80
 
 # reduce learning rate plateau callback
-reduce_lr_plateau: False
+reduce_lr_plateau: True
 min_lr: 0.0001
 factor: 0.2
 plateau_patience: 3
@@ -51,7 +51,7 @@ snrs: null
 # snrs: [0.1, 0.3, 0.5, 0.7, 1.0]
 
 # 'clean_unet_loss' for mae + STFT loss 
-loss: 'clean_unet_loss'
+loss: 'mae'
 use_log_norm: False
 
 signal_length: 6120
@@ -59,7 +59,7 @@ frame_lengths: [23, 46, 10]
 frame_steps: [5, 10, 2]
 fft_sizes: [64, 128, 32]
 # frame_lengths: [100]
-# frame_steps: [24]
+# frame_steps: [24] 
 # fft_sizes: [126]
 stft_lambda: 1.0
 sc_lambda: 0.5
@@ -70,7 +70,7 @@ channels_input: 3
 channels_output: 3
 dropout: 0.0
 use_raglu: False        
-channels_H: 64
+channels_H: 8
 encoder_n_layers: 8
 kernel_size: 4
 stride: 2
@@ -78,10 +78,10 @@ max_H: 768
 kernel_sizes: [9, 9, 7, 7, 5, 5, 3, 3]
 
 # transformer settings
-tsfm_n_layers: 5
-tsfm_n_head: 8
-tsfm_d_model: 1024
-tsfm_d_inner: 2048
+tsfm_n_layers: 3
+tsfm_n_head: 4
+tsfm_d_model: 128
+tsfm_d_inner: 512
 
 # baseline
 channel_base: 8

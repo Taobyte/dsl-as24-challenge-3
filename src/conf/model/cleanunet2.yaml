@@ -1,44 +1,19 @@
 model_name: "CleanUNet2"
-clean_specnet: True
-train_pytorch: True
-save_model: True
-use_metrics: False
-load_dummy: False
-seed: 123
 
 # data
 snr_lower: 0.1
 snr_upper: 2.0
-event_shift_start: 5000
-random: True
-subset: null
 
 # training
 batch_size: 256
 lr: 0.0002
 epochs: 4000
 clipnorm: 1e9
-checkpoint_model: null
 
-# Validation frequency
 val_freq: 1e9
-# snrs: [0.1, 0.3, 0.5, 0.7, 1.0]
-snrs: null
-
-# Early Stopping callback
-patience: null
-
-# Checkpoint Logger callback
-log_checkpoints: True
-checkpoint_freq: 500
-
-# learning rate scheduler
 lr_schedule: True
 
-# 'stft' for spectogram loss only
-# 'mae' for L1 loss only
-# 'clean_unet' for stft + mae loss 
-loss: 'stft'
+loss: 'mae'
 
 signal_length: 6120
 frame_lengths: [100]
@@ -48,17 +23,24 @@ stft_lambda: 1.0
 sc_lambda: 1.0
 mag_lambda: 1.0
 
-# encoder/decoder settings   
-channels_input: 3 
-channels_output: 3
-dropout: 0.0        
-channels_H: 64
-encoder_n_layers: 5
-kernel_size: 5
-max_H: 768
+clean_specnet_path: /cluster/scratch/ckeusch/dsl-as24-challenge-3/outputs/2024-12-10/13-07-37/checkpoints/8.pth
+clean_specnet:
+  n_channels: 3
+  n_layers: 5
+  channel_base: 8
+  dropout: 0.0
 
-# transformer settings
-tsfm_n_layers: 3
-tsfm_n_head: 8
-tsfm_d_model: 512
-tsfm_d_inner: 1024
+clean_unet:
+  # encoder/decoder settings   
+  channels_input: 3 
+  channels_output: 3      
+  channels_H: 64
+  encoder_n_layers: 5
+  kernel_size: 5
+  max_H: 768
+
+  # transformer settings
+  tsfm_n_layers: 3
+  tsfm_n_head: 8
+  tsfm_d_model: 512
+  tsfm_d_inner: 1024

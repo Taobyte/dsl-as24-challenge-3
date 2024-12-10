@@ -1,4 +1,9 @@
 import logging
+from math import cos, pi
+
+
+import torch
+import numpy as np
 
 from enum import Enum
 
@@ -14,7 +19,6 @@ class Mode(Enum):
 class Model(Enum):
     Butterworth = "butter_worth"
     DeepDenoiser = "deep_denoiser"
-    WaveDecompNet = "wave_decomp_net"
     ColdDiffusion = "cold_diffusion"
     CleanUNet = "clean_unet"
     CleanSpecNet = "clean_specnet"
@@ -31,13 +35,26 @@ def log_gradient_stats(model):
     logger.info(f"Total Gradient Norm: {total_grad_norm}")
 
 
+def log_model_size(net):
+    """
+    Print the number of parameters of a network
+    """
+
+    if net is not None and isinstance(net, torch.nn.Module):
+        module_parameters = filter(lambda p: p.requires_grad, net.parameters())
+        params = sum([np.prod(p.size()) for p in module_parameters])
+
+        logger.info(
+            "{} Parameters: {:.6f}M".format(net.__class__.__name__, params / 1e6)
+        )
+
+
 ####################### lr scheduler: Linear Warmup then Cosine Decay #############################
 
 # Adapted from https://github.com/rosinality/vq-vae-2-pytorch
 
 # Original Copyright 2019 Kim Seonghyeon
 #  MIT License (https://opensource.org/licenses/MIT)
-from math import cos, pi, floor, sin
 
 
 def anneal_linear(start, end, proportion):

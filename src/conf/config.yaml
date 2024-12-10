@@ -1,15 +1,17 @@
 defaults: 
   - _self_
-  - model: cleanunet
+  - model: deepdenoiser
   - user: clemens
 
+seed: 123
+trace_length: 6120
 tuner: False
 use_optuna: False
 n_trials: 100
 training: True
 # can be 'accelerate', 'dataparallel' or null
-multi_gpu: 'accelerate'
-# multi_gpu: null 
+# multi_gpu: 'accelerate'
+multi_gpu: null 
 test: False
 plot:
   metrics: False

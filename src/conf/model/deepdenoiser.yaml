@@ -1,0 +1,23 @@
+model_name: "DeepDenoiser"
+
+snr_lower: 0.1
+snr_upper: 2.0
+
+architecture:
+  n_channels: 3
+  n_layers: 3
+  channel_base: 8
+  dropout: 0.0
+
+  # STFT parameters
+  n_fft: 126
+  hop_length: 24
+  win_length: 100
+
+# Training parameters
+batch_size: 256
+epochs: 100
+lr: 0.001
+clip_norm: 1e9
+
+val_freq: 1

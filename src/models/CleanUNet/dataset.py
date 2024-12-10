@@ -203,9 +203,9 @@ class CleanUNetDatasetCSV(torch.utils.data.Dataset):
         if self.pure_noise and np.random.rand() < 0.1:
             assert not self.spectogram
             if self.data_format == "channel_first":
-                return einops.rearrange(noise_stacked, "t c -> c t"), torch.zeros(
-                    (3, self.signal_length)
-                )
+                noise_stacked = einops.rearrange(noise_stacked, "t c -> c t")
+                noise_stacked = torch.from_numpy(noise_stacked)
+                return noise_stacked, torch.zeros((3, self.signal_length))
             else:
                 return noise_stacked, torch.zeros((self.signal_length, 3))
 
