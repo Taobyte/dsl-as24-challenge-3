@@ -54,20 +54,26 @@ class TestColdDiffusionDataset(torch.utils.data.Dataset):
 
 def compute_train_dataset(signal_length, mode, memmap):
 
-    signal_path = "/home/tim/Documents/Data-Science_MSc/DSLab/earthquake_data/event"
-    noise_path = "/home/tim/Documents/Data-Science_MSc/DSLab/earthquake_data/noise"
-    if mode == Mode.TRAIN:
-        dataset_eq_name = "/home/tim/Documents/Data-Science_MSc/DSLab/earthquake_data/train_eq_003"
-        dataset_noise_name = "/home/tim/Documents/Data-Science_MSc/DSLab/earthquake_data/train_noise_003"
-    elif mode == Mode.TEST:
-        dataset_eq_name = "/home/tim/Documents/Data-Science_MSc/DSLab/earthquake_data/tst_eq_003"
-        dataset_noise_name = "/home/tim/Documents/Data-Science_MSc/DSLab/earthquake_data/tst_noise_003"
+    num = 5
+    if mode == Mode.TEST:
+        num = 1
+        signal_path = "/home/tim/Documents/Data-Science_MSc/DSLab/earthquake_data/test/event"
+        noise_path = "/home/tim/Documents/Data-Science_MSc/DSLab/earthquake_data/test/noise"
     else:
-        dataset_eq_name = "/home/tim/Documents/Data-Science_MSc/DSLab/earthquake_data/val_eq_003"
-        dataset_noise_name = "/home/tim/Documents/Data-Science_MSc/DSLab/earthquake_data/val_noise_003"
+        signal_path = "/home/tim/Documents/Data-Science_MSc/DSLab/earthquake_data/event"
+        noise_path = "/home/tim/Documents/Data-Science_MSc/DSLab/earthquake_data/noise"
+    if mode == Mode.TRAIN:
+        dataset_eq_name = f"/home/tim/Documents/Data-Science_MSc/DSLab/earthquake_data/train_eq_00{num}"
+        dataset_noise_name = f"/home/tim/Documents/Data-Science_MSc/DSLab/earthquake_data/train_noise_00{num}"
+    elif mode == Mode.TEST:
+        dataset_eq_name = f"/home/tim/Documents/Data-Science_MSc/DSLab/earthquake_data/tst_eq_00{num}"
+        dataset_noise_name = f"/home/tim/Documents/Data-Science_MSc/DSLab/earthquake_data/tst_noise_00{num}"
+    else:
+        dataset_eq_name = f"/home/tim/Documents/Data-Science_MSc/DSLab/earthquake_data/val_eq_00{num}"
+        dataset_noise_name = f"/home/tim/Documents/Data-Science_MSc/DSLab/earthquake_data/val_noise_00{num}"
     if not mode == Mode.TEST:
         assoc = get_signal_noise_assoc(signal_path, noise_path, mode, size_testset=1000,
-                                   snr=lambda : np.random.uniform(0.1, 1.5))
+                                   snr=lambda : np.random.uniform(0.1, 1.8))
     else: 
         assoc = get_signal_noise_assoc(signal_path, noise_path, mode, size_testset=1000,
                                     snr=lambda : 1.0)
@@ -88,6 +94,8 @@ def compute_train_dataset(signal_length, mode, memmap):
         N_noise = noise["noise_waveform_N"][:signal_length]
         E_noise = noise["noise_waveform_E"][:signal_length]
         noise_stacked = np.stack([Z_noise, N_noise, E_noise], axis=1)
+        if len(noise_stacked) == 0:
+            print("noise", noise_file)
 
         max_val = np.max(np.abs(noise_stacked)) + 1e-10
         noise_stacked = noise_stacked / max_val
