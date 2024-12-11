@@ -18,6 +18,7 @@ from train import train_model
 # from tuner import tune_model, tune_model_optuna
 from validate import compute_metrics
 from plot import compare_model_and_baselines, visualize_predictions
+from dayplots import plot_day
 
 
 log = logging.getLogger(__name__)
@@ -77,6 +78,9 @@ def main(cfg: omegaconf.DictConfig):
             )
         elif cfg.plot.visualization:
             visualize_predictions(cfg)
+
+        elif cfg.plot.dayplot:
+            plot_day(cfg)
 
 
 if __name__ == "__main__":
