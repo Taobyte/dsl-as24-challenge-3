@@ -73,6 +73,9 @@ def plot_day(cfg):
     # Split the array into batches
     num_batches = int(np.floor(data.shape[1] / signal_length))
     chunks = np.array_split(data[:,:num_batches*signal_length], num_batches, axis=1)
+    # ##### testing
+    # filename = cfg.user.data.test_data_file
+    # chunks = np.load(filename + "tst_noise_001.npy", allow_pickle=True)[:len(chunks)]
 
     dl = DataLoader(chunks, batch_size=32, shuffle=False)
 
@@ -88,7 +91,7 @@ def plot_day(cfg):
     st_ch_dix_denoised.select(component="Z")[0].data = o[0]
     st_ch_dix_denoised.select(component="N")[0].data = o[1]
     st_ch_dix_denoised.select(component="E")[0].data = o[2]
-    y_limit = np.percentile(st_ch_dix.select(component="Z")[0].data,99.95)  # use same y scale on raw and bandpass data
+    y_limit = np.percentile(st_ch_dix_denoised.select(component="Z")[0].data,99.95)  # use same y scale on raw and bandpass data
     fig = st_ch_dix_denoised.select(component="Z").plot(type='dayplot',vertical_scaling_range=y_limit, events=cat)
     fig.savefig(output_dir / "dayplot_denoised.png")
 
