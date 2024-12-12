@@ -21,19 +21,6 @@ class CDiffDataset(torch.utils.data.Dataset):
         return self.file[index]
     def __len__(self):
         return len(self.file)
-
-class ColdDiffusionDataset(torch.utils.data.Dataset):
-
-    def __init__(self, filename, shape):
-        # shape args: TRAIN: (20230, 6, signal_length) VAL: (4681, 6, signal_length)
-        self.memmap_file = np.memmap(filename, mode="r+", shape=shape, dtype='float32')
-        self.memmap_file = self.memmap_file
-        print("shaape", self.memmap_file.shape)
-
-    def __getitem__(self, index):
-        return (self.memmap_file[index,:3,:], self.memmap_file[index,3:,:]) 
-    def __len__(self):
-        return len(self.memmap_file)
     
 
 class TestColdDiffusionDataset(torch.utils.data.Dataset):
