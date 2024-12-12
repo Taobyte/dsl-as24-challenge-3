@@ -1,8 +1,8 @@
 model_name: "ColdDiffusion"
 use_csv: True
 # architecture
-dim: 16
-dim_multiples: [1, 1, 2, 2, 4, 4, 8, 8] # [1,2,4,4,8]
+dim: 32
+dim_multiples: [1, 2, 4, 4, 8] # [1,2,4,4,8]
 attn_dim_head: 64 #  32
 attn_heads: 8 #  4
 resnet_norm_groups: 8
@@ -14,16 +14,16 @@ signal_length: 4096
 
 # training 
 continue_from_pretrained: False
-pretrained_path: "/home/tlauner/DSLab/dsl-as24-challenge-3/outputs/2024-12-08/16-13-03/chkpt_epoch_21_20_cosine_cold_diffusion.pth"
+pretrained_path: "/home/tlauner/DSLab/dsl-as24-challenge-3/outputs/2024-12-09/11-34-57/chkpt_epoch_26_20_cosine_cold_diffusion.pth"
 batch_size: 32 
 num_workers: 2
-lr: 0.001
-epochs: 30
+lr: 0.0005
+epochs: 50
 seed: 123
 
 # testing
 test_batch_size: 32
-sampling: True
+sampling: False
 
 # new
 channels: 3
@@ -31,4 +31,4 @@ T: 20
 scheduler_type: 'cosine'
 s: 0.008
 penalization: 3.0
-learned_sinusoidal_cond: True
+learned_sinusoidal_cond: False
