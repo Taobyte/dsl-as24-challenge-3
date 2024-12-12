@@ -4,31 +4,23 @@ import time
 
 import einops
 import hydra
-import keras
 import numpy as np
 import omegaconf
 import torch
 import accelerate
-import matplotlib.pyplot as plt
-from PIL import Image
-from io import BytesIO
-
 from torch.utils.tensorboard import SummaryWriter
 
-from src.callbacks import VisualizeCallback
+from src.models.DeepDenoiser.dataset import get_dataloaders_pytorch
+
 from src.metrics import (
     cross_correlation_torch,
     max_amplitude_difference_torch,
     p_wave_onset_difference_torch,
 )
-from src.models.CleanUNet.clean_unet2_model import baseline_unet
-from src.models.CleanUNet.clean_unet_model import CleanUNet
+
 from src.models.CleanUNet.clean_unet_pytorch import CleanUNetPytorch
-from src.models.CleanUNet.dataset import CleanUNetDataset, CleanUNetDatasetCSV
 from src.models.CleanUNet.stft_loss import MultiResolutionSTFTLoss
-from src.models.CleanUNet.utils import CleanUNetLoss
-from src.models.CleanUNet.validate import visualize_predictions_clean_unet
-from src.utils import LinearWarmupCosineDecay, Mode, log_model_size
+from src.utils import LinearWarmupCosineDecay, log_model_size
 
 
 logger = logging.getLogger()
@@ -36,285 +28,12 @@ logger = logging.getLogger()
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 
-def fit_clean_unet(cfg: omegaconf.DictConfig) -> keras.Model:
+def fit_clean_unet_pytorch(cfg: omegaconf.DictConfig) -> torch.nn.Module:
     output_dir = pathlib.Path(
         hydra.core.hydra_config.HydraConfig.get().runtime.output_dir
     )
 
-    if not cfg.model.use_baseline:
-        model = CleanUNet(
-            cfg.model.channels_input,
-            cfg.model.channels_output,
-            cfg.model.signal_length,
-            cfg.model.channels_H,
-            cfg.model.max_H,
-            cfg.model.encoder_n_layers,
-            cfg.model.kernel_size,
-            cfg.model.stride,
-            cfg.model.tsfm_n_layers,
-            cfg.model.tsfm_n_head,
-            cfg.model.tsfm_d_model,
-            cfg.model.tsfm_d_inner,
-            cfg.model.bottleneck,
-            cfg.model.use_raglu,
-            cfg.model.kernel_sizes,
-        )
-    else:
-        model = baseline_unet(
-            cfg.model.signal_length,
-            cfg.model.channel_dims,
-            cfg.model.channel_base,
-            cfg.model.kernel_size,
-        )
-
-    sample_shape = np.zeros(
-        (cfg.model.batch_size, cfg.model.signal_length, cfg.model.channels_input)
-    )
-    model(sample_shape)
-
-    metrics = []
-
-    print(
-        f"type of omegaconf list {cfg.model.frame_lengths} is {type(cfg.model.frame_lengths)}"
-    )
-    print(type(list(cfg.model.frame_lengths)))
-
-    if cfg.model.loss == "stft":
-        loss = CleanUNetLoss(
-            cfg.model.signal_length,
-            list(cfg.model.frame_lengths),
-            list(cfg.model.frame_steps),
-            list(cfg.model.fft_sizes),
-        )
-    elif cfg.model.loss == "mae":
-        loss = keras.losses.MeanAbsoluteError()
-    elif cfg.model.loss == "mse":
-        loss = keras.losses.MeanSquaredError()
-    else:
-        raise NotImplementedError
-
-    if cfg.model.lr_schedule:
-        lr_schedule = keras.optimizers.schedules.CosineDecay(
-            cfg.model.lr,
-            cfg.model.decay_steps,
-            alpha=0.0,
-            name="CosineDecay",
-            warmup_target=cfg.model.warmup_target,
-            warmup_steps=cfg.model.warmup_steps,
-        )
-    else:
-        lr_schedule = cfg.model.lr
-
-    model.compile(
-        loss=loss,
-        optimizer=keras.optimizers.AdamW(
-            learning_rate=lr_schedule, clipnorm=cfg.model.clipnorm
-        ),
-        metrics=metrics,
-    )
-
-    sample_shape = np.zeros(
-        (cfg.model.batch_size, cfg.model.signal_length, cfg.model.channels_input)
-    )
-    model(sample_shape)
-
-    model.summary()
-
-    callbacks = [
-        keras.callbacks.TensorBoard(
-            log_dir=output_dir / "logs",
-            histogram_freq=1,
-            write_graph=True,
-            write_images=True,
-            update_freq="epoch",
-        ),
-        keras.callbacks.TerminateOnNaN(),
-    ]
-
-    if cfg.model.reduce_lr_plateau:
-        callbacks.append(
-            keras.callbacks.ReduceLROnPlateau(
-                monitor="val_loss",
-                factor=cfg.model.factor,
-                patience=cfg.model.plateau_patience,
-                min_lr=cfg.model.min_lr,
-            )
-        )
-
-    if cfg.model.log_checkpoints:
-        callbacks.append(
-            keras.callbacks.ModelCheckpoint(
-                filepath=output_dir / "checkpoints/model_at_epoch_{epoch}.keras"
-            )
-        )
-
-    if cfg.plot.visualization:
-        callbacks.append(VisualizeCallback(cfg))
-
-    if cfg.model.patience:
-        callbacks.append(
-            keras.callbacks.EarlyStopping(
-                monitor="val_loss", patience=cfg.model.patience
-            )
-        )
-
-    if not cfg.model.use_csv:
-        train_dataset = CleanUNetDataset(
-            cfg.user.data.signal_path + "/train/",
-            cfg.user.data.noise_path + "/train/",
-            cfg.model.signal_length,
-        )
-        val_dataset = CleanUNetDataset(
-            cfg.user.data.signal_path + "/validation/",
-            cfg.user.data.noise_path + "/validation/",
-            cfg.model.signal_length,
-            cfg.model.snr_lower,
-            cfg.model.snr_upper,
-        )
-    else:
-        train_dataset = CleanUNetDatasetCSV(
-            cfg.user.data.csv_path,
-            cfg.model.signal_length,
-            cfg.model.snr_lower,
-            cfg.model.snr_upper,
-            Mode.TRAIN,
-        )
-        val_dataset = CleanUNetDatasetCSV(
-            cfg.user.data.csv_path,
-            cfg.model.signal_length,
-            cfg.model.snr_lower,
-            cfg.model.snr_upper,
-            Mode.VALIDATION,
-        )
-
-    train_dl = torch.utils.data.DataLoader(
-        train_dataset, batch_size=cfg.model.batch_size
-    )
-    val_dl = torch.utils.data.DataLoader(val_dataset, batch_size=cfg.model.batch_size)
-
-    model.fit(
-        train_dl, epochs=cfg.model.epochs, validation_data=val_dl, callbacks=callbacks
-    )
-
-    if cfg.plot.visualization:
-        visualize_predictions_clean_unet(
-            model,
-            cfg.user.data.signal_path,
-            cfg.user.data.noise_path,
-            cfg.model.signal_length,
-            cfg.plot.n_examples,
-            cfg.snrs,
-        )
-
-    return model
-
-
-def plot_dataset_tensorboard(cfg, tb, dataset, name):
-    fig, ax = plt.subplots(nrows=cfg.model.subset, ncols=2)
-    for i in range(len(dataset)):
-        noisy, clean = dataset[i]
-        ax[i, 0].plot(
-            range(cfg.model.signal_length),
-            noisy[0, :],
-            label=f"Input {i+1}",
-        )
-        ax[i, 1].plot(
-            range(cfg.model.signal_length),
-            clean[0, :],
-            label=f"Input {i+1}",
-        )
-
-    buf = BytesIO()
-    plt.savefig(buf, format="png")
-    plt.close(fig)
-    image = np.array(Image.open(buf))
-    image = np.transpose(image, (2, 0, 1))
-
-    tb.add_image(name, image, global_step=0)
-
-
-def log_gpu_memory(tag=""):
-    if torch.cuda.is_available():
-        logger.info(
-            f"Allocated memory: {torch.cuda.memory_allocated() / 1024**2:.2f} MB"
-        )
-        logger.info(
-            f"[{tag}] Cached memory: {torch.cuda.memory_reserved() / 1024**2:.2f} MB"
-        )
-
-
-def fit_clean_unet_pytorch(cfg: omegaconf.DictConfig):
-    output_dir = pathlib.Path(
-        hydra.core.hydra_config.HydraConfig.get().runtime.output_dir
-    )
-
-    print("Im in fit_clean_unet")
-
-    if not cfg.model.load_dummy:
-        # load training data
-        if cfg.model.use_csv:
-            train_dataset = CleanUNetDatasetCSV(
-                cfg.user.data.csv_path,
-                cfg.model.signal_length,
-                cfg.model.snr_lower,
-                cfg.model.snr_upper,
-                Mode.TRAIN,
-                data_format="channel_first",
-                random=cfg.model.random,
-                pure_noise=cfg.model.pure_noise,
-            )
-            val_dataset = None
-            if cfg.model.validation:
-                val_dataset = CleanUNetDatasetCSV(
-                    cfg.user.data.csv_path,
-                    cfg.model.signal_length,
-                    cfg.model.snr_lower,
-                    cfg.model.snr_upper,
-                    Mode.TEST,
-                    data_format="channel_first",
-                    random=cfg.model.random,
-                    pure_noise=cfg.model.pure_noise,
-                )
-        else:
-            train_dataset = CleanUNetDataset(
-                cfg.user.data.signal_path + "/train/",
-                cfg.user.data.noise_path + "/train/",
-                cfg.model.signal_length,
-                cfg.model.snr_lower,
-                cfg.model.snr_upper,
-                Mode.TRAIN,
-                data_format="channel_first",
-                random=cfg.model.random,
-            )
-            val_dataset = None
-            if cfg.model.validation:
-                val_dataset = CleanUNetDataset(
-                    cfg.user.data.signal_path + "/validation/",
-                    cfg.user.data.noise_path + "/validation/",
-                    cfg.model.signal_length,
-                    cfg.model.snr_lower,
-                    cfg.model.snr_upper,
-                    Mode.TEST,
-                    data_format="channel_first",
-                    random=cfg.model.random,
-                )
-
-        if cfg.model.subset:
-            train_dataset = torch.utils.data.Subset(
-                train_dataset, indices=range(cfg.model.subset)
-            )
-            val_dataset = train_dataset
-            plot_dataset_tensorboard(cfg, tb, train_dataset, "Inputs")
-
-    else:
-        inps = torch.randn((32, 3, 6120))
-        tgts = torch.randn((32, 3, 6120))
-        train_dataset = torch.utils.data.TensorDataset(inps, tgts)
-        val_dataset = train_dataset
-
-    train_dl = torch.utils.data.DataLoader(
-        train_dataset, batch_size=cfg.model.batch_size, shuffle=True
-    )
+    train_dl, val_dl = get_dataloaders_pytorch(cfg)
 
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     accelerator = None
@@ -330,16 +49,7 @@ def fit_clean_unet_pytorch(cfg: omegaconf.DictConfig):
         tb = SummaryWriter(output_dir)
 
     # predefine model
-    net = CleanUNetPytorch(
-        channels_input=3,
-        channels_output=3,
-        channels_H=cfg.model.channels_H,
-        encoder_n_layers=cfg.model.encoder_n_layers,
-        tsfm_n_layers=cfg.model.tsfm_n_layers,
-        tsfm_n_head=cfg.model.tsfm_n_head,
-        tsfm_d_model=cfg.model.tsfm_d_model,
-        tsfm_d_inner=cfg.model.tsfm_d_inner,
-    ).to(device)
+    net = CleanUNetPytorch(**cfg.model.architecture).to(device)
 
     log_model_size(net)
 
@@ -372,30 +82,30 @@ def fit_clean_unet_pytorch(cfg: omegaconf.DictConfig):
         else:
             net, optimizer, train_dl = accelerator.prepare(net, optimizer, train_dl)
 
-    train_model(
+    model = train_model(
         net,
         optimizer,
         scheduler,
         train_dl,
-        val_dataset,
+        val_dl,
         cfg,
         tb=tb,
         accelerator=accelerator,
     )
 
-    return 0
+    return model
 
 
 # loss function
 def get_loss(
-    denoised_audio,
-    clean_audio,
-    stft_lambda,
-    sc_lambda,
-    mag_lambda,
-    cfg,
-    accelerator=None,
-):
+    denoised_eq: torch.Tensor,
+    clean_eq: torch.Tensor,
+    stft_lambda: float,
+    sc_lambda: float,
+    mag_lambda: float,
+    cfg: omegaconf.DictConfig,
+    accelerator: accelerate.Accelerator = None,
+) -> torch.Tensor:
     stft_lambda = stft_lambda if stft_lambda else cfg.model.stft_lambda
 
     time_domain_loss = torch.nn.L1Loss()
@@ -408,22 +118,20 @@ def get_loss(
         transform_stft=False if cfg.model.loss == "stft" else True,
     ).to(device if not cfg.multi_gpu == "accelerate" else accelerator.device)
     if cfg.model.loss == "clean_unet_loss":
-        loss = time_domain_loss(denoised_audio, clean_audio)
-        spec_loss, mag_loss = stft_loss(denoised_audio, clean_audio)
+        loss = time_domain_loss(denoised_eq, clean_eq)
+        spec_loss, mag_loss = stft_loss(denoised_eq, clean_eq)
         loss += (spec_loss + mag_loss) * cfg.model.stft_lambda
     elif cfg.model.loss == "stft":
-        denoised_audio = einops.rearrange(
-            denoised_audio, "b repeat c t ->(b repeat) t c", repeat=3
+        denoised_eq = einops.rearrange(
+            denoised_eq, "b repeat c t ->(b repeat) t c", repeat=3
         )
-        denoised_audio = torch.clamp(denoised_audio, min=1e-7)
-        clean_audio = einops.rearrange(
-            clean_audio, "b repeat c t ->(b repeat) t c", repeat=3
-        )
-        spec_loss, mag_loss = stft_loss(denoised_audio, clean_audio)
+        denoised_eq = torch.clamp(denoised_eq, min=1e-7)
+        clean_eq = einops.rearrange(clean_eq, "b repeat c t ->(b repeat) t c", repeat=3)
+        spec_loss, mag_loss = stft_loss(denoised_eq, clean_eq)
         loss = (spec_loss + mag_loss) * stft_lambda
 
     elif cfg.model.loss == "mae":
-        loss = time_domain_loss(denoised_audio, clean_audio)
+        loss = time_domain_loss(denoised_eq, clean_eq)
     else:
         raise NotImplementedError
 
@@ -431,18 +139,18 @@ def get_loss(
 
 
 def train_model(
-    net,
-    optimizer,
+    net: torch.nn.Module,
+    optimizer: torch.optim.Optimizer,
     scheduler,
-    train_dl,
-    val_dataset,
-    cfg,
-    tb=None,
-    sc_lambda=None,
-    mag_lambda=None,
-    stft_lambda=None,
-    accelerator=None,
-):
+    train_dl: torch.utils.data.DataLoader,
+    val_dataset: torch.utils.data.DataLoader,
+    cfg: omegaconf.DictConfig,
+    tb: SummaryWriter = None,
+    sc_lambda: float = None,
+    mag_lambda: float = None,
+    stft_lambda: float = None,
+    accelerator: accelerate.Accelerator = None,
+) -> torch.nn.Module:
     output_dir = pathlib.Path(
         hydra.core.hydra_config.HydraConfig.get().runtime.output_dir
     )
@@ -461,18 +169,18 @@ def train_model(
         if tb:
             logger.info(f"Epoch {n_iter}")
         c_loss = 0
-        for noisy_audio, clean_audio in train_dl:
-            clean_audio = clean_audio.float()
+        for noisy_audio, clean_eq in train_dl:
+            clean_eq = clean_eq.float()
             noisy_audio = noisy_audio.float()
             if not cfg.multi_gpu == "accelerate":
-                clean_audio = clean_audio.to(device)
+                clean_eq = clean_eq.to(device)
                 noisy_audio = noisy_audio.to(device)
 
-            denoised_audio = net(noisy_audio)
+            denoised_eq = net(noisy_audio)
 
             loss = get_loss(
-                denoised_audio,
-                clean_audio,
+                denoised_eq,
+                clean_eq,
                 stft_lambda,
                 sc_lambda,
                 mag_lambda,
@@ -539,22 +247,6 @@ def train_model(
 
         n_iter += 1
 
-    if cfg.model.subset and cfg.plot.visualization:
-        predictions = []
-        ground_truth = []
-        net.eval()
-        with torch.no_grad():
-            for noisy, clean in train_dataset:
-                noisy = noisy.unsqueeze(0).float().to(device)
-                clean = clean.float().to(device)
-                pred = net(noisy)
-                predictions.append(pred.squeeze(0).cpu())
-                ground_truth.append(clean.cpu())
-
-        plot_dataset_tensorboard(
-            cfg, tb, list(zip(predictions, ground_truth)), "Predictions"
-        )
-
     ending_time = time.time()
     logger.info(f"Total time: {ending_time - starting_time}")
 
@@ -569,13 +261,7 @@ def train_model(
         else:
             torch.save(net.state_dict(), output_dir / "model.pth")
 
-    if val_c_loss:
-        if cfg.model.use_metrics:
-            return val_c_loss, metrics
-        else:
-            return val_c_loss
-    else:
-        return c_loss
+    return net
 
 
 def validate_model(net, n_iter, stft_lambda, sc_lambda, mag_lambda, cfg, tb):
@@ -599,15 +285,15 @@ def validate_model(net, n_iter, stft_lambda, sc_lambda, mag_lambda, cfg, tb):
                 )
                 val_c_loss = 0
                 max_amp_differences, cc, pw = [], [], []
-                for noisy_audio, clean_audio, shift in val_dl:
-                    clean_audio = clean_audio.float().to(device)
+                for noisy_audio, clean_eq, shift in val_dl:
+                    clean_eq = clean_eq.float().to(device)
                     noisy_audio = noisy_audio.float().to(device)
                     shift = shift.to(device)
-                    denoised_audio = net(noisy_audio)
+                    denoised_eq = net(noisy_audio)
                     # loss
                     loss = get_loss(
-                        denoised_audio,
-                        clean_audio,
+                        denoised_eq,
+                        clean_eq,
                         stft_lambda,
                         sc_lambda,
                         mag_lambda,
@@ -617,13 +303,11 @@ def validate_model(net, n_iter, stft_lambda, sc_lambda, mag_lambda, cfg, tb):
                     # metrics
                     if cfg.model.use_metrics:
                         max_amp_differences.append(
-                            max_amplitude_difference_torch(clean_audio, denoised_audio)
+                            max_amplitude_difference_torch(clean_eq, denoised_eq)
                         )
-                        cc.append(cross_correlation_torch(clean_audio, denoised_audio))
+                        cc.append(cross_correlation_torch(clean_eq, denoised_eq))
                         pw.append(
-                            p_wave_onset_difference_torch(
-                                clean_audio, denoised_audio, shift
-                            )
+                            p_wave_onset_difference_torch(clean_eq, denoised_eq, shift)
                         )
                 if cfg.model.use_metrics:
                     max_amp_differences = torch.concatenate(max_amp_differences, dim=0)
@@ -645,15 +329,15 @@ def validate_model(net, n_iter, stft_lambda, sc_lambda, mag_lambda, cfg, tb):
             )
             val_c_loss = 0
             max_amp_differences, cc, pw = [], [], []
-            for noisy_audio, clean_audio, shift in val_dl:
-                clean_audio = clean_audio.float().to(device)
+            for noisy_audio, clean_eq, shift in val_dl:
+                clean_eq = clean_eq.float().to(device)
                 noisy_audio = noisy_audio.float().to(device)
                 shift = shift.to(device)
-                denoised_audio = net(noisy_audio)
+                denoised_eq = net(noisy_audio)
                 # loss
                 loss = get_loss(
-                    denoised_audio,
-                    clean_audio,
+                    denoised_eq,
+                    clean_eq,
                     stft_lambda,
                     sc_lambda,
                     mag_lambda,
@@ -662,13 +346,11 @@ def validate_model(net, n_iter, stft_lambda, sc_lambda, mag_lambda, cfg, tb):
 
                 if cfg.model.use_metrics:
                     max_amp_differences.append(
-                        max_amplitude_difference_torch(clean_audio, denoised_audio)
+                        max_amplitude_difference_torch(clean_eq, denoised_eq)
                     )
-                    cc.append(cross_correlation_torch(clean_audio, denoised_audio))
+                    cc.append(cross_correlation_torch(clean_eq, denoised_eq))
                     pw.append(
-                        p_wave_onset_difference_torch(
-                            clean_audio, denoised_audio, shift
-                        )
+                        p_wave_onset_difference_torch(clean_eq, denoised_eq, shift)
                     )
             if cfg.model.use_metrics:
                 max_amp_differences = torch.concatenate(max_amp_differences, dim=0)

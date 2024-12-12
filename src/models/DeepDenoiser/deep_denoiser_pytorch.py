@@ -83,8 +83,8 @@ class DeepDenoiser(nn.Module):
         n_layers: int,
         channel_base: int,
         dropout: float = 0.0,
-        n_fft: int = 126,
-        hop_length: int = 24,
+        n_fft: int = 127,
+        hop_length: int = 16,
         win_length: int = 100,
         window: str = "hann_window",
     ):
@@ -110,7 +110,7 @@ class DeepDenoiser(nn.Module):
             kernel_size=3,
             stride=1,
             padding="same",
-            bias=False,  # TODO: remove bias
+            bias=False,  
         )
         self.batch_norm = nn.BatchNorm2d(channel_base * 2 ** (n_layers))
         self.relu = nn.ReLU()

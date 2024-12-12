@@ -258,6 +258,7 @@ class CleanUNetPytorch(nn.Module):
         encoder_n_layers=8,
         kernel_size=4,
         stride=2,
+        dropout=0.0,
         tsfm_n_layers=3,
         tsfm_n_head=8,
         tsfm_d_model=512,
@@ -272,6 +273,7 @@ class CleanUNetPytorch(nn.Module):
         encoder_n_layers (int): number of encoder/decoder layers D
         kernel_size (int):      kernel size K
         stride (int):           stride S
+        dropout (float):        dropout probability in [0,1]
         tsfm_n_layers (int):    number of self attention blocks N
         tsfm_n_head (int):      number of heads in each self attention block
         tsfm_d_model (int):     d_model of self attention
@@ -301,9 +303,13 @@ class CleanUNetPytorch(nn.Module):
             self.encoder.append(
                 nn.Sequential(
                     nn.Conv1d(channels_input, channels_H, kernel_size, stride),
-                    nn.ReLU(inplace=False),
+                    nn.BatchNorm1d(channels_H),
+                    nn.ReLU(),
+                    nn.Dropout(dropout),
                     nn.Conv1d(channels_H, channels_H * 2, 1),
+                    nn.BatchNorm1d(channels_H*2),
                     nn.GLU(dim=1),
+                    nn.Dropout(dropout)
                 )
             )
             channels_input = channels_H
@@ -313,7 +319,9 @@ class CleanUNetPytorch(nn.Module):
                 self.decoder.append(
                     nn.Sequential(
                         nn.Conv1d(channels_H, channels_H * 2, 1),
+                        nn.BatchNorm1d(channels_H*2),
                         nn.GLU(dim=1),
+                        nn.Dropout(dropout),
                         nn.ConvTranspose1d(
                             channels_H, channels_output, kernel_size, stride
                         ),
@@ -324,11 +332,15 @@ class CleanUNetPytorch(nn.Module):
                     0,
                     nn.Sequential(
                         nn.Conv1d(channels_H, channels_H * 2, 1),
+                        nn.BatchNorm1d(channels_H*2),
                         nn.GLU(dim=1),
+                        nn.Dropout(dropout),
                         nn.ConvTranspose1d(
                             channels_H, channels_output, kernel_size, stride
                         ),
-                        nn.ReLU(inplace=False),
+                        nn.BatchNorm1d(channels_output),
+                        nn.ReLU(),
+                        nn.Dropout(dropout)
                     ),
                 )
             channels_output = channels_H

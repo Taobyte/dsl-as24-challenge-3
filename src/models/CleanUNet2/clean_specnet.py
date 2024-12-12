@@ -7,7 +7,7 @@ from src.models.CleanUNet.stft_loss import stft
 
 
 class CleanSpecNet(nn.Module):
-    """ CleanUNet architecture. """
+    """CleanSpecNet implementation"""
 
     def __init__(self, channels_input=1, channels_output=1,
                  channels_H=64, max_H=768,

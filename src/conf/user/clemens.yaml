@@ -1,22 +1,10 @@
 data:
-  signal_path: '/cluster/scratch/ckeusch/data/signal/'
-  noise_path: '/cluster/scratch/ckeusch/data/noise/'
-  csv_path: '/cluster/scratch/ckeusch/dsl-as24-challenge-3/data/'
+  signal_path: '/work/courses/dsl/team3/earthquake_data/event'
+  noise_path: '/work/courses/dsl/team3/earthquake_data/noise'
+  filename: '/work/courses/dsl/team3/earthquake_data/'
 
 # testing
-# model_path: /cluster/scratch/ckeusch/dsl-as24-challenge-3/outputs/2024-11-08/15-27-39/DeepDenoiser_lr_0.001_e10.keras # DeepDenoiser
-# model_path: /cluster/scratch/ckeusch/dsl-as24-challenge-3/outputs/2024-11-08/09-05-09/WaveDecompNet_lr_0.001_e5.keras # WaveDecompNet
-# model_path: /cluster/scratch/ckeusch/dsl-as24-challenge-3/outputs/2024-11-17/08-59-41/WaveDecompNet_lr_0.001_e5.keras # WaveDecompNet
-# model_path: /cluster/scratch/ckeusch/dsl-as24-challenge-3/outputs/2024-11-04/11-35-27/checkpoints/model_at_epoch_10.keras # ColdDiffusion
-# model_path: /cluster/scratch/ckeusch/dsl-as24-challenge-3/outputs/2024-11-11/12-35-51/checkpoints/model_at_epoch_8.keras # CleanUNet
-# model_path: /cluster/scratch/ckeusch/dsl-as24-challenge-3/outputs/2024-11-17/08-47-48/CleanUNet_lr_0.0001_e50.keras
-# model_path: '/cluster/scratch/ckeusch/dsl-as24-challenge-3/outputs/2024-11-06/15-22-50/checkpoints/model_at_epoch_7.keras' # ColdDiffusion stft loss
-# model_path: /cluster/scratch/ckeusch/dsl-as24-challenge-3/outputs/2024-11-19/11-33-55/90.pkl # CleanUNet Pytorch
-# model_path: /cluster/scratch/ckeusch/dsl-as24-challenge-3/outputs/2024-11-21/17-08-11/200.pkl
-# model_path: /cluster/scratch/ckeusch/dsl-as24-challenge-3/outputs/2024-11-25/10-30-52/70.pkl # CleanUNet Pytorch 
-# model_path: /cluster/scratch/ckeusch/dsl-as24-challenge-3/outputs/2024-11-25/13-43-22/10.pkl CleanSpecNet bad
-# model_path: /cluster/scratch/ckeusch/dsl-as24-challenge-3/outputs/2024-12-02/14-29-34/1000.pkl # CleanUNet Pytorcht 24h
-model_path: /cluster/scratch/ckeusch/dsl-as24-challenge-3/outputs/2024-12-11/08-10-49/5000/model.safetensors
+model_path: /work/scratch/ckeusch/dsl-as24-challenge-3/outputs/2024-12-12/10-42-17/checkpoints/epoch_9.pth
 # plotting
 metrics_model_path: /cluster/scratch/ckeusch/dsl-as24-challenge-3/outputs/2024-12-06/11-02-09/metrics_model.csv
 metrics_butterworth_path: /cluster/scratch/ckeusch/dsl-as24-challenge-3/outputs/2024-12-03/10-59-47/metrics_butterworth.csv

@@ -5,7 +5,6 @@ import os
 from typing import Union
 
 import torch
-import keras
 import matplotlib.pyplot as plt
 from tqdm import tqdm
 
@@ -61,7 +60,7 @@ def get_metrics_clean_unet(model, cfg: omegaconf.DictConfig, snr: int, idx: int 
 
 
 def visualize_predictions_clean_unet(
-    model: Union[str, keras.Model],
+    model: str,
     signal_path: str,
     noise_path: str,
     signal_length: int,
@@ -78,36 +77,33 @@ def visualize_predictions_clean_unet(
     epoch_dir = os.path.join(output_dir, str(epoch))
     os.makedirs(epoch_dir, exist_ok=True)
 
-    if isinstance(model, str):
-        if not cfg.model.train_pytorch:
-            model = keras.saving.load_model(model)
+    if isinstance(model, str):   
+        device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+        model = CleanUNetPytorch(
+            channels_input=3,
+            channels_output=3,
+            channels_H=cfg.model.channels_H,
+            encoder_n_layers=cfg.model.encoder_n_layers,
+            tsfm_n_layers=cfg.model.tsfm_n_layers,
+            tsfm_n_head=cfg.model.tsfm_n_head,
+            tsfm_d_model=cfg.model.tsfm_d_model,
+            tsfm_d_inner=cfg.model.tsfm_d_inner,
+        ).to(device)
+
+        if "safetensors" in cfg.user.model_path:
+            from safetensors.torch import load_file
+
+            checkpoint = load_file(cfg.user.model_path)
         else:
-            device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-            model = CleanUNetPytorch(
-                channels_input=3,
-                channels_output=3,
-                channels_H=cfg.model.channels_H,
-                encoder_n_layers=cfg.model.encoder_n_layers,
-                tsfm_n_layers=cfg.model.tsfm_n_layers,
-                tsfm_n_head=cfg.model.tsfm_n_head,
-                tsfm_d_model=cfg.model.tsfm_d_model,
-                tsfm_d_inner=cfg.model.tsfm_d_inner,
-            ).to(device)
+            checkpoint = torch.load(
+                cfg.user.model_path, map_location=torch.device("cpu")
+            )
 
-            if "safetensors" in cfg.user.model_path:
-                from safetensors.torch import load_file
-
-                checkpoint = load_file(cfg.user.model_path)
-            else:
-                checkpoint = torch.load(
-                    cfg.user.model_path, map_location=torch.device("cpu")
-                )
-
-            if "model_state_dict" in checkpoint.keys():
-                model.load_state_dict(checkpoint["model_state_dict"])
-            else:
-                model.load_state_dict(checkpoint)
-            model.eval()
+        if "model_state_dict" in checkpoint.keys():
+            model.load_state_dict(checkpoint["model_state_dict"])
+        else:
+            model.load_state_dict(checkpoint)
+        model.eval()
 
     data_format = "channel_first" if cfg.model.train_pytorch else "channel_last"
 

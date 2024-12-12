@@ -5,9 +5,6 @@ import omegaconf
 import pandas as pd
 import matplotlib.pyplot as plt
 
-from src.models.DeepDenoiser.validate import visualize_predictions_deep_denoiser
-from src.models.WaveDecompNet.validate import visualize_predictions_wave_decomp_net
-from src.models.ColdDiffusion.validate import visualize_predictions_cold_diffusion
 from src.models.CleanUNet.validate import visualize_predictions_clean_unet
 from src.models.CleanUNet2.validate import visualize_predictions_clean_specnet
 from src.models.DeepDenoiser.validate import plot_spectograms
@@ -25,27 +22,7 @@ def visualize_predictions(cfg: omegaconf.DictConfig):
             cfg.snrs,
         )
         """
-
         plot_spectograms(cfg)
-
-    elif cfg.model.model_name == "WaveDecompNet":
-        visualize_predictions_wave_decomp_net(
-            cfg.user.model_path,
-            cfg.user.data.signal_path,
-            cfg.user.data.noise_path,
-            cfg.model.signal_length,
-            cfg.plot.n_examples,
-            cfg.snrs,
-        )
-    elif cfg.model.model_name == "ColdDiffusion":
-        visualize_predictions_cold_diffusion(
-            cfg.user.model_path,
-            cfg.user.data.signal_path,
-            cfg.user.data.noise_path,
-            cfg.model.signal_length,
-            cfg.plot.n_examples,
-            cfg.snrs,
-        )
     elif cfg.model.model_name == "CleanUNet":
         visualize_predictions_clean_unet(
             cfg.user.model_path,
@@ -164,3 +141,27 @@ def compare_model_and_baselines(
     plt.show()
 
     plt.savefig(output_dir / "metrics.jpg")
+
+
+
+def overlay_plot(prediction_path: str):
+    """
+    Creates overlay plot over butterworth filtered noisy earthquake
+    Args:
+        prediction_path (str): Path to csv file storing noisy earthquake and predictions for DeepDenoiser, CleanUNet, ColdDiffusion 
+    """
+
+    df = pd.read_csv(prediction_path)
+
+    models = df.columns[2:]
+    colors = ['red', 'green', 'yellow']
+
+    fig, axs = plt.subplots(1, len(df.columns - 1))
+
+    axs[0].plot(df['noisy_eq'].iloc[0])
+    for i,model in enumerate(models):
+        axs[i+1].plot()
+    
+    pass
+
+

@@ -3,7 +3,6 @@ import logging
 import random
 
 import einops
-import keras
 import omegaconf
 import torch as th
 from torch.utils.data import Dataset, DataLoader, Subset
@@ -17,20 +16,54 @@ from typing import Union
 
 logger = logging.getLogger()
 
+def get_dataloaders_pytorch(
+    cfg: omegaconf.DictConfig, return_test=False, subset=None
+) -> Union[DataLoader, tuple[DataLoader, DataLoader]]:
+    
+    if return_test:
+        test_dataset = EQDataset(cfg.user.data.filename, Mode.TEST)
+        test_dl = th.utils.data.DataLoader(
+            test_dataset, batch_size=cfg.plot.n_examples, num_workers=1
+        )
+        return test_dl
 
-def get_dataloaders(
-    signal_path: str, noise_path: str, shuffle=False, batch_size=32
-) -> tuple[DataLoader, DataLoader]:
-    train_assoc = get_signal_noise_assoc(signal_path, noise_path, Mode.TRAIN)
-    val_assoc = get_signal_noise_assoc(signal_path, noise_path, Mode.VALIDATION)
+    if cfg.random:
 
-    train_dataset = CombinedDeepDenoiserDataset(train_assoc)
-    val_dataset = CombinedDeepDenoiserDataset(val_assoc)
+        train_dataset = DeepDenoiserDataset(
+            cfg.user.data.signal_path,
+            cfg.user.data.noise_path,
+            cfg.trace_length,
+            cfg.model.snr_lower,
+            cfg.model.snr_upper,
+            Mode.TRAIN,
+            random=cfg.model.random,
+        )
+        val_dataset = DeepDenoiserDataset(
+            cfg.user.data.signal_path,
+            cfg.user.data.noise_path,
+            cfg.trace_length,
+            cfg.model.snr_lower,
+            cfg.model.snr_upper,
+            Mode.VALIDATION,
+            random=cfg.model.random,
+        )
+        
+    else:
+        train_dataset = EQDataset(cfg.user.data.filename, Mode.TRAIN)
+        val_dataset = EQDataset(cfg.user.data.filename, Mode.VALIDATION)
 
-    train_dl = DataLoader(train_dataset, batch_size=batch_size, shuffle=shuffle)
-    validation_dl = DataLoader(val_dataset, batch_size=batch_size, shuffle=shuffle)
+    if subset:
+        train_dataset = Subset(train_dataset, indices=range(subset))
+        val_dataset = Subset(train_dataset, indices=range(subset))
 
-    return train_dl, validation_dl
+    train_dl = th.utils.data.DataLoader(
+        train_dataset, batch_size=cfg.model.batch_size, num_workers=2
+    )
+    val_dl = th.utils.data.DataLoader(
+        val_dataset, batch_size=cfg.model.batch_size, num_workers=2
+    )
+
+    return train_dl, val_dl
 
 
 def get_signal_noise_assoc(
@@ -122,266 +155,95 @@ def load_traces_and_shift(
     return eq_traces, noise_traces, shifts
 
 
-class InputSignals(Dataset):
-    def __init__(self, signal_noise_association: list, mode=Mode.TRAIN, snr=1.0):
-        """
-        Args:
-            signal_noise_association: a list containing tuples for signal and noise filenames
-        """
 
-        self.signal_noise_assoc = signal_noise_association
-        self.signal_length = 6120
-        self.mode = mode
-        self.snr = snr
+class EQDataset(Dataset):
 
-    def __len__(self) -> int:
-        return len(self.signal_noise_assoc)
+    def __init__(self, filename, mode: Mode):
 
-    def __getitem__(self, idx: int) -> th.Tensor:
-        eq = np.load(self.signal_noise_assoc[idx][0], allow_pickle=True)
-        noise = np.load(self.signal_noise_assoc[idx][1], allow_pickle=True)
-        snr_random = self.signal_noise_assoc[idx][2]
-        event_shift = self.signal_noise_assoc[idx][3]
-
-        Z_eq = eq["earthquake_waveform_Z"][
-            event_shift : event_shift + self.signal_length
-        ]
-        N_eq = eq["earthquake_waveform_N"][
-            event_shift : event_shift + self.signal_length
-        ]
-        E_eq = eq["earthquake_waveform_E"][
-            event_shift : event_shift + self.signal_length
-        ]
-        eq_stacked = np.stack([Z_eq, N_eq, E_eq], axis=0)
-
-        Z_noise = noise["noise_waveform_Z"][: self.signal_length]
-        N_noise = noise["noise_waveform_N"][: self.signal_length]
-        E_noise = noise["noise_waveform_E"][: self.signal_length]
-
-        noise_stacked = np.stack([Z_noise, N_noise, E_noise], axis=0)
-
-        max_val = max(np.max(np.abs(noise_stacked)), np.max(np.abs(eq_stacked))) + 1e-10
-        eq_stacked /= max_val
-        noise_stacked /= max_val
-
-        if self.mode == Mode.TRAIN:
-            ratio = snr_random
-        elif self.mode == Mode.TEST:
-            ratio = self.snr
+        if mode == Mode.TRAIN:
+            self.file_noise = np.load(filename + "train_eq_005.npy", allow_pickle=True)
+            self.file_eq = np.load(filename + "train_noise_005.npy", allow_pickle=True) 
+        elif mode == Mode.VALIDATION:
+            self.file_noise = np.load(filename + "val_eq_005.npy", allow_pickle=True)
+            self.file_eq = np.load(filename + "val_noise_005.npy", allow_pickle=True)
+        elif mode == Mode.TEST:
+            self.file_noise = np.load(filename + "tst_noise_001.npy", allow_pickle=True)
+            self.file_eq = np.load(filename + "tst_eq_001.npy", allow_pickle=True)
         else:
-            print(f"Not supported mode {self.mode}")
-            ratio = 0
+            raise NotImplementedError
+        
+        assert self.file_eq.shape == self.file_noise.shape
 
-        signal_std = np.std(
-            eq_stacked[:, 6000 - event_shift : 6500 - event_shift], axis=1
-        ).reshape(-1, 1)
-        noise_std = np.std(
-            noise_stacked[:, 6000 - event_shift : 6500 - event_shift], axis=1
-        ).reshape(-1, 1)
-        snr_original = signal_std / (noise_std + 1e-10)
-
-        # change the SNR
-        noise_stacked = noise_stacked * snr_original  # rescale noise so that SNR=1
-        eq_stacked = eq_stacked * ratio  # rescale event to desired SNR
-        noisy_eq = eq_stacked + noise_stacked  # recombine
-
-        if self.mode == Mode.TRAIN:
-            return noisy_eq
-        elif self.mode == Mode.TEST:
-            return noisy_eq, eq_stacked, event_shift
+    def __len__(self):
+        return len(self.file_noise) 
+    def __getitem__(self, index):
+        return (self.file_eq[index], self.file_noise[index]) 
 
 
-class EventMasks(Dataset):
-    def __init__(self, signal_noise_association: list):
-        """
-        Args:
-            signal_noise_association: a list containing tuples for signal and noise filenames
-        """
 
-        self.signal_noise_assoc = signal_noise_association
-        self.signal_length = 6120
-
-        # STFT parameters
-        self.frame_length = 100
-        self.frame_step = 24
-        self.fft_size = 126
-
-    def __len__(self) -> int:
-        return len(self.signal_noise_assoc)
-
-    def __getitem__(self, idx) -> th.Tensor:
-        eq = np.load(self.signal_noise_assoc[idx][0], allow_pickle=True)
-        noise = np.load(self.signal_noise_assoc[idx][1], allow_pickle=True)
-        snr_random = self.signal_noise_assoc[idx][2]
-        event_shift = self.signal_noise_assoc[idx][3]
-
-        Z_eq = eq["earthquake_waveform_Z"][
-            event_shift : event_shift + self.signal_length
-        ]
-        N_eq = eq["earthquake_waveform_N"][
-            event_shift : event_shift + self.signal_length
-        ]
-        E_eq = eq["earthquake_waveform_E"][
-            event_shift : event_shift + self.signal_length
-        ]
-        eq_stacked = np.stack([Z_eq, N_eq, E_eq], axis=0)
-
-        Z_noise = noise["noise_waveform_Z"][: self.signal_length]
-        N_noise = noise["noise_waveform_N"][: self.signal_length]
-        E_noise = noise["noise_waveform_E"][: self.signal_length]
-
-        noise_stacked = np.stack([Z_noise, N_noise, E_noise], axis=0)
-
-        max_val = max(np.max(np.abs(noise_stacked)), np.max(np.abs(eq_stacked))) + 1e-10
-        eq_stacked /= max_val
-        noise_stacked /= max_val
-
-        signal_std = np.std(
-            eq_stacked[:, 6000 - event_shift : 6500 - event_shift], axis=1
-        ).reshape(-1, 1)
-        noise_std = np.std(
-            noise_stacked[:, 6000 - event_shift : 6500 - event_shift], axis=1
-        ).reshape(-1, 1)
-        snr_original = signal_std / (noise_std + 1e-10)
-
-        # change the SNR
-        noise_stacked = noise_stacked * snr_original  # rescale noise so that SNR=1
-        eq_stacked = eq_stacked * snr_random  # rescale event to desired SNR
-
-        stft = keras.ops.stft(
-            eq_stacked, self.frame_length, self.frame_step, self.fft_size
-        )
-        stft_eq = np.concatenate([stft[0], stft[1]], axis=0)
-
-        stft = keras.ops.stft(
-            noise_stacked, self.frame_length, self.frame_step, self.fft_size
-        )
-        stft_noise = np.concatenate([stft[0], stft[1]], axis=0)
-
-        mask = np.abs(stft_eq) / (np.abs(stft_noise) + np.abs(stft_eq) + 1e-10)
-
-        return mask
-
-
-class CombinedDeepDenoiserDataset(Dataset):
-    def __init__(self, signal_noise_association: list):
-        """
-        Args:
-            signal_noise_association: a list containing tuples for signal and noise filenames
-        """
-
-        self.signal_noise_assoc = signal_noise_association
-        self.signal_length = 6120
-
-        # STFT parameters
-        self.frame_length = 100
-        self.frame_step = 24
-        self.fft_size = 126
-
-    def __len__(self) -> int:
-        return len(self.signal_noise_assoc)
-
-    def __getitem__(self, idx) -> th.Tensor:
-        eq = np.load(self.signal_noise_assoc[idx][0], allow_pickle=True)
-        noise = np.load(self.signal_noise_assoc[idx][1], allow_pickle=True)
-        snr_random = self.signal_noise_assoc[idx][2]
-        event_shift = self.signal_noise_assoc[idx][3]
-
-        Z_eq = eq["earthquake_waveform_Z"][
-            event_shift : event_shift + self.signal_length
-        ]
-        N_eq = eq["earthquake_waveform_N"][
-            event_shift : event_shift + self.signal_length
-        ]
-        E_eq = eq["earthquake_waveform_E"][
-            event_shift : event_shift + self.signal_length
-        ]
-        eq_stacked = np.stack([Z_eq, N_eq, E_eq], axis=0)
-
-        Z_noise = noise["noise_waveform_Z"][: self.signal_length]
-        N_noise = noise["noise_waveform_N"][: self.signal_length]
-        E_noise = noise["noise_waveform_E"][: self.signal_length]
-
-        noise_stacked = np.stack([Z_noise, N_noise, E_noise], axis=0)
-
-        signal_std = np.std(
-            eq_stacked[:, 6000 - event_shift : 6500 - event_shift], axis=1
-        ).reshape(-1, 1)
-        noise_std = np.std(
-            noise_stacked[:, 6000 - event_shift : 6500 - event_shift], axis=1
-        ).reshape(-1, 1)
-        snr_original = signal_std / (noise_std + 1e-10)
-
-        # change the SNR
-        noise_stacked = noise_stacked * snr_original  # rescale noise so that SNR=1
-        eq_stacked = eq_stacked * snr_random  # rescale event to desired SNR
-        noisy_eq = eq_stacked + noise_stacked  # recombine
-
-        stft = keras.ops.stft(
-            eq_stacked, self.frame_length, self.frame_step, self.fft_size
-        )
-        stft_eq = np.concatenate([stft[0], stft[1]], axis=0)
-
-        stft = keras.ops.stft(
-            noise_stacked, self.frame_length, self.frame_step, self.fft_size
-        )
-        stft_noise = np.concatenate([stft[0], stft[1]], axis=0)
-
-        mask = np.abs(stft_eq) / (np.abs(stft_noise) + np.abs(stft_eq) + 1e-10)
-
-        return noisy_eq, mask
-
-
-class CSVDataset(Dataset):
+class DeepDenoiserDataset(Dataset):
     def __init__(
         self,
-        path: str,
+        signal_path: str,
+        noise_path: str,
         signal_length: int,
         snr_lower: float,
         snr_upper: float,
         mode: Mode,
+        window="hann_window",
+        random: bool = True,
     ):
-        print("start loading pickle files")
+        logger.info(f"start loading pickle files for {mode}")
 
         if mode == Mode.TRAIN:
-            self.signal_df = pd.read_pickle(path + "/signal_train.pkl")
-            self.noise_df = pd.read_pickle(path + "/noise_train.pkl")
+            self.signal_files = glob.glob(f"{signal_path}/train/**/*.npz", recursive=True)
+            self.noise_files = glob.glob(f"{noise_path}/train/**/*.npz", recursive=True)
         elif mode == Mode.VALIDATION:
-            self.signal_df = pd.read_pickle(path + "/signal_validation.pkl")
-            self.noise_df = pd.read_pickle(path + "/noise_validation.pkl")
+            self.signal_files = glob.glob(f"{signal_path}/validation/**/*.npz", recursive=True)
+            self.noise_files = glob.glob(f"{noise_path}/validation/**/*.npz", recursive=True)
         else:
-            assert False, f"mode {mode} not implemented yet"
+            raise NotImplementedError
 
-        print("finished loading pickle files")
+        logger.info(f"finished loading pickle files for {mode}")
 
-        self.signal_length = signal_length
+        self.trace_length = signal_length
         self.snr_lower = snr_lower
         self.snr_upper = snr_upper
 
+        assert self.snr_lower <= self.snr_upper
+
         # STFT parameters
-        self.frame_length = 100
-        self.frame_step = 24
-        self.fft_size = 126
+        self.win_length = 100
+        self.hop_length = 16
+        self.n_fft = 127
+        self.window = getattr(th, window)(self.win_length)
+
+        self.random = random
 
     def __len__(self) -> int:
-        return len(self.signal_df)
+        return len(self.signal_files)
 
-    def __getitem__(self, idx) -> tuple[ndarray, ndarray]:
-        eq = self.signal_df.iloc[idx]
-        random_noise_idx = np.random.randint(len(self.noise_df))
-        noise = self.noise_df.iloc[random_noise_idx]
-        assert self.snr_lower <= self.snr_upper
+    def __getitem__(self, idx) -> tuple[Tensor, Tensor]:
+
+        eq = np.load(self.signal_files[idx], allow_pickle=True)
+        noise = np.load(self.noise_files[idx], allow_pickle=True)
         snr_random = np.random.uniform(self.snr_lower, self.snr_upper)
-        event_shift = np.random.randint(1000, 6000)
+        event_shift = np.random.randint(6000 - (self.trace_length-500), 6000)
 
-        Z_eq = eq["Z"][event_shift : event_shift + self.signal_length]
-        N_eq = eq["N"][event_shift : event_shift + self.signal_length]
-        E_eq = eq["E"][event_shift : event_shift + self.signal_length]
+        Z_eq = eq["earthquake_waveform_Z"][
+            event_shift : event_shift + self.trace_length
+        ]
+        N_eq = eq["earthquake_waveform_N"][
+            event_shift : event_shift + self.trace_length
+        ]
+        E_eq = eq["earthquake_waveform_E"][
+            event_shift : event_shift + self.trace_length
+        ]
         eq_stacked = np.stack([Z_eq, N_eq, E_eq], axis=0)
 
-        Z_noise = noise["Z"][: self.signal_length]
-        N_noise = noise["N"][: self.signal_length]
-        E_noise = noise["E"][: self.signal_length]
+        Z_noise = noise["noise_waveform_Z"][: self.trace_length]
+        N_noise = noise["noise_waveform_N"][: self.trace_length]
+        E_noise = noise["noise_waveform_E"][: self.trace_length]
         noise_stacked = np.stack([Z_noise, N_noise, E_noise], axis=0)
 
         max_val = max(np.max(np.abs(noise_stacked)), np.max(np.abs(eq_stacked))) + 1e-12
@@ -394,26 +256,47 @@ class CSVDataset(Dataset):
         noise_std = np.std(
             noise_stacked[:, 6000 - event_shift : 6500 - event_shift], axis=1
         ).reshape(-1, 1)
-        snr_original = signal_std / (noise_std + 1e-10)
+        snr_original = signal_std / (noise_std + 1e-12)
+
+        # print(signal_std)
+        # print(noise_std)
 
         # change the SNR
         noise_stacked = noise_stacked * snr_original  # rescale noise so that SNR=1
         eq_stacked = eq_stacked * snr_random  # rescale event to desired SNR
         noisy_eq = eq_stacked + noise_stacked  # recombine
 
-        stft = keras.ops.stft(
-            eq_stacked, self.frame_length, self.frame_step, self.fft_size
+        eq_stacked = th.from_numpy(eq_stacked)
+        noise_stacked = th.from_numpy(noise_stacked)
+        noisy_eq = th.from_numpy(noisy_eq)
+
+        eq_stft = th.stft(
+            eq_stacked,
+            self.n_fft,
+            self.hop_length,
+            self.win_length,
+            self.window,
+            return_complex=True,
         )
-        stft_eq = np.concatenate([stft[0], stft[1]], axis=0)
+        stft_eq = th.view_as_real(eq_stft)
+        stft_eq = einops.rearrange(stft_eq, "c w h f -> (c f) w h")
 
-        stft = keras.ops.stft(
-            noise_stacked, self.frame_length, self.frame_step, self.fft_size
+        noise_stft = th.stft(
+            noise_stacked,
+            self.n_fft,
+            self.hop_length,
+            self.win_length,
+            self.window,
+            return_complex=True,
         )
-        stft_noise = np.concatenate([stft[0], stft[1]], axis=0)
+        stft_noise = th.view_as_real(noise_stft)
+        stft_noise = einops.rearrange(stft_noise, "c w h f -> (c f) w h")
 
-        mask = np.abs(stft_eq) / (np.abs(stft_noise) + np.abs(stft_eq) + 1e-10)
+        mask = stft_eq.abs() / (stft_noise.abs() + stft_eq.abs() + 1e-12)
 
-        return noisy_eq, mask
+        return noisy_eq.float(), mask.float()
+
+
 
 
 class CSVDatasetPytorch(Dataset):
@@ -429,7 +312,7 @@ class CSVDatasetPytorch(Dataset):
     ):
         logger.info(f"start loading pickle files for {mode}")
         if mode == Mode.TRAIN:
-            self.signal_df = pd.read_pickle(path + "/signal_train.pkl")
+            self.signal_df = glob.glob()
             self.noise_df = pd.read_pickle(path + "/noise_train.pkl")
         elif mode == Mode.VALIDATION:
             self.signal_df = pd.read_pickle(path + "/signal_validation.pkl")
@@ -523,48 +406,3 @@ class CSVDatasetPytorch(Dataset):
         return noisy_eq.float(), mask.float()
 
 
-def get_dataloaders_pytorch(
-    cfg: omegaconf.DictConfig, return_test=False, subset=None
-) -> Union[DataLoader, tuple[DataLoader, DataLoader]]:
-    if return_test:
-        test_dataset = CSVDatasetPytorch(
-            cfg.user.data.csv_path,
-            cfg.trace_length,
-            cfg.model.snr_lower,
-            cfg.model.snr_upper,
-            Mode.TEST,
-            random=cfg.model.random,
-        )
-        test_dl = th.utils.data.DataLoader(
-            test_dataset, batch_size=cfg.plot.n_examples, num_workers=1
-        )
-        return test_dl
-
-    train_dataset = CSVDatasetPytorch(
-        cfg.user.data.csv_path,
-        cfg.trace_length,
-        cfg.model.snr_lower,
-        cfg.model.snr_upper,
-        Mode.TRAIN,
-        random=cfg.model.random,
-    )
-    val_dataset = CSVDatasetPytorch(
-        cfg.user.data.csv_path,
-        cfg.trace_length,
-        cfg.model.snr_lower,
-        cfg.model.snr_upper,
-        Mode.VALIDATION,
-        random=cfg.model.random,
-    )
-
-    if subset:
-        train_dataset = Subset(train_dataset, indices=range(subset))
-
-    train_dl = th.utils.data.DataLoader(
-        train_dataset, batch_size=cfg.model.batch_size, num_workers=4
-    )
-    val_dl = th.utils.data.DataLoader(
-        val_dataset, batch_size=cfg.model.batch_size, num_workers=4
-    )
-
-    return train_dl, val_dl

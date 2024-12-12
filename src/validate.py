@@ -1,41 +1,28 @@
-import os
 import tqdm
 import pathlib
 
-os.environ["KERAS_BACKEND"] = "jax"
-import keras
 import hydra
 import omegaconf
+import torch
 import numpy as np
 from numpy import ndarray
 import pandas as pd
-import torch
 
 from src.utils import Mode
+from src.models.DeepDenoiser.dataset import get_signal_noise_assoc
 from models.Butterworth.butterworth_filter import bandpass_obspy
 from models.DeepDenoiser.validate import get_metrics_deepdenoiser
-from models.DeepDenoiser.dataset import get_signal_noise_assoc, InputSignals
-from models.WaveDecompNet.validate import get_metrics_wave_decomp_net
 from models.CleanUNet.validate import get_metrics_clean_unet
-from models.ColdDiffusion.validate import get_metrics_cold_diffusion
 from metrics import cross_correlation, p_wave_onset_difference, max_amplitude_difference
 from models.CleanUNet.clean_unet_pytorch import CleanUNetPytorch
 
 
 def get_metrics(
-    model: keras.Model, assoc: list, snr: int, cfg: omegaconf.DictConfig
+    model, assoc: list, snr: int, cfg: omegaconf.DictConfig
 ) -> tuple[ndarray, ndarray, ndarray]:
     if cfg.model.model_name == "DeepDenoiser":
         cross_correlations, max_amplitude_differences, p_wave_onset_differences = (
             get_metrics_deepdenoiser(model, assoc, snr, cfg, idx=0)
-        )
-    elif cfg.model.model_name == "WaveDecompNet":
-        cross_correlations, max_amplitude_differences, p_wave_onset_differences = (
-            get_metrics_wave_decomp_net(model, snr, cfg, idx=0)
-        )
-    elif cfg.model.model_name == "ColdDiffusion":
-        cross_correlations, max_amplitude_differences, p_wave_onset_differences = (
-            get_metrics_cold_diffusion(model, snr, cfg, idx=0)
         )
     elif cfg.model.model_name == "CleanUNet":
         cross_correlations, max_amplitude_differences, p_wave_onset_differences = (
@@ -72,35 +59,33 @@ def compute_metrics(cfg: omegaconf.DictConfig) -> pd.DataFrame:
         "p_wave_std": [],
     }
 
-    if not cfg.model.train_pytorch:
-        model = keras.saving.load_model(cfg.user.model_path)
+
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    model = CleanUNetPytorch(
+        channels_input=3,
+        channels_output=3,
+        channels_H=cfg.model.channels_H,
+        encoder_n_layers=cfg.model.encoder_n_layers,
+        tsfm_n_layers=cfg.model.tsfm_n_layers,
+        tsfm_n_head=cfg.model.tsfm_n_head,
+        tsfm_d_model=cfg.model.tsfm_d_model,
+        tsfm_d_inner=cfg.model.tsfm_d_inner,
+    ).to(device)
+
+    if "safetensors" in cfg.user.model_path:
+        from safetensors.torch import load_file
+
+        checkpoint = load_file(cfg.user.model_path)
     else:
-        device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-        model = CleanUNetPytorch(
-            channels_input=3,
-            channels_output=3,
-            channels_H=cfg.model.channels_H,
-            encoder_n_layers=cfg.model.encoder_n_layers,
-            tsfm_n_layers=cfg.model.tsfm_n_layers,
-            tsfm_n_head=cfg.model.tsfm_n_head,
-            tsfm_d_model=cfg.model.tsfm_d_model,
-            tsfm_d_inner=cfg.model.tsfm_d_inner,
-        ).to(device)
+        checkpoint = torch.load(
+            cfg.user.model_path, map_location=torch.device("cpu")
+        )
 
-        if "safetensors" in cfg.user.model_path:
-            from safetensors.torch import load_file
-
-            checkpoint = load_file(cfg.user.model_path)
-        else:
-            checkpoint = torch.load(
-                cfg.user.model_path, map_location=torch.device("cpu")
-            )
-
-        if "model_state_dict" in checkpoint.keys():
-            model.load_state_dict(checkpoint["model_state_dict"])
-        else:
-            model.load_state_dict(checkpoint)
-        model.eval()
+    if "model_state_dict" in checkpoint.keys():
+        model.load_state_dict(checkpoint["model_state_dict"])
+    else:
+        model.load_state_dict(checkpoint)
+    model.eval()
 
     print(f"running predictions for snrs {cfg.snrs}")
     for snr in tqdm.tqdm(cfg.snrs, total=len(cfg.snrs)):
@@ -202,3 +187,8 @@ def get_bandpass_results(assoc, snr, idx=0):
         p_wave_onset_difference_mean,
         p_wave_onset_difference_std,
     ]
+
+
+def create_prediction_csv(cfg: omegaconf.DictConfig) -> pd.DataFrame:
+    
+    models = ['DeepDenoiser', 'CleanUNet', 'ColdDiffusion']

@@ -10,6 +10,6 @@
 #SBATCH --error=accelerate_logs/job_%j.err
 
 source /cluster/home/ckeusch/miniconda3/bin/activate
-conda activate CDiffSD
+conda activate dsl
 
 accelerate launch --multi-gpu --mixed_precision=fp16 src/main.py 
