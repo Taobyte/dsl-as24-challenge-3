@@ -21,6 +21,7 @@ logger = logging.getLogger()
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 
+# TODO: Clean up this mess
 def get_metrics_clean_unet(model, cfg: omegaconf.DictConfig, snr: int):
     test_dl = get_dataloaders_pytorch(cfg, return_test=True)
     model = get_trained_model(cfg, Model.CleanUNet)

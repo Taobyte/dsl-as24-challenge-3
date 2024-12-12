@@ -3,14 +3,13 @@ model_name: "CleanUNet"
 # data
 snr_lower: 0.1
 snr_upper: 2.0
-random: True
 subset: null
 pure_noise: False
 
 # training
-batch_size: 128
-lr: 0.01
-epochs: 100
+batch_size: 256
+lr: 0.001
+epochs: 3000
 clipnorm: 1e9
 # checkpoint_model: '/cluster/scratch/ckeusch/dsl-as24-challenge-3/outputs/2024-12-01/12-02-44/model.pth'
 checkpoint_model: null
@@ -21,7 +20,7 @@ min_delta: 10
 
 # Checkpoint Logger callback
 log_checkpoints: True
-checkpoint_freq: 5000
+checkpoint_freq: 500
 
 # learning rate scheduler
 lr_schedule: False
