@@ -349,7 +349,7 @@ def fit_clean_unet_pytorch(cfg: omegaconf.DictConfig):
         logger.info("Checkpoint loaded successfully.")
 
     # define optimizer
-    optimizer = torch.optim.Adam(net.parameters(), lr=cfg.model.lr)
+    optimizer = torch.optim.AdamW(net.parameters(), lr=cfg.model.lr)
 
     scheduler = None
     n_obs = cfg.model.subset if cfg.model.subset else 20600
@@ -364,17 +364,13 @@ def fit_clean_unet_pytorch(cfg: omegaconf.DictConfig):
             phase=("linear", "cosine"),
         )
 
-    if cfg.multi_gpu == "dataparallel":
-        if torch.cuda.device_count() > 1:
-            logger.info(
-                f"Multiple GPUs {torch.cuda.device_count()} detected. Using Pytorch DataParallel."
+    if cfg.multi_gpu == "accelerate":
+        if cfg.model.lr_schedule:
+            net, optimizer, train_dl, scheduler = accelerator.prepare(
+                net, optimizer, train_dl, scheduler
             )
-            net = torch.nn.DataParallel(net)
-        net.to(device)
-    elif cfg.multi_gpu == "accelerate":
-        net, optimizer, train_dl, scheduler = accelerator.prepare(
-            net, optimizer, train_dl, scheduler
-        )
+        else:
+            net, optimizer, train_dl = accelerator.prepare(net, optimizer, train_dl)
 
     train_model(
         net,
@@ -425,7 +421,7 @@ def get_loss(
         )
         spec_loss, mag_loss = stft_loss(denoised_audio, clean_audio)
         loss = (spec_loss + mag_loss) * stft_lambda
-        # loss = spec_loss * cfg.model.stft_lambda
+
     elif cfg.model.loss == "mae":
         loss = time_domain_loss(denoised_audio, clean_audio)
     else:

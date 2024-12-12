@@ -6,7 +6,6 @@ use_metrics: False
 use_baseline: False
 load_dummy: False
 save_model: True
-seed: 123
 
 # data
 snr_lower: 0.1
@@ -14,13 +13,13 @@ snr_upper: 2.0
 event_shift_start: 5000
 random: True
 subset: null
-pure_noise: True
+pure_noise: False
 
 # training
 batch_size: 512
 lr: 0.00001
-epochs: 5000
-clipnorm: 1e9
+epochs: 20000
+clipnorm: 1.0
 # checkpoint_model: '/cluster/scratch/ckeusch/dsl-as24-challenge-3/outputs/2024-12-01/12-02-44/model.pth'
 checkpoint_model: null
 
@@ -29,7 +28,7 @@ patience: null
 
 # Checkpoint Logger callback
 log_checkpoints: True
-checkpoint_freq: 100
+checkpoint_freq: 5000
 
 # learning rate scheduler
 lr_schedule: True
@@ -78,9 +77,9 @@ max_H: 768
 kernel_sizes: [9, 9, 7, 7, 5, 5, 3, 3]
 
 # transformer settings
-tsfm_n_layers: 3
-tsfm_n_head: 4
-tsfm_d_model: 128
+tsfm_n_layers: 5
+tsfm_n_head: 8
+tsfm_d_model: 256
 tsfm_d_inner: 512
 
 # baseline

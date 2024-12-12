@@ -16,7 +16,7 @@ data:
 # model_path: /cluster/scratch/ckeusch/dsl-as24-challenge-3/outputs/2024-11-25/10-30-52/70.pkl # CleanUNet Pytorch 
 # model_path: /cluster/scratch/ckeusch/dsl-as24-challenge-3/outputs/2024-11-25/13-43-22/10.pkl CleanSpecNet bad
 # model_path: /cluster/scratch/ckeusch/dsl-as24-challenge-3/outputs/2024-12-02/14-29-34/1000.pkl # CleanUNet Pytorcht 24h
-model_path: /cluster/scratch/ckeusch/dsl-as24-challenge-3/outputs/2024-12-10/22-01-03/500/model.safetensors
+model_path: /cluster/scratch/ckeusch/dsl-as24-challenge-3/outputs/2024-12-11/08-10-49/5000/model.safetensors
 # plotting
 metrics_model_path: /cluster/scratch/ckeusch/dsl-as24-challenge-3/outputs/2024-12-06/11-02-09/metrics_model.csv
 metrics_butterworth_path: /cluster/scratch/ckeusch/dsl-as24-challenge-3/outputs/2024-12-03/10-59-47/metrics_butterworth.csv

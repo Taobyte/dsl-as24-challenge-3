@@ -60,6 +60,8 @@ class LogSTFTMagnitudeLoss(torch.nn.Module):
         """Initilize los STFT magnitude loss module."""
         super(LogSTFTMagnitudeLoss, self).__init__()
 
+        self.trace_length = 6120  # TODO: pass trace_length to LogSTFTMagnitudeLoss
+
     def forward(self, x_mag, y_mag):
         """Calculate forward propagation.
 
@@ -71,12 +73,8 @@ class LogSTFTMagnitudeLoss(torch.nn.Module):
             Tensor: Log STFT magnitude loss value.
 
         """
-        # print("x_mag range:", x_mag.min().item(), x_mag.max().item())
-        # print("y_mag range:", y_mag.min().item(), y_mag.max().item())
 
-        B, T, C = x_mag.shape
-
-        return F.l1_loss(torch.log(y_mag), torch.log(x_mag))
+        return F.l1_loss(torch.log(y_mag), torch.log(x_mag)) / self.trace_length
 
 
 class STFTLoss(torch.nn.Module):
