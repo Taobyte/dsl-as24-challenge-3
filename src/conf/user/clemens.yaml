@@ -5,6 +5,13 @@ data:
 
 # testing
 model_path: /work/scratch/ckeusch/dsl-as24-challenge-3/outputs/2024-12-12/10-42-17/checkpoints/epoch_9.pth
+
+# final models 
+deep_denoiser_folder: '/work/scratch/ckeusch/dsl-as24-challenge-3/outputs/2024-12-12/10-42-17'
+
+# prediction npz path
+prediction_path: /work/scratch/ckeusch/dsl-as24-challenge-3/outputs/2024-12-12/17-27-13/data.npz
+
 # plotting
 metrics_model_path: /cluster/scratch/ckeusch/dsl-as24-challenge-3/outputs/2024-12-06/11-02-09/metrics_model.csv
 metrics_butterworth_path: /cluster/scratch/ckeusch/dsl-as24-challenge-3/outputs/2024-12-03/10-59-47/metrics_butterworth.csv

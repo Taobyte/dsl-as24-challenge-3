@@ -3,6 +3,7 @@ import hydra
 import omegaconf
 
 import pandas as pd
+import numpy as np
 import matplotlib.pyplot as plt
 
 from src.models.CleanUNet.validate import visualize_predictions_clean_unet
@@ -143,25 +144,47 @@ def compare_model_and_baselines(
     plt.savefig(output_dir / "metrics.jpg")
 
 
-
-def overlay_plot(prediction_path: str):
+def overlay_plot(cfg: omegaconf.DictConfig):
     """
     Creates overlay plot over butterworth filtered noisy earthquake
     Args:
-        prediction_path (str): Path to csv file storing noisy earthquake and predictions for DeepDenoiser, CleanUNet, ColdDiffusion 
+        prediction_path (str): Path to csv file storing noisy earthquake and predictions for DeepDenoiser, CleanUNet, ColdDiffusion
     """
+    output_dir = pathlib.Path(
+        hydra.core.hydra_config.HydraConfig.get().runtime.output_dir
+    )
 
-    df = pd.read_csv(prediction_path)
+    data = np.load(cfg.user.prediction_path)
 
-    models = df.columns[2:]
-    colors = ['red', 'green', 'yellow']
+    fig, axs = plt.subplots(1, 4, figsize=(12, 8))
 
-    fig, axs = plt.subplots(1, len(df.columns - 1))
+    axs[0].plot(range(cfg.trace_length), data["noisy_eq"][0, cfg.plot.channel_idx, :])
+    axs[0].set_title("Noisy Earthquake Signal")
+    axs[0].set_ylim(-2, 2)
 
-    axs[0].plot(df['noisy_eq'].iloc[0])
-    for i,model in enumerate(models):
-        axs[i+1].plot()
-    
-    pass
+    axs[1].plot(range(cfg.trace_length), data["eq"][0, cfg.plot.channel_idx, :])
+    axs[1].set_title("Original Earthquake Signal")
+    axs[1].set_ylim(-2, 2)
 
+    axs[2].plot(
+        range(cfg.trace_length),
+        data["butterworth"][0, cfg.plot.channel_idx, :],
+        color="blue",
+        label="Butterworth Filtered",
+    )
 
+    print(data["deepdenoiser"].shape)
+    axs[2].set_title("Filtered Signals Comparison")
+    axs[2].set_ylim(-2, 2)
+    axs[2].legend()
+
+    axs[2].plot(
+        range(cfg.trace_length),
+        data["deepdenoiser"][0, cfg.plot.channel_idx, :]
+        / np.max(np.abs(data["deepdenoiser"][0, cfg.plot.channel_idx, :])),
+        color="red",
+        label="Deep Denoiser",
+    )
+
+    plt.tight_layout()
+    fig.savefig(output_dir)

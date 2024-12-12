@@ -9,9 +9,15 @@ from numpy import ndarray
 import pandas as pd
 
 from src.utils import Mode
-from src.models.DeepDenoiser.dataset import get_signal_noise_assoc
+from src.models.DeepDenoiser.dataset import (
+    get_signal_noise_assoc,
+    get_dataloaders_pytorch,
+)
 from models.Butterworth.butterworth_filter import bandpass_obspy
-from models.DeepDenoiser.validate import get_metrics_deepdenoiser
+from models.DeepDenoiser.validate import (
+    get_metrics_deepdenoiser,
+    get_predictions_deepdenoiser,
+)
 from models.CleanUNet.validate import get_metrics_clean_unet
 from metrics import cross_correlation, p_wave_onset_difference, max_amplitude_difference
 from models.CleanUNet.clean_unet_pytorch import CleanUNetPytorch
@@ -59,7 +65,6 @@ def compute_metrics(cfg: omegaconf.DictConfig) -> pd.DataFrame:
         "p_wave_std": [],
     }
 
-
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     model = CleanUNetPytorch(
         channels_input=3,
@@ -77,9 +82,7 @@ def compute_metrics(cfg: omegaconf.DictConfig) -> pd.DataFrame:
 
         checkpoint = load_file(cfg.user.model_path)
     else:
-        checkpoint = torch.load(
-            cfg.user.model_path, map_location=torch.device("cpu")
-        )
+        checkpoint = torch.load(cfg.user.model_path, map_location=torch.device("cpu"))
 
     if "model_state_dict" in checkpoint.keys():
         model.load_state_dict(checkpoint["model_state_dict"])
@@ -189,6 +192,47 @@ def get_bandpass_results(assoc, snr, idx=0):
     ]
 
 
-def create_prediction_csv(cfg: omegaconf.DictConfig) -> pd.DataFrame:
-    
-    models = ['DeepDenoiser', 'CleanUNet', 'ColdDiffusion']
+def create_prediction_csv(cfg: omegaconf.DictConfig) -> None:
+    """
+    This function creates and saves a dataframe containing the time-domain predictions from DeepDenoiser, CleanUNet & ColdDiffusion
+    Args:
+        cfg (omegaconf.DictConfig): the hydra config file
+    Returns:
+        pd.DataFrame: Dataframe with columns ['eq' , 'noise', 'noisy_eq', 'shift', 'deepdenoiser', 'cleanunet', 'colddiffusion'
+    """
+
+    # models = ["DeepDenoiser"]
+    output_dir = pathlib.Path(
+        hydra.core.hydra_config.HydraConfig.get().runtime.output_dir
+    )
+
+    test_dl = get_dataloaders_pytorch(cfg, return_test=True)
+    eq, noise, shift = next(iter(test_dl))
+    noisy_eq = eq + noise
+
+    butterworth = np.apply_along_axis(
+        lambda x: bandpass_obspy(
+            x,
+            freqmin=cfg.butterworth_range[0],
+            freqmax=cfg.butterworth_range[1],
+            df=cfg.sampling_rate,
+            corners=4,
+            zerophase=False,
+        ),
+        axis=2,
+        arr=noisy_eq.numpy(),
+    )
+
+    predictions = get_predictions_deepdenoiser(eq, noise, cfg)
+
+    print(predictions.shape)
+
+    np.savez(
+        output_dir / "data.npz",
+        eq=eq.numpy(),
+        noise=noise.numpy(),
+        noisy_eq=noisy_eq.numpy(),
+        shift=np.array(shift),
+        butterworth=butterworth,
+        deepdenoiser=predictions.numpy(),
+    )

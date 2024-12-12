@@ -16,10 +16,10 @@ from typing import Union
 
 logger = logging.getLogger()
 
+
 def get_dataloaders_pytorch(
     cfg: omegaconf.DictConfig, return_test=False, subset=None
 ) -> Union[DataLoader, tuple[DataLoader, DataLoader]]:
-    
     if return_test:
         test_dataset = EQDataset(cfg.user.data.filename, Mode.TEST)
         test_dl = th.utils.data.DataLoader(
@@ -28,7 +28,6 @@ def get_dataloaders_pytorch(
         return test_dl
 
     if cfg.random:
-
         train_dataset = DeepDenoiserDataset(
             cfg.user.data.signal_path,
             cfg.user.data.noise_path,
@@ -47,7 +46,7 @@ def get_dataloaders_pytorch(
             Mode.VALIDATION,
             random=cfg.model.random,
         )
-        
+
     else:
         train_dataset = EQDataset(cfg.user.data.filename, Mode.TRAIN)
         val_dataset = EQDataset(cfg.user.data.filename, Mode.VALIDATION)
@@ -155,30 +154,31 @@ def load_traces_and_shift(
     return eq_traces, noise_traces, shifts
 
 
-
 class EQDataset(Dataset):
-
     def __init__(self, filename, mode: Mode):
-
+        self.mode = mode
         if mode == Mode.TRAIN:
             self.file_noise = np.load(filename + "train_eq_005.npy", allow_pickle=True)
-            self.file_eq = np.load(filename + "train_noise_005.npy", allow_pickle=True) 
+            self.file_eq = np.load(filename + "train_noise_005.npy", allow_pickle=True)
         elif mode == Mode.VALIDATION:
             self.file_noise = np.load(filename + "val_eq_005.npy", allow_pickle=True)
             self.file_eq = np.load(filename + "val_noise_005.npy", allow_pickle=True)
         elif mode == Mode.TEST:
             self.file_noise = np.load(filename + "tst_noise_001.npy", allow_pickle=True)
             self.file_eq = np.load(filename + "tst_eq_001.npy", allow_pickle=True)
+            self.assoc = np.load(filename + "tst_eq_assoc.npy", allow_pickle=True)
         else:
             raise NotImplementedError
-        
+
         assert self.file_eq.shape == self.file_noise.shape
 
-    def __len__(self):
-        return len(self.file_noise) 
-    def __getitem__(self, index):
-        return (self.file_eq[index], self.file_noise[index]) 
+    def __len__(self) -> int:
+        return len(self.file_noise)
 
+    def __getitem__(self, index):
+        if self.mode == Mode.TEST:
+            return (self.file_eq[index], self.file_noise[index], self.assoc[index][3])
+        return (self.file_eq[index], self.file_noise[index])
 
 
 class DeepDenoiserDataset(Dataset):
@@ -196,11 +196,17 @@ class DeepDenoiserDataset(Dataset):
         logger.info(f"start loading pickle files for {mode}")
 
         if mode == Mode.TRAIN:
-            self.signal_files = glob.glob(f"{signal_path}/train/**/*.npz", recursive=True)
+            self.signal_files = glob.glob(
+                f"{signal_path}/train/**/*.npz", recursive=True
+            )
             self.noise_files = glob.glob(f"{noise_path}/train/**/*.npz", recursive=True)
         elif mode == Mode.VALIDATION:
-            self.signal_files = glob.glob(f"{signal_path}/validation/**/*.npz", recursive=True)
-            self.noise_files = glob.glob(f"{noise_path}/validation/**/*.npz", recursive=True)
+            self.signal_files = glob.glob(
+                f"{signal_path}/validation/**/*.npz", recursive=True
+            )
+            self.noise_files = glob.glob(
+                f"{noise_path}/validation/**/*.npz", recursive=True
+            )
         else:
             raise NotImplementedError
 
@@ -224,11 +230,10 @@ class DeepDenoiserDataset(Dataset):
         return len(self.signal_files)
 
     def __getitem__(self, idx) -> tuple[Tensor, Tensor]:
-
         eq = np.load(self.signal_files[idx], allow_pickle=True)
         noise = np.load(self.noise_files[idx], allow_pickle=True)
         snr_random = np.random.uniform(self.snr_lower, self.snr_upper)
-        event_shift = np.random.randint(6000 - (self.trace_length-500), 6000)
+        event_shift = np.random.randint(6000 - (self.trace_length - 500), 6000)
 
         Z_eq = eq["earthquake_waveform_Z"][
             event_shift : event_shift + self.trace_length
@@ -295,8 +300,6 @@ class DeepDenoiserDataset(Dataset):
         mask = stft_eq.abs() / (stft_noise.abs() + stft_eq.abs() + 1e-12)
 
         return noisy_eq.float(), mask.float()
-
-
 
 
 class CSVDatasetPytorch(Dataset):
@@ -404,5 +407,3 @@ class CSVDatasetPytorch(Dataset):
         mask = stft_eq.abs() / (stft_noise.abs() + stft_eq.abs() + 1e-12)
 
         return noisy_eq.float(), mask.float()
-
-

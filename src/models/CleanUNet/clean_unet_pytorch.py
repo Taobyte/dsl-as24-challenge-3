@@ -307,9 +307,9 @@ class CleanUNetPytorch(nn.Module):
                     nn.ReLU(),
                     nn.Dropout(dropout),
                     nn.Conv1d(channels_H, channels_H * 2, 1),
-                    nn.BatchNorm1d(channels_H*2),
+                    nn.BatchNorm1d(channels_H * 2),
                     nn.GLU(dim=1),
-                    nn.Dropout(dropout)
+                    nn.Dropout(dropout),
                 )
             )
             channels_input = channels_H
@@ -319,7 +319,7 @@ class CleanUNetPytorch(nn.Module):
                 self.decoder.append(
                     nn.Sequential(
                         nn.Conv1d(channels_H, channels_H * 2, 1),
-                        nn.BatchNorm1d(channels_H*2),
+                        nn.BatchNorm1d(channels_H * 2),
                         nn.GLU(dim=1),
                         nn.Dropout(dropout),
                         nn.ConvTranspose1d(
@@ -332,7 +332,7 @@ class CleanUNetPytorch(nn.Module):
                     0,
                     nn.Sequential(
                         nn.Conv1d(channels_H, channels_H * 2, 1),
-                        nn.BatchNorm1d(channels_H*2),
+                        nn.BatchNorm1d(channels_H * 2),
                         nn.GLU(dim=1),
                         nn.Dropout(dropout),
                         nn.ConvTranspose1d(
@@ -340,7 +340,7 @@ class CleanUNetPytorch(nn.Module):
                         ),
                         nn.BatchNorm1d(channels_output),
                         nn.ReLU(),
-                        nn.Dropout(dropout)
+                        nn.Dropout(dropout),
                     ),
                 )
             channels_output = channels_H
@@ -373,10 +373,6 @@ class CleanUNetPytorch(nn.Module):
     def forward(self, noisy_audio):
         B, C, L = noisy_audio.shape
         x = padding(noisy_audio, self.encoder_n_layers, self.kernel_size, self.stride)
-
-        std = noisy_audio.std(dim=2, keepdim=True) + 1e-3
-        # noisy_audio /= std
-
         # encoder
         skip_connections = []
         for downsampling_block in self.encoder:

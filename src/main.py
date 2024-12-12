@@ -8,8 +8,8 @@ import numpy as np
 import torch as th
 
 from train import train_model
-from validate import compute_metrics
-from plot import compare_model_and_baselines, visualize_predictions
+from validate import compute_metrics, create_prediction_csv
+from plot import compare_model_and_baselines, visualize_predictions, overlay_plot
 
 
 def setup_logging(cfg: omegaconf.DictConfig):
@@ -42,6 +42,7 @@ def main(cfg: omegaconf.DictConfig):
         model = train_model(cfg)
 
     elif cfg.test:
+        """
         model_df, butterworth_df = compute_metrics(cfg)
         if cfg.plot.metrics:
             compare_model_and_baselines(
@@ -52,6 +53,9 @@ def main(cfg: omegaconf.DictConfig):
                 label2="Butterworth",
                 label3="DeepDenoiser",
             )
+        """
+        df = create_prediction_csv(cfg)
+
     elif cfg.plot.metrics:
         compare_model_and_baselines(
             cfg.user.metrics_model_path,
@@ -63,6 +67,8 @@ def main(cfg: omegaconf.DictConfig):
         )
     elif cfg.plot.visualization:
         visualize_predictions(cfg)
+    elif cfg.plot.overlay_plot:
+        overlay_plot(cfg)
 
 
 if __name__ == "__main__":
