@@ -19,6 +19,7 @@ from models.WaveDecompNet.validate import get_metrics_wave_decomp_net
 from models.CleanUNet.validate import get_metrics_clean_unet
 from models.ColdDiffusion.validate import get_metrics_cold_diffusion
 from models.ColdDiffusion.ColdDiffusion_keras import ColdDiffusion
+from models.ColdDiffusion.dataset import TestColdDiffusionDataset
 from metrics import cross_correlation, p_wave_onset_difference, max_amplitude_difference
 
 def get_metrics(model: keras.Model, assoc: list, snr:int, cfg: omegaconf.DictConfig) -> tuple[ndarray, ndarray, ndarray]:
@@ -101,7 +102,7 @@ def compute_metrics(cfg: omegaconf.DictConfig) -> pd.DataFrame:
         predictions["p_wave_std"].append(p_wave_onset_difference_std)
 
         # butterworth
-        butti = get_bandpass_results(assoc, snr=snr)
+        butti = get_bandpass_results(assoc, snr, cfg)
 
         preds_butterworth["cc_mean"].append(butti[0])
         preds_butterworth["cc_std"].append(butti[1])
@@ -123,7 +124,7 @@ def compute_metrics(cfg: omegaconf.DictConfig) -> pd.DataFrame:
     return df, df_butti
 
 
-def get_bandpass_results(assoc, snr, idx=0):
+def get_bandpass_results(assoc, snr, cfg, idx=0):
     """get baseline results for butterworth bandpass filter
 
     Args:
@@ -134,9 +135,16 @@ def get_bandpass_results(assoc, snr, idx=0):
         - a dictionary with results (mean and std) for the cross-correlation,
           maximum amplitude difference (percentage) and p wave onset shift (timesteps)
     """
-
-    test_dataset = InputSignals(assoc, Mode.TEST, snr)
-    test_dl = th.utils.data.DataLoader(test_dataset, batch_size=1, shuffle=False)
+    if cfg.model.model_name == "ColdDiffusion":
+            test_dataset = TestColdDiffusionDataset(
+                cfg.user.data.test_data_file
+            )
+            test_dl = th.utils.data.DataLoader(
+                test_dataset, batch_size=1, shuffle=False
+            )
+    else:
+        test_dataset = InputSignals(assoc, Mode.TEST, snr)
+        test_dl = th.utils.data.DataLoader(test_dataset, batch_size=1, shuffle=False)
     ccs = []
     amplitudes = []
     onsets = []
@@ -144,8 +152,11 @@ def get_bandpass_results(assoc, snr, idx=0):
     # butterworth params
     freq_range = [1, 45]
     sampling_rate = 100
-
-    for noisy_batch, eq_batch, shifts in test_dl:
+    # print("fitting butterworth filter")
+    for eq_batch, noise_batch, shifts in test_dl:
+        shifts = int(shifts[0])
+        eq_batch = eq_batch * snr
+        noisy_batch = eq_batch + noise_batch
         eq_batch = eq_batch[0, idx].numpy()
         filtered = bandpass_obspy(
             noisy_batch[0, idx],

@@ -6,11 +6,11 @@ def create_dataloader(cfg, is_noise=False):
     
     # Step 1: Load the data
     if is_noise:
-        train_dataset = CDiffDataset(cfg.user.data.datapath + "train_noise_002.npy")
-        val_dataset = CDiffDataset(cfg.user.data.datapath + "val_noise_002.npy")
+        train_dataset = CDiffDataset(cfg.user.data.datapath + "train_noise_007.npy")
+        val_dataset = CDiffDataset(cfg.user.data.datapath + "val_noise_007.npy")
     else:
-        train_dataset = CDiffDataset(cfg.user.data.datapath + "train_eq_002.npy")
-        val_dataset = CDiffDataset(cfg.user.data.datapath + "val_eq_002.npy")
+        train_dataset = CDiffDataset(cfg.user.data.datapath + "train_eq_007.npy")
+        val_dataset = CDiffDataset(cfg.user.data.datapath + "val_eq_007.npy")
     
     # Step 2: Creating DataLoader instances
     train_loader = DataLoader(train_dataset, batch_size=cfg.model.batch_size, shuffle=False)

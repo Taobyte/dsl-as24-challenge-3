@@ -10,7 +10,7 @@ data:
 outside_repo: True
 model_path: '/home/tim/Documents/Data-Science_MSc/DSLab/models/DeepDenoiser_l5_e3.keras'
 test_model_path: "some"
-path_model: '/home/tlauner/DSLab/dsl-as24-challenge-3/outputs/2024-12-08/17-51-16/chkpt_epoch_15_20_cosine_cold_diffusion.pth'
+path_model: '/home/tlauner/DSLab/dsl-as24-challenge-3/outputs/2024-12-11/17-38-53/chkpt_epoch_35_20_cosine_cold_diffusion.pth'
 metrics_deepdenoiser_path: '/home/tlauner/DSLab/dsl-as24-challenge-3/metrics/deep_denoiser_metrics.csv' 
 
 # model dir

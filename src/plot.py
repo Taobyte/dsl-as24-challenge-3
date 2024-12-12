@@ -74,7 +74,11 @@ def compare_model_and_baselines(df1_path: str, df2_path: str, df3_path: str, lab
 
         if i == 1:
             ax.set_yscale("log")
-            # ax.set_ylim(0, 1000)
+        #     ax.set_ylim(0, 5)
+        # elif i == 2:
+        #     ax.set_ylim(0, 1000)
+        # elif i == 0:
+        #     ax.set_ylim(0, 1)
 
     # Set the title for the entire figure
     fig.suptitle('Comparison of Denoising Models', fontsize=16)
