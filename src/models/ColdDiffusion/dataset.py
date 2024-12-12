@@ -54,7 +54,7 @@ class TestColdDiffusionDataset(torch.utils.data.Dataset):
 
 def compute_train_dataset(signal_length, mode, memmap):
 
-    num = 5
+    num = 7
     if mode == Mode.TEST:
         num = 1
         signal_path = "/home/tim/Documents/Data-Science_MSc/DSLab/earthquake_data/test/event"
