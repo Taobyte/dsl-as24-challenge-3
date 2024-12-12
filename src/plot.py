@@ -25,15 +25,7 @@ def visualize_predictions(cfg: omegaconf.DictConfig):
         """
         plot_spectograms(cfg)
     elif cfg.model.model_name == "CleanUNet":
-        visualize_predictions_clean_unet(
-            cfg.user.model_path,
-            cfg.user.data.signal_path,
-            cfg.user.data.noise_path,
-            cfg.model.signal_length,
-            cfg.plot.n_examples,
-            cfg.snrs,
-            cfg=cfg,
-        )
+        visualize_predictions_clean_unet(cfg)
     elif cfg.model.model_name == "CleanUNet2":
         visualize_predictions_clean_specnet(
             cfg.user.model_path,
@@ -144,47 +136,84 @@ def compare_model_and_baselines(
     plt.savefig(output_dir / "metrics.jpg")
 
 
+import matplotlib.pyplot as plt
+import seaborn as sns
+import numpy as np
+import pathlib
+import hydra
+
+
 def overlay_plot(cfg: omegaconf.DictConfig):
     """
-    Creates overlay plot over butterworth filtered noisy earthquake
+    Creates an overlay plot of noisy earthquake, original, and filtered signals
+
     Args:
-        prediction_path (str): Path to csv file storing noisy earthquake and predictions for DeepDenoiser, CleanUNet, ColdDiffusion
+        cfg (omegaconf.DictConfig): Configuration dictionary
     """
+    plt.style.use("seaborn-v0_8-whitegrid")
+    sns.set_palette("deep")
+
+    fig, axs = plt.subplots(1, 3, figsize=(18, 6), dpi=300)
+
     output_dir = pathlib.Path(
         hydra.core.hydra_config.HydraConfig.get().runtime.output_dir
     )
 
     data = np.load(cfg.user.prediction_path)
 
-    fig, axs = plt.subplots(1, 4, figsize=(12, 8))
+    channel_idx = cfg.plot.channel_idx
+    trace_length = cfg.trace_length
 
-    axs[0].plot(range(cfg.trace_length), data["noisy_eq"][0, cfg.plot.channel_idx, :])
-    axs[0].set_title("Noisy Earthquake Signal")
+    deepdenoiser_normalized = data["deepdenoiser"][0, channel_idx, :] / np.max(
+        np.abs(data["deepdenoiser"][0, channel_idx, :])
+    )
+
+    axs[0].plot(
+        range(trace_length),
+        data["noisy_eq"][0, channel_idx, :],
+        linewidth=2,
+        color=sns.color_palette("deep")[0],
+    )
+    axs[0].set_title("Noisy Earthquake Signal", fontsize=12, fontweight="bold")
     axs[0].set_ylim(-2, 2)
+    axs[0].set_xlabel("Time", fontsize=10)
+    axs[0].set_ylabel("Amplitude", fontsize=10)
 
-    axs[1].plot(range(cfg.trace_length), data["eq"][0, cfg.plot.channel_idx, :])
-    axs[1].set_title("Original Earthquake Signal")
+    axs[1].plot(
+        range(trace_length),
+        data["eq"][0, channel_idx, :],
+        linewidth=2,
+        color=sns.color_palette("deep")[1],
+    )
+    axs[1].set_title("Original Earthquake Signal", fontsize=12, fontweight="bold")
     axs[1].set_ylim(-2, 2)
+    axs[1].set_xlabel("Time", fontsize=10)
+    axs[1].set_ylabel("Amplitude", fontsize=10)
 
     axs[2].plot(
-        range(cfg.trace_length),
-        data["butterworth"][0, cfg.plot.channel_idx, :],
-        color="blue",
+        range(trace_length),
+        data["butterworth"][0, channel_idx, :],
+        color=sns.color_palette("deep")[2],
+        linewidth=2,
         label="Butterworth Filtered",
     )
-
-    print(data["deepdenoiser"].shape)
-    axs[2].set_title("Filtered Signals Comparison")
-    axs[2].set_ylim(-2, 2)
-    axs[2].legend()
-
     axs[2].plot(
-        range(cfg.trace_length),
-        data["deepdenoiser"][0, cfg.plot.channel_idx, :]
-        / np.max(np.abs(data["deepdenoiser"][0, cfg.plot.channel_idx, :])),
-        color="red",
+        range(trace_length),
+        deepdenoiser_normalized,
+        color=sns.color_palette("deep")[3],
+        linewidth=2,
         label="Deep Denoiser",
     )
+    axs[2].set_title("Filtered Signals Comparison", fontsize=12, fontweight="bold")
+    axs[2].set_ylim(-2, 2)
+    axs[2].set_xlabel("Time", fontsize=10)
+    axs[2].set_ylabel("Normalized Amplitude", fontsize=10)
+    axs[2].legend(fontsize=9)
 
     plt.tight_layout()
-    fig.savefig(output_dir)
+    fig.suptitle("Earthquake Signal Analysis", fontsize=14, fontweight="bold", y=1.05)
+
+    output_path = output_dir / "overlay_plot.png"
+    fig.savefig(output_path, bbox_inches="tight")
+
+    plt.close(fig)

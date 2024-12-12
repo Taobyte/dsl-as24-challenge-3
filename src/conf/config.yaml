@@ -7,10 +7,12 @@ seed: 123
 
 # data properties
 trace_length: 4096
+random: False
+
+# butterworth settings
 butterworth_range: [1, 45]
 sampling_rate: 100
 
-random: False
 training: True
 # can be 'accelerate', 'dataparallel' or null
 # multi_gpu: 'accelerate'
@@ -21,7 +23,7 @@ plot:
   channel_idx: 0
   n_examples: 10
   visualization: False
-  overlay_plot: True
+  overlay_plot: False
 
 snrs: [0.1, 0.3, 0.5, 0.7, 1.0, 1.2, 1.5, 1.8, 2.0, 2.5, 3.5]
 

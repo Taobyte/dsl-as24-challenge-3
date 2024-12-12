@@ -8,11 +8,17 @@ from torch.utils.data import DataLoader
 import numpy as np
 import pandas as pd
 import hydra
+import omegaconf
+from omegaconf import OmegaConf
 from scipy.stats import wilcoxon
-
 from enum import Enum
 
+from src.models.CleanUNet.clean_unet_pytorch import CleanUNetPytorch
+from src.models.DeepDenoiser.deep_denoiser_pytorch import DeepDenoiser
+
 logger = logging.getLogger()
+
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 
 class Mode(Enum):
@@ -27,6 +33,46 @@ class Model(Enum):
     CleanUNet = "clean_unet"
     CleanSpecNet = "clean_specnet"
     CleanUNet2 = "clean_unet2"
+
+
+def get_trained_model(cfg: omegaconf.DictConfig, model_type: Model) -> torch.nn.Module:
+    if model_type == Model.DeepDenoiser:
+        config_path = cfg.user.deep_denoiser_folder + "/.hydra/config.yaml"
+        config = OmegaConf.load(config_path)
+        model = DeepDenoiser(**config.model.architecture).to(device)
+        checkpoint = torch.load(
+            cfg.user.deep_denoiser_folder + "/model.pth",
+            map_location=torch.device("cpu"),
+        )
+    elif model_type == Model.CleanUNet:
+        config_path = cfg.user.clean_unet_folder + "/.hydra/config.yaml"
+        config = OmegaConf.load(config_path)
+
+        model = CleanUNetPytorch(**config.model.architecture).to(device)
+
+        if "safetensors" in cfg.user.model_path:
+            from safetensors.torch import load_file
+
+            checkpoint = load_file(cfg.user.clean_unet_folder + "/model.pth")
+        else:
+            checkpoint = torch.load(
+                cfg.user.clean_unet_folder + "/model.pth",
+                map_location=torch.device("cpu"),
+            )
+    elif model_type == Model.CleanUNet2:
+        raise NotImplementedError
+    elif model_type == Model.ColdDiffusion:
+        raise NotImplementedError
+    else:
+        raise NotImplementedError
+
+    if "model_state_dict" in checkpoint.keys():
+        model.load_state_dict(checkpoint["model_state_dict"])
+    else:
+        model.load_state_dict(checkpoint)
+    model.eval()
+
+    return model
 
 
 def log_model_size(net: torch.nn.Module) -> int:

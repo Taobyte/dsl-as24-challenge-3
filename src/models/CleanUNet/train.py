@@ -224,6 +224,9 @@ def train_model(
                         cfg,
                     )
                     val_loss += loss.item()
+                if tb:
+                    logger.info(f"val_loss: {val_loss}")
+                    tb.add_scalar("Validation/Val-Loss", val_loss, n_iter)
 
                 if early_stopper.early_stop(val_loss):
                     break

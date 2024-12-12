@@ -23,7 +23,10 @@ def get_dataloaders_pytorch(
     if return_test:
         test_dataset = EQDataset(cfg.user.data.filename, Mode.TEST)
         test_dl = th.utils.data.DataLoader(
-            test_dataset, batch_size=cfg.plot.n_examples, num_workers=1
+            test_dataset,
+            batch_size=cfg.plot.n_examples,
+            shuffle=False,
+            num_workers=1,
         )
         return test_dl
 

@@ -1,141 +1,79 @@
 import omegaconf
+import logging
 import hydra
 import pathlib
-import os
-from typing import Union
-
+from omegaconf import OmegaConf
 import torch
 import matplotlib.pyplot as plt
 from tqdm import tqdm
 
-from src.utils import Mode
+from src.utils import Mode, get_trained_model
 from src.metrics import (
     cross_correlation_torch,
     max_amplitude_difference_torch,
     p_wave_onset_difference_torch,
 )
-from src.models.CleanUNet.dataset import CleanUNetDataset
-from src.models.CleanUNet.clean_unet_pytorch import CleanUNetPytorch
+from src.models.DeepDenoiser.dataset import get_dataloaders_pytorch
+from src.utils import get_trained_model, Model
+
+logger = logging.getLogger()
+
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 
-def get_metrics_clean_unet(model, cfg: omegaconf.DictConfig, snr: int, idx: int = 0):
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+def get_metrics_clean_unet(model, cfg: omegaconf.DictConfig, snr: int):
+    test_dl = get_dataloaders_pytorch(cfg, return_test=True)
+    model = get_trained_model(cfg, Model.CleanUNet)
 
-    test_dataset = CleanUNetDataset(
-        cfg.user.data.signal_path + "/validation/",
-        cfg.user.data.noise_path + "/validation/",
-        cfg.model.signal_length,
-        snr_lower=snr,
-        snr_upper=snr,
-        mode=Mode.TEST,
-        data_format="channel_first" if cfg.model.train_pytorch else "channel_last",
-    )
-
-    test_dl = torch.utils.data.DataLoader(
-        test_dataset, cfg.model.batch_size, shuffle=False
-    )
-    ccs = []
-    amplitudes = []
-    onsets = []
     with torch.no_grad():
-        for noisy_batch, eq_batch, shifts in tqdm(test_dl, total=len(test_dl)):
-            eq_batch = eq_batch.float().to(device)
-            noisy_batch = noisy_batch.float().to(device)
+        for eq, noise, shifts in tqdm(test_dl, total=len(test_dl)):
+            eq = eq.float().to(device)
+            noise = noise.float().to(device)
             shifts = shifts.to(device)
+            noisy_eq = snr * eq + noise
 
-            prediction = model(noisy_batch)
-            ccs.append(cross_correlation_torch(eq_batch, prediction))
-            amplitudes.append(max_amplitude_difference_torch(eq_batch, prediction))
-            onsets.append(p_wave_onset_difference_torch(eq_batch, prediction, shifts))
+            prediction = model(noisy_eq)
 
+
+def get_metrics_clean_unet_mean_std(cfg, snr):
+    # TODO: load predictions
+    # eq, predictions, shifts = load()
+    ccs, amplitudes, onsets = [], [], []
+    ccs.append(cross_correlation_torch(eq, prediction))
+    amplitudes.append(max_amplitude_difference_torch(eq, prediction))
+    onsets.append(p_wave_onset_difference_torch(eq, prediction, shifts))
     ccs = torch.concatenate(ccs, dim=0)
     amplitudes = torch.concatenate(amplitudes, dim=0)
     onsets = torch.concatenate(onsets, dim=0)
 
-    return (
-        ccs.detach().cpu().numpy(),
-        amplitudes.detach().cpu().numpy(),
-        onsets.detach().cpu().numpy(),
-    )
+    return (ccs, amplitudes, onsets)
 
 
-def visualize_predictions_clean_unet(
-    model: str,
-    signal_path: str,
-    noise_path: str,
-    signal_length: int,
-    n_examples: int,
-    snrs: list[int],
-    channel: int = 0,
-    epoch="",
-    cfg=None,
-) -> None:
-    print("Visualizing predictions")
+def visualize_predictions_clean_unet(cfg: omegaconf.DictConfig) -> None:
+    logger.info("Visualizing predictions for CleanUNet")
     output_dir = pathlib.Path(
         hydra.core.hydra_config.HydraConfig.get().runtime.output_dir
     )
-    epoch_dir = os.path.join(output_dir, str(epoch))
-    os.makedirs(epoch_dir, exist_ok=True)
 
-    if isinstance(model, str):   
-        device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-        model = CleanUNetPytorch(
-            channels_input=3,
-            channels_output=3,
-            channels_H=cfg.model.channels_H,
-            encoder_n_layers=cfg.model.encoder_n_layers,
-            tsfm_n_layers=cfg.model.tsfm_n_layers,
-            tsfm_n_head=cfg.model.tsfm_n_head,
-            tsfm_d_model=cfg.model.tsfm_d_model,
-            tsfm_d_inner=cfg.model.tsfm_d_inner,
-        ).to(device)
+    n_examples = cfg.plot.n_examples
+    channel_idx = cfg.plot.channel_idx
 
-        if "safetensors" in cfg.user.model_path:
-            from safetensors.torch import load_file
+    model = get_trained_model()
 
-            checkpoint = load_file(cfg.user.model_path)
-        else:
-            checkpoint = torch.load(
-                cfg.user.model_path, map_location=torch.device("cpu")
-            )
-
-        if "model_state_dict" in checkpoint.keys():
-            model.load_state_dict(checkpoint["model_state_dict"])
-        else:
-            model.load_state_dict(checkpoint)
-        model.eval()
-
-    data_format = "channel_first" if cfg.model.train_pytorch else "channel_last"
-
-    for snr in tqdm(snrs, total=len(snrs)):
-        test_dl = torch.utils.data.DataLoader(
-            CleanUNetDataset(
-                signal_path + "/validation",
-                noise_path + "/validation",
-                signal_length,
-                snr,
-                snr,
-                data_format=data_format,
-            ),
-            batch_size=n_examples,
-        )
-        input, ground_truth = next(iter(test_dl))
-        predictions = model(input.float())
+    for snr in tqdm(cfg.snrs, total=len(cfg.snrs)):
+        test_dl = get_dataloaders_pytorch(cfg, return_test=True)
+        eq, noise, _ = next(iter(test_dl))
+        eq, noise = eq.float(), noise.float()
+        noisy_eq = snr * eq + noise
+        with torch.no_grad():
+            predictions = model(noisy_eq)
 
         _, axs = plt.subplots(n_examples, 3, figsize=(15, n_examples * 3))
-        time = range(signal_length)
-
+        time = range(cfg.trace_length)
         for i in tqdm(range(n_examples), total=n_examples):
-            if not cfg.model.train_pytorch:
-                axs[i, 0].plot(time, input[i, :, channel])  # noisy earthquake
-                axs[i, 1].plot(time, ground_truth[i, :, channel])  # ground truth noise
-                axs[i, 2].plot(time, predictions[i, :, channel])  # predicted noise
-            else:
-                axs[i, 0].plot(time, input[i, channel, :])  # noisy earthquake
-                axs[i, 1].plot(time, ground_truth[i, channel, :])  # ground truth noise
-                axs[i, 2].plot(
-                    time, predictions.detach().numpy()[i, channel, :]
-                )  # predicted noise
+            axs[i, 0].plot(time, noisy_eq[i, channel_idx, :])
+            axs[i, 1].plot(time, eq[i, channel_idx, :])
+            axs[i, 2].plot(time, predictions.numpy()[i, channel_idx, :])
 
             for j in range(3):
                 axs[i, j].set_ylim(-2, 2)
@@ -146,4 +84,4 @@ def visualize_predictions_clean_unet(
 
         plt.tight_layout()
         plt.subplots_adjust(top=0.9)
-        plt.savefig(epoch_dir + f"/visualization_snr_{snr}.png")
+        plt.savefig(output_dir / f"visualization_snr_{snr}.png")
