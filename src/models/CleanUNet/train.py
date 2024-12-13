@@ -39,6 +39,8 @@ def fit_clean_unet_pytorch(cfg: omegaconf.DictConfig, model: Model) -> torch.nn.
             net = get_trained_model(cfg, Model.CleanUNet2)
         else:
             net = CleanUNet2(cfg).to(device)
+    else:
+        raise NotImplementedError
 
     log_model_size(net)
 

@@ -15,11 +15,11 @@ patience: 1e9
 min_delta: 1
 
 log_checkpoints: True
-checkpoint_freq: 60
+checkpoint_freq: 10
 
 lr_schedule: True
 
-val_freq: 1e9
+val_freq: 10
 
 # 'mae': L1 loss in time domain
 # 'stft': STFT Log Magnitude Loss + Spectogram Loss 

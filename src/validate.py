@@ -189,7 +189,7 @@ def get_bandpass_results(assoc, snr, idx=0):
 
 def create_prediction_csv(cfg: omegaconf.DictConfig) -> None:
     """
-    This function creates and saves a dataframe containing the time-domain predictions from DeepDenoiser, CleanUNet & ColdDiffusion
+    This function creates and saves a dataframe containing the time-domain predictions from DeepDenoiser, CleanUNet(2) & ColdDiffusion
     Args:
         cfg (omegaconf.DictConfig): the hydra config file
     Returns:
@@ -201,33 +201,32 @@ def create_prediction_csv(cfg: omegaconf.DictConfig) -> None:
         hydra.core.hydra_config.HydraConfig.get().runtime.output_dir
     )
 
-    test_dl = get_dataloaders_pytorch(cfg, return_test=True)
-    eq, noise, shift = next(iter(test_dl))
-    noisy_eq = eq + noise
+    for snr in cfg.snrs:
+        test_dl = get_dataloaders_pytorch(cfg, return_test=True)
+        eq, noise, shift = next(iter(test_dl))
+        noisy_eq = snr * eq + noise
 
-    butterworth = np.apply_along_axis(
-        lambda x: bandpass_obspy(
-            x,
-            freqmin=cfg.butterworth_range[0],
-            freqmax=cfg.butterworth_range[1],
-            df=cfg.sampling_rate,
-            corners=4,
-            zerophase=False,
-        ),
-        axis=2,
-        arr=noisy_eq.numpy(),
-    )
+        butterworth = np.apply_along_axis(
+            lambda x: bandpass_obspy(
+                x,
+                freqmin=cfg.butterworth_range[0],
+                freqmax=cfg.butterworth_range[1],
+                df=cfg.sampling_rate,
+                corners=4,
+                zerophase=False,
+            ),
+            axis=2,
+            arr=noisy_eq.numpy(),
+        )
 
-    predictions = get_predictions_deepdenoiser(eq, noise, cfg)
+        predictions = get_predictions_deepdenoiser(eq, noise, cfg)
 
-    print(predictions.shape)
-
-    np.savez(
-        output_dir / "data.npz",
-        eq=eq.numpy(),
-        noise=noise.numpy(),
-        noisy_eq=noisy_eq.numpy(),
-        shift=np.array(shift),
-        butterworth=butterworth,
-        deepdenoiser=predictions.numpy(),
-    )
+        np.savez(
+            output_dir / f"snr_{snr}_predictions.npz",
+            eq=eq.numpy(),
+            noise=noise.numpy(),
+            noisy_eq=noisy_eq.numpy(),
+            shift=np.array(shift),
+            butterworth=butterworth,
+            deepdenoiser=predictions.numpy(),
+        )
