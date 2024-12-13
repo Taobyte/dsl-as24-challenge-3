@@ -4,8 +4,14 @@ import torch.nn.functional as F
 import einops
 
 
-def get_istft(stft_eq: torch.Tensor, cfg: omegaconf.DictConfig) -> torch.Tensor:
-    window = torch.hann_window(cfg.model.architecture.win_length)
+def get_istft(
+    stft_eq: torch.Tensor,
+    n_fft: int,
+    hop_length: int,
+    win_length: int,
+    trace_length: int,
+) -> torch.Tensor:
+    window = torch.hann_window(win_length)
     stft_eq = einops.rearrange(stft_eq, "b (c f) w h -> (b c) w h f", c=3, f=2)
     print(stft_eq.shape)
     stft_eq = stft_eq.contiguous()
@@ -13,11 +19,11 @@ def get_istft(stft_eq: torch.Tensor, cfg: omegaconf.DictConfig) -> torch.Tensor:
     print(stft_eq.shape)
     eq = torch.istft(
         stft_eq,
-        cfg.model.architecture.n_fft,
-        cfg.model.architecture.hop_length,
-        cfg.model.architecture.win_length,
+        n_fft,
+        hop_length,
+        win_length,
         window,
-        length=cfg.trace_length,
+        length=trace_length,
         return_complex=False,
     )
     eq = einops.rearrange(eq, "(b c) t -> b c t", c=3)
@@ -25,15 +31,17 @@ def get_istft(stft_eq: torch.Tensor, cfg: omegaconf.DictConfig) -> torch.Tensor:
     return eq
 
 
-def get_stft(eq: torch.Tensor, cfg: omegaconf.DictConfig) -> torch.Tensor:
+def get_stft(
+    eq: torch.Tensor, n_fft: int, hop_length: int, win_length: int
+) -> torch.Tensor:
     B, C, T = eq.shape
-    window = torch.hann_window(cfg.model.architecture.win_length)
+    window = torch.hann_window(win_length)
     eq = einops.rearrange(eq, "b c t -> (b c) t", b=B, c=C)
     eq_stft = torch.stft(
         eq,
-        cfg.model.architecture.n_fft,
-        cfg.model.architecture.hop_length,
-        cfg.model.architecture.win_length,
+        n_fft,
+        hop_length,
+        win_length,
         window,
         return_complex=True,
     )
@@ -44,10 +52,10 @@ def get_stft(eq: torch.Tensor, cfg: omegaconf.DictConfig) -> torch.Tensor:
 
 
 def get_mask(
-    eq: torch.Tensor, noise: torch.Tensor, cfg: omegaconf.DictConfig
+    eq: torch.Tensor, noise: torch.Tensor, n_fft: int, hop_length: int, win_length: int
 ) -> torch.Tensor:
-    stft_eq = get_stft(eq, cfg)
-    stft_noise = get_stft(noise, cfg)
+    stft_eq = get_stft(eq, n_fft, hop_length, win_length)
+    stft_noise = get_stft(noise, n_fft, hop_length, win_length)
 
     mask = stft_eq.abs() / (stft_noise.abs() + stft_eq.abs() + 1e-12)
 

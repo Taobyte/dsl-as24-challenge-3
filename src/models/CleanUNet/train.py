@@ -12,7 +12,7 @@ from tqdm import tqdm
 from src.utils import get_trained_model, Model
 from src.models.DeepDenoiser.dataset import get_dataloaders_pytorch
 from src.models.CleanUNet.clean_unet_pytorch import CleanUNetPytorch
-from src.models.CleanUNet.stft_loss import MultiResolutionSTFTLoss
+from src.stft import MultiResolutionSTFTLoss
 from src.utils import LinearWarmupCosineDecay, log_model_size, EarlyStopper
 
 
