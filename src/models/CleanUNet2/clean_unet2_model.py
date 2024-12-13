@@ -11,8 +11,6 @@ class CleanUnet2(nn.Module):
     def __init__(self, cfg: omegaconf.DictConfig):
         super().__init__()
 
-        print(cfg)
-
         # Instantiate and load CleanSpecNet
         self.clean_specnet = DeepDenoiser(**cfg.model.clean_specnet)
         checkpoint = torch.load(

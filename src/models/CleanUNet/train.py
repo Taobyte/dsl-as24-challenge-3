@@ -123,8 +123,8 @@ def train_model(
         hydra.core.hydra_config.HydraConfig.get().runtime.output_dir
     )
 
-    if cfg.model.patience:
-        early_stopper = EarlyStopper(cfg.model.patience, cfg.model.min_delta)
+    early_stopper = EarlyStopper(cfg.model.patience, cfg.model.min_delta)
+    scaler = torch.cuda.amp.GradScaler(enabled=cfg.model.use_amp)
 
     n_iter = 0
     starting_time = time.time()
@@ -139,10 +139,16 @@ def train_model(
             eq = eq.float().to(device)
             noise = noise.float().to(device)
             noisy_eq = eq + noise
-            denoised_eq = net(noisy_eq)
-
-            loss = get_loss(denoised_eq, eq, stft_lambda, sc_lambda, mag_lambda, cfg)
-            loss.backward()
+            with torch.autocast(
+                device_type="cuda", dtype=torch.float16, enabled=cfg.model.use_amp
+            ):
+                denoised_eq = net(noisy_eq)
+                loss = get_loss(
+                    denoised_eq, eq, stft_lambda, sc_lambda, mag_lambda, cfg
+                )
+            scaler.scale(loss).backward()
+            scaler.step(optimizer)
+            scaler.update()
 
             if torch.isnan(loss) or torch.isinf(loss):
                 logger.info("Terminated on NaN/INF triggered.")
@@ -152,7 +158,6 @@ def train_model(
             grad_norm = torch.nn.utils.clip_grad_norm_(
                 net.parameters(), cfg.model.clipnorm
             )
-            optimizer.step()
             if scheduler:
                 scheduler.step()
 

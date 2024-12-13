@@ -18,10 +18,18 @@ logger = logging.getLogger()
 
 def get_dataloaders_pytorch(
     cfg: omegaconf.DictConfig,
-    return_test=False,
-    subset=None,
+    return_test: bool = False,
+    subset: int = None,
     model: Model = Model.DeepDenoiser,
 ) -> Union[DataLoader, tuple[DataLoader, DataLoader]]:
+    """
+    Loads dataset and returns dataloaders for training, valiadation and test
+    Args:
+        cfg (omegaconf.DictConfig): hydra config
+        return_test (bool): whether to return test dataloder or train & validation dataloaders
+        subset (int): whether to use only subset number of training and validation datapoints
+        model (Model): specifies model used with dataloaders (needed for DeepDenoiser due to ground truth masks)
+    """
     if return_test:
         test_dataset = EQDataset(cfg.user.data.filename, Mode.TEST)
         test_dl = th.utils.data.DataLoader(
@@ -62,47 +70,19 @@ def get_dataloaders_pytorch(
         val_dataset = Subset(train_dataset, indices=range(subset))
 
     train_dl = th.utils.data.DataLoader(
-        train_dataset, batch_size=cfg.model.batch_size, num_workers=2
+        train_dataset, batch_size=cfg.model.batch_size, num_workers=2, pin_memory=True
     )
     val_dl = th.utils.data.DataLoader(
-        val_dataset, batch_size=cfg.model.batch_size, num_workers=2
+        val_dataset, batch_size=cfg.model.batch_size, num_workers=2, pin_memory=True
     )
 
     return train_dl, val_dl
-
-
-class EQDataset(Dataset):
-    def __init__(self, filename, mode: Mode):
-        self.mode = mode
-        if mode == Mode.TRAIN:
-            self.file_noise = np.load(filename + "train_eq_005.npy", allow_pickle=True)
-            self.file_eq = np.load(filename + "train_noise_005.npy", allow_pickle=True)
-        elif mode == Mode.VALIDATION:
-            self.file_noise = np.load(filename + "val_eq_005.npy", allow_pickle=True)
-            self.file_eq = np.load(filename + "val_noise_005.npy", allow_pickle=True)
-        elif mode == Mode.TEST:
-            self.file_noise = np.load(filename + "tst_noise_001.npy", allow_pickle=True)
-            self.file_eq = np.load(filename + "tst_eq_001.npy", allow_pickle=True)
-            self.assoc = np.load(filename + "tst_eq_assoc.npy", allow_pickle=True)
-        else:
-            raise NotImplementedError
-
-        assert self.file_eq.shape == self.file_noise.shape
-
-    def __len__(self) -> int:
-        return len(self.file_noise)
-
-    def __getitem__(self, index):
-        if self.mode == Mode.TEST:
-            return (self.file_eq[index], self.file_noise[index], self.assoc[index][3])
-        return (self.file_eq[index], self.file_noise[index])
 
 
 def get_signal_noise_assoc(
     signal_path: str,
     noise_path: str,
     mode: Mode,
-    size_testset=1000,
     snr=lambda: np.random.uniform(0.1, 1.1),
 ) -> list[tuple[str, str, float, int]]:
     """generates a signal to noise file association from folders
@@ -126,12 +106,8 @@ def get_signal_noise_assoc(
         noise_files = glob.glob(f"{noise_path}/train/**/*.npz", recursive=True)
 
     elif mode == Mode.VALIDATION:
-        signal_files = glob.glob(
-            f"{signal_path}/validation/**/*.npz", recursive=True
-        )  # [:-size_testset]
-        noise_files = glob.glob(
-            f"{noise_path}/validation/**/*.npz", recursive=True
-        )  # [:-size_testset]
+        signal_files = glob.glob(f"{signal_path}/validation/**/*.npz", recursive=True)
+        noise_files = glob.glob(f"{noise_path}/validation/**/*.npz", recursive=True)
 
     elif mode == Mode.TEST:
         signal_files = glob.glob(f"{signal_path}/**/*.npz", recursive=True)
@@ -269,6 +245,33 @@ def compute_train_dataset(signal_length, mode, memmap):
         # np.save(dataset_name[:-4], full, allow_pickle=True)
     if mode == Mode.TEST:
         np.save(dataset_eq_name[:-4] + "_assoc", assoc, allow_pickle=True)
+
+
+class EQDataset(Dataset):
+    def __init__(self, filename, mode: Mode):
+        self.mode = mode
+        if mode == Mode.TRAIN:
+            self.file_noise = np.load(filename + "train_eq_005.npy", allow_pickle=True)
+            self.file_eq = np.load(filename + "train_noise_005.npy", allow_pickle=True)
+        elif mode == Mode.VALIDATION:
+            self.file_noise = np.load(filename + "val_eq_005.npy", allow_pickle=True)
+            self.file_eq = np.load(filename + "val_noise_005.npy", allow_pickle=True)
+        elif mode == Mode.TEST:
+            self.file_noise = np.load(filename + "tst_noise_001.npy", allow_pickle=True)
+            self.file_eq = np.load(filename + "tst_eq_001.npy", allow_pickle=True)
+            self.assoc = np.load(filename + "tst_eq_assoc.npy", allow_pickle=True)
+        else:
+            raise NotImplementedError
+
+        assert self.file_eq.shape == self.file_noise.shape
+
+    def __len__(self) -> int:
+        return len(self.file_noise)
+
+    def __getitem__(self, index):
+        if self.mode == Mode.TEST:
+            return (self.file_eq[index], self.file_noise[index], self.assoc[index][3])
+        return (self.file_eq[index], self.file_noise[index])
 
 
 class EQRandomDataset(Dataset):
