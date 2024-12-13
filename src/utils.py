@@ -28,11 +28,11 @@ class Mode(Enum):
 
 
 class Model(Enum):
-    DeepDenoiser = "deep_denoiser"
-    ColdDiffusion = "cold_diffusion"
-    CleanUNet = "clean_unet"
-    CleanSpecNet = "clean_specnet"
-    CleanUNet2 = "clean_unet2"
+    DeepDenoiser = "DeepDenoiser"
+    ColdDiffusion = "ColdDiffusion"
+    CleanUNet = "CleanUNet"
+    CleanSpecNet = "CleanSpecNet"
+    CleanUNet2 = "CleanUNet2"
 
 
 def get_trained_model(cfg: omegaconf.DictConfig, model_type: Model) -> torch.nn.Module:
@@ -47,18 +47,11 @@ def get_trained_model(cfg: omegaconf.DictConfig, model_type: Model) -> torch.nn.
     elif model_type == Model.CleanUNet:
         config_path = cfg.user.clean_unet_folder + "/.hydra/config.yaml"
         config = OmegaConf.load(config_path)
-
         model = CleanUNetPytorch(**config.model.architecture).to(device)
-
-        if "safetensors" in cfg.user.model_path:
-            from safetensors.torch import load_file
-
-            checkpoint = load_file(cfg.user.clean_unet_folder + "/model.pth")
-        else:
-            checkpoint = torch.load(
-                cfg.user.clean_unet_folder + "/model.pth",
-                map_location=torch.device("cpu"),
-            )
+        checkpoint = torch.load(
+            cfg.user.clean_unet_folder + "/model.pkl",
+            map_location=torch.device("cpu"),
+        )
     elif model_type == Model.CleanUNet2:
         raise NotImplementedError
     elif model_type == Model.ColdDiffusion:

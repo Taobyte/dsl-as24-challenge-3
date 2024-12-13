@@ -1,52 +1,62 @@
-import omegaconf
 import logging
+
+import omegaconf
 import hydra
 import pathlib
 import torch
+import pandas as pd
 import matplotlib.pyplot as plt
 from tqdm import tqdm
 
-from src.utils import Mode, get_trained_model
+from src.utils import get_trained_model, Model
 from src.metrics import (
     cross_correlation_torch,
     max_amplitude_difference_torch,
     p_wave_onset_difference_torch,
 )
 from src.models.DeepDenoiser.dataset import get_dataloaders_pytorch
-from src.utils import get_trained_model, Model
 
 logger = logging.getLogger()
-
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 
-# TODO: Clean up this mess
-def get_metrics_clean_unet(model, cfg: omegaconf.DictConfig, snr: int):
-    test_dl = get_dataloaders_pytorch(cfg, return_test=True)
+def get_metrics_clean_unet(model, cfg: omegaconf.DictConfig) -> pd.DataFrame:
+    logger.info("Computing metrics on testset for CleanUNet.")
+    output_dir = pathlib.Path(
+        hydra.core.hydra_config.HydraConfig.get().runtime.output_dir
+    )
     model = get_trained_model(cfg, Model.CleanUNet)
 
-    with torch.no_grad():
-        for eq, noise, shifts in tqdm(test_dl, total=len(test_dl)):
-            eq = eq.float().to(device)
-            noise = noise.float().to(device)
-            shifts = shifts.to(device)
-            noisy_eq = snr * eq + noise
+    metrics = {}
 
-            prediction = model(noisy_eq)
+    for snr in cfg.snrs:
+        test_dl = get_dataloaders_pytorch(cfg, return_test=True)
+        ccs, amplitudes, onsets = [], [], []
+        with torch.no_grad():
+            for eq, noise, shifts in tqdm(test_dl, total=len(test_dl)):
+                eq = eq.float().to(device)
+                noise = noise.float().to(device)
+                shifts = shifts.to(device)
+                noisy_eq = snr * eq + noise
 
+                prediction = model(noisy_eq)
+                ccs.append(cross_correlation_torch(eq, prediction))
+                amplitudes.append(max_amplitude_difference_torch(eq, prediction))
+                onsets.append(p_wave_onset_difference_torch(eq, prediction, shifts))
 
-def get_metrics_clean_unet_mean_std(cfg, snr):
-    # TODO: load predictions
-    # eq, predictions, shifts = load()
-    ccs, amplitudes, onsets = [], [], []
-    ccs.append(cross_correlation_torch(eq, prediction))
-    amplitudes.append(max_amplitude_difference_torch(eq, prediction))
-    onsets.append(p_wave_onset_difference_torch(eq, prediction, shifts))
-    ccs = torch.concatenate(ccs, dim=0)
-    amplitudes = torch.concatenate(amplitudes, dim=0)
-    onsets = torch.concatenate(onsets, dim=0)
+            ccs = torch.concatenate(ccs, dim=0)
+            amplitudes = torch.concatenate(amplitudes, dim=0)
+            onsets = torch.concatenate(onsets, dim=0)
+            metrics[f"{snr}"] = {
+                "cc": ccs.numpy(),
+                "amp": amplitudes.numpy(),
+                "pw": onsets.numpy(),
+            }
 
-    return (ccs, amplitudes, onsets)
+    df = pd.DataFrame(metrics)
+    df.to_csv(output_dir / "metrics.csv")
+
+    return df
 
 
 def visualize_predictions_clean_unet(cfg: omegaconf.DictConfig) -> None:

@@ -26,7 +26,7 @@ def setup_logging(cfg: omegaconf.DictConfig):
 @hydra.main(version_base=None, config_path="conf", config_name="config")
 def main(cfg: omegaconf.DictConfig):
     setup_logging(cfg)
-    logging.info(omegaconf.OmegaConf.to_yaml(cfg))
+    # logging.info(omegaconf.OmegaConf.to_yaml(cfg))
 
     # Set see (default: 123)
     seed = cfg.seed

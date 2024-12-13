@@ -24,7 +24,8 @@ lr_schedule: True
 val_freq: 5
 
 # 'mae': L1 loss in time domain
-# 'stft': 
+# 'stft': STFT Log Magnitude Loss + Spectogram Loss 
+# 'clean_unet_loss': mae + 0.5 * stft  
 loss: 'clean_unet_loss'
 # frame_lengths: [23, 46, 10]
 # frame_steps: [5, 10, 2]

@@ -5,41 +5,23 @@ import omegaconf
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+import seaborn as sns
 
+from src.utils import Model
 from src.models.CleanUNet.validate import visualize_predictions_clean_unet
 from src.models.CleanUNet2.validate import visualize_predictions_clean_specnet
 from src.models.DeepDenoiser.validate import plot_spectograms
 
 
 def visualize_predictions(cfg: omegaconf.DictConfig):
-    if cfg.model.model_name == "DeepDenoiser":
-        """
-        visualize_predictions_deep_denoiser(
-            cfg.user.model_path,
-            cfg.user.data.signal_path,
-            cfg.user.data.noise_path,
-            cfg.model.signal_length,
-            cfg.plot.n_examples,
-            cfg.snrs,
-        )
-        """
+    if cfg.model.model_name == Model.DeepDenoiser.value:
         plot_spectograms(cfg)
-    elif cfg.model.model_name == "CleanUNet":
+    elif cfg.model.model_name == Model.CleanUNet.value:
         visualize_predictions_clean_unet(cfg)
-    elif cfg.model.model_name == "CleanUNet2":
-        visualize_predictions_clean_specnet(
-            cfg.user.model_path,
-            cfg.user.data.signal_path,
-            cfg.user.data.noise_path,
-            cfg.model.signal_length,
-            cfg.plot.n_examples,
-            cfg.snrs,
-            cfg=cfg,
-        )
+    elif cfg.model.model_name == Model.CleanUNet2.value:
+        raise NotImplementedError
     else:
-        raise ValueError(
-            f"{cfg.model.model_name} not visualization function or not implemented"
-        )
+        raise NotImplementedError
 
 
 def compare_model_and_baselines(
@@ -134,13 +116,6 @@ def compare_model_and_baselines(
     plt.show()
 
     plt.savefig(output_dir / "metrics.jpg")
-
-
-import matplotlib.pyplot as plt
-import seaborn as sns
-import numpy as np
-import pathlib
-import hydra
 
 
 def overlay_plot(cfg: omegaconf.DictConfig):

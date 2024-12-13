@@ -28,19 +28,7 @@ def fit_clean_unet_pytorch(cfg: omegaconf.DictConfig) -> torch.nn.Module:
     )
 
     train_dl, val_dl = get_dataloaders_pytorch(cfg)
-
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    accelerator = None
-    if cfg.multi_gpu == "accelerate":
-        accelerator = accelerate.Accelerator()
-        device = accelerator.device
-
-    # Create tensorboard logger.
-    tb = None
-    if (accelerator is None) or (
-        (accelerator is not None) and accelerator.is_main_process
-    ):
-        tb = SummaryWriter(output_dir)
+    tb = SummaryWriter(output_dir)
 
     if cfg.model.load_checkpoint:
         net = get_trained_model(cfg, Model.CleanUNet)
@@ -65,14 +53,6 @@ def fit_clean_unet_pytorch(cfg: omegaconf.DictConfig) -> torch.nn.Module:
             phase=("linear", "cosine"),
         )
 
-    if cfg.multi_gpu == "accelerate":
-        if cfg.model.lr_schedule:
-            net, optimizer, train_dl, scheduler = accelerator.prepare(
-                net, optimizer, train_dl, scheduler
-            )
-        else:
-            net, optimizer, train_dl = accelerator.prepare(net, optimizer, train_dl)
-
     model = train_model(
         net,
         optimizer,
@@ -81,7 +61,6 @@ def fit_clean_unet_pytorch(cfg: omegaconf.DictConfig) -> torch.nn.Module:
         val_dl,
         cfg,
         tb=tb,
-        accelerator=accelerator,
     )
 
     return model
@@ -139,7 +118,6 @@ def train_model(
     sc_lambda: float = None,
     mag_lambda: float = None,
     stft_lambda: float = None,
-    accelerator: accelerate.Accelerator = None,
 ) -> torch.nn.Module:
     output_dir = pathlib.Path(
         hydra.core.hydra_config.HydraConfig.get().runtime.output_dir
@@ -158,28 +136,13 @@ def train_model(
             logger.info(f"Epoch {n_iter}")
         train_loss = 0
         for eq, noise in tqdm(train_dl, total=len(train_dl)):
-            eq = eq.float()
-            noise = noise.float()
-            if not cfg.multi_gpu == "accelerate":
-                eq = eq.to(device)
-                noise = noise.to(device)
-
+            eq = eq.float().to(device)
+            noise = noise.float().to(device)
             noisy_eq = eq + noise
             denoised_eq = net(noisy_eq)
 
-            loss = get_loss(
-                denoised_eq,
-                eq,
-                stft_lambda,
-                sc_lambda,
-                mag_lambda,
-                cfg,
-                accelerator,
-            )
-            if cfg.multi_gpu == "accelerate":
-                accelerator.backward(loss)
-            else:
-                loss.backward()
+            loss = get_loss(denoised_eq, eq, stft_lambda, sc_lambda, mag_lambda, cfg)
+            loss.backward()
 
             if torch.isnan(loss) or torch.isinf(loss):
                 logger.info("Terminated on NaN/INF triggered.")
@@ -193,16 +156,14 @@ def train_model(
                 scheduler.step()
             optimizer.step()
 
-            if tb:
-                tb.add_scalar("Train/Gradient-Norm", grad_norm, n_iter)
-                tb.add_scalar(
-                    "Train/learning-rate", optimizer.param_groups[0]["lr"], n_iter
-                )
+            tb.add_scalar("Train/Gradient-Norm", grad_norm, n_iter)
+            tb.add_scalar(
+                "Train/learning-rate", optimizer.param_groups[0]["lr"], n_iter
+            )
 
         time1 = time.time()
-        if tb:
-            logger.info(f"train_loss: {train_loss} | time: {time1-time0}")
-            tb.add_scalar("Train/Train-Loss", train_loss, n_iter)
+        logger.info(f"train_loss: {train_loss} | time: {time1-time0}")
+        tb.add_scalar("Train/Train-Loss", train_loss, n_iter)
 
         if n_iter > 0 and n_iter % cfg.model.val_freq == 0:
             net.eval()
@@ -222,45 +183,36 @@ def train_model(
                         cfg,
                     )
                     val_loss += loss.item()
-                if tb:
-                    logger.info(f"val_loss: {val_loss}")
-                    tb.add_scalar("Validation/Val-Loss", val_loss, n_iter)
+                logger.info(f"val_loss: {val_loss}")
+                tb.add_scalar("Validation/Val-Loss", val_loss, n_iter)
 
                 if early_stopper.early_stop(val_loss):
+                    logger.info(f"Early stopping triggered at epoch {n_iter}.")
                     break
         if (
             cfg.model.log_checkpoints
             and n_iter > 0
             and n_iter % cfg.model.checkpoint_freq == 0
         ):
-            if accelerator:
-                accelerator.wait_for_everyone()
-                accelerator.save_model(net, output_dir / f"{n_iter}")
-            else:
-                checkpoint_name = "{}.pkl".format(n_iter)
-                torch.save(
-                    {
-                        "iter": n_iter,
-                        "model_state_dict": net.state_dict(),
-                        "optimizer_state_dict": optimizer.state_dict(),
-                        "training_time_seconds": int(time.time() - time0),
-                    },
-                    output_dir / checkpoint_name,
-                )
-                logger.info("model at iteration %s is saved" % n_iter)
+            checkpoint_name = "{}.pkl".format(n_iter)
+            torch.save(
+                {
+                    "iter": n_iter,
+                    "model_state_dict": net.state_dict(),
+                    "optimizer_state_dict": optimizer.state_dict(),
+                    "training_time_seconds": int(time.time() - time0),
+                },
+                output_dir / checkpoint_name,
+            )
+            logger.info("model at iteration %s is saved" % n_iter)
 
         n_iter += 1
 
     ending_time = time.time()
     logger.info(f"Total time: {ending_time - starting_time}")
 
-    if tb:
-        tb.close()
+    tb.close()
 
-    if accelerator:
-        accelerator.wait_for_everyone()
-        accelerator.save_model(net, output_dir / "model.pth")
-    else:
-        torch.save(net.state_dict(), output_dir / "model.pth")
+    torch.save(net.state_dict(), output_dir / "model.pth")
 
     return net
