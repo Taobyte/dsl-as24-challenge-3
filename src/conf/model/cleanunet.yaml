@@ -1,5 +1,5 @@
 model_name: "CleanUNet"
-load_checkpoint: False
+load_checkpoint: True
 
 # data
 snr_lower: 0.1
@@ -9,7 +9,7 @@ pure_noise: False
 
 # training
 batch_size: 256
-lr: 0.001
+lr: 0.0001
 epochs: 200
 clipnorm: 1e9
 
@@ -19,9 +19,9 @@ min_delta: 1
 log_checkpoints: True
 checkpoint_freq: 25
 
-lr_schedule: True
+lr_schedule: False
 
-val_freq: 5
+val_freq: 3
 
 # 'mae': L1 loss in time domain
 # 'stft': STFT Log Magnitude Loss + Spectogram Loss 

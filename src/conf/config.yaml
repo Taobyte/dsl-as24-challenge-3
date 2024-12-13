@@ -14,9 +14,6 @@ butterworth_range: [1, 45]
 sampling_rate: 100
 
 training: True
-# can be 'accelerate', 'dataparallel' or null
-# multi_gpu: 'accelerate'
-multi_gpu: null 
 test: False
 plot:
   metrics: False

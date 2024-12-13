@@ -25,9 +25,8 @@ def get_metrics_clean_unet(model, cfg: omegaconf.DictConfig) -> pd.DataFrame:
     output_dir = pathlib.Path(
         hydra.core.hydra_config.HydraConfig.get().runtime.output_dir
     )
-    model = get_trained_model(cfg, Model.CleanUNet)
 
-    metrics = {}
+    model = get_trained_model(cfg, Model.CleanUNet)
 
     for snr in cfg.snrs:
         test_dl = get_dataloaders_pytorch(cfg, return_test=True)
@@ -47,14 +46,13 @@ def get_metrics_clean_unet(model, cfg: omegaconf.DictConfig) -> pd.DataFrame:
             ccs = torch.concatenate(ccs, dim=0)
             amplitudes = torch.concatenate(amplitudes, dim=0)
             onsets = torch.concatenate(onsets, dim=0)
-            metrics[f"{snr}"] = {
-                "cc": ccs.numpy(),
-                "amp": amplitudes.numpy(),
-                "pw": onsets.numpy(),
+            snr_metrics = {
+                "cross_correlation": ccs.numpy(),
+                "max_amplitude_difference": amplitudes.numpy(),
+                "p_wave_onset_difference": onsets.numpy(),
             }
-
-    df = pd.DataFrame(metrics)
-    df.to_csv(output_dir / "metrics.csv")
+            df = pd.DataFrame(snr_metrics)
+            df.to_csv(output_dir / f"snr_{snr}_metrics_CleanUNet.csv")
 
     return df
 

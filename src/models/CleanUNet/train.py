@@ -2,12 +2,11 @@ import logging
 import pathlib
 import time
 
-import einops
 import hydra
 import omegaconf
 import torch
-import accelerate
 from torch.utils.tensorboard import SummaryWriter
+import einops
 from tqdm import tqdm
 
 from src.utils import get_trained_model, Model
@@ -73,7 +72,6 @@ def get_loss(
     sc_lambda: float,
     mag_lambda: float,
     cfg: omegaconf.DictConfig,
-    accelerator: accelerate.Accelerator = None,
 ) -> torch.Tensor:
     stft_lambda = stft_lambda if stft_lambda else cfg.model.stft_lambda
 
@@ -85,7 +83,7 @@ def get_loss(
         sc_lambda=sc_lambda if sc_lambda else cfg.model.sc_lambda,
         mag_lambda=mag_lambda if mag_lambda else cfg.model.mag_lambda,
         transform_stft=False if cfg.model.loss == "stft" else True,
-    ).to(device if not cfg.multi_gpu == "accelerate" else accelerator.device)
+    ).to(device)
     if cfg.model.loss == "clean_unet_loss":
         loss = time_domain_loss(denoised_eq, clean_eq)
         spetrain_loss, mag_loss = stft_loss(denoised_eq, clean_eq)

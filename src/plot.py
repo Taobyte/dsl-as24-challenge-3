@@ -9,7 +9,6 @@ import seaborn as sns
 
 from src.utils import Model
 from src.models.CleanUNet.validate import visualize_predictions_clean_unet
-from src.models.CleanUNet2.validate import visualize_predictions_clean_specnet
 from src.models.DeepDenoiser.validate import plot_spectograms
 
 
@@ -19,6 +18,8 @@ def visualize_predictions(cfg: omegaconf.DictConfig):
     elif cfg.model.model_name == Model.CleanUNet.value:
         visualize_predictions_clean_unet(cfg)
     elif cfg.model.model_name == Model.CleanUNet2.value:
+        raise NotImplementedError
+    elif cfg.model.model_name == Model.CleanSpecNet.value:
         raise NotImplementedError
     else:
         raise NotImplementedError

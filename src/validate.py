@@ -77,12 +77,7 @@ def compute_metrics(cfg: omegaconf.DictConfig) -> pd.DataFrame:
         tsfm_d_inner=cfg.model.tsfm_d_inner,
     ).to(device)
 
-    if "safetensors" in cfg.user.model_path:
-        from safetensors.torch import load_file
-
-        checkpoint = load_file(cfg.user.model_path)
-    else:
-        checkpoint = torch.load(cfg.user.model_path, map_location=torch.device("cpu"))
+    checkpoint = torch.load(cfg.user.model_path, map_location=torch.device("cpu"))
 
     if "model_state_dict" in checkpoint.keys():
         model.load_state_dict(checkpoint["model_state_dict"])
