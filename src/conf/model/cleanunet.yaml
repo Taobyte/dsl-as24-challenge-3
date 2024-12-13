@@ -43,16 +43,16 @@ architecture:
   channels_output: 3
   dropout: 0.0
   channels_H: 8
-  encoder_n_layers: 3
+  encoder_n_layers: 5
   kernel_size: 4
   stride: 2
   max_H: 256
 
   bottleneck: "lstm"
   # transformer settings
-  tsfm_n_layers: 1
+  tsfm_n_layers: 2
   tsfm_n_head: 4
   tsfm_d_model: 64
-  tsfm_d_inner: 128
+  tsfm_d_inner: 256
 
 
