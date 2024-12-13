@@ -9,10 +9,9 @@ pure_noise: False
 # training
 batch_size: 256
 lr: 0.001
-epochs: 3000
+epochs: 200
 clipnorm: 1e9
-# checkpoint_model: '/cluster/scratch/ckeusch/dsl-as24-challenge-3/outputs/2024-12-01/12-02-44/model.pth'
-checkpoint_model: null
+checkpoint_model: True
 
 # Early Stopping callback
 patience: 5

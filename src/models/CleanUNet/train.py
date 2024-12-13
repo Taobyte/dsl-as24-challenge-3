@@ -10,6 +10,7 @@ import accelerate
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
 
+from src.utils import get_trained_model, Model
 from src.models.DeepDenoiser.dataset import get_dataloaders_pytorch
 from src.models.CleanUNet.clean_unet_pytorch import CleanUNetPytorch
 from src.models.CleanUNet.stft_loss import MultiResolutionSTFTLoss
@@ -41,15 +42,14 @@ def fit_clean_unet_pytorch(cfg: omegaconf.DictConfig) -> torch.nn.Module:
     ):
         tb = SummaryWriter(output_dir)
 
-    # define model
-    net = CleanUNetPytorch(**cfg.model.architecture).to(device)
+    if cfg.model.checkpoint_model:
+        net = get_trained_model(cfg, Model.CleanUNet)
+        logger.info("Checkpoint loaded successfully.")
+    else:
+        # define model
+        net = CleanUNetPytorch(**cfg.model.architecture).to(device)
 
     log_model_size(net)
-
-    if cfg.model.checkpoint_model:
-        checkpoint = torch.load(cfg.model.checkpoint_model, map_location="cpu")
-        net.load_state_dict(checkpoint)
-        logger.info("Checkpoint loaded successfully.")
 
     # define optimizer
     optimizer = torch.optim.AdamW(net.parameters(), lr=cfg.model.lr)
