@@ -2,7 +2,6 @@ import omegaconf
 import logging
 import hydra
 import pathlib
-from omegaconf import OmegaConf
 import torch
 import matplotlib.pyplot as plt
 from tqdm import tqdm
@@ -59,7 +58,7 @@ def visualize_predictions_clean_unet(cfg: omegaconf.DictConfig) -> None:
     n_examples = cfg.plot.n_examples
     channel_idx = cfg.plot.channel_idx
 
-    model = get_trained_model()
+    model = get_trained_model(cfg, Model.CleanUNet)
 
     for snr in tqdm(cfg.snrs, total=len(cfg.snrs)):
         test_dl = get_dataloaders_pytorch(cfg, return_test=True)

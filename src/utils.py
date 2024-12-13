@@ -72,6 +72,8 @@ def get_trained_model(cfg: omegaconf.DictConfig, model_type: Model) -> torch.nn.
         model.load_state_dict(checkpoint)
     model.eval()
 
+    logger.info(f"Trained model {model_type} loaded successfully.")
+
     return model
 
 

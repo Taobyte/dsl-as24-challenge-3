@@ -1,4 +1,5 @@
 model_name: "CleanUNet"
+load_checkpoint: False
 
 # data
 snr_lower: 0.1
@@ -11,23 +12,19 @@ batch_size: 256
 lr: 0.001
 epochs: 200
 clipnorm: 1e9
-checkpoint_model: True
 
-# Early Stopping callback
 patience: 5
-min_delta: 10
+min_delta: 1
 
-# Checkpoint Logger callback
 log_checkpoints: True
-checkpoint_freq: 500
+checkpoint_freq: 25
 
-# learning rate scheduler
-lr_schedule: False
+lr_schedule: True
 
-# validation frequency
-val_freq: 10
+val_freq: 5
 
-# 'clean_unet_loss' for mae + STFT loss 
+# 'mae': L1 loss in time domain
+# 'stft': 
 loss: 'clean_unet_loss'
 # frame_lengths: [23, 46, 10]
 # frame_steps: [5, 10, 2]
@@ -45,15 +42,16 @@ architecture:
   channels_output: 3
   dropout: 0.0
   channels_H: 8
-  encoder_n_layers: 5
+  encoder_n_layers: 3
   kernel_size: 4
   stride: 2
-  max_H: 768
+  max_H: 256
 
+  bottleneck: "lstm"
   # transformer settings
   tsfm_n_layers: 1
   tsfm_n_head: 4
-  tsfm_d_model: 32
-  tsfm_d_inner: 64
+  tsfm_d_model: 64
+  tsfm_d_inner: 128
 
 

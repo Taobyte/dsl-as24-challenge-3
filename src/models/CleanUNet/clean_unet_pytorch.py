@@ -251,18 +251,19 @@ class CleanUNetPytorch(nn.Module):
 
     def __init__(
         self,
-        channels_input=1,
-        channels_output=1,
-        channels_H=64,
-        max_H=768,
-        encoder_n_layers=8,
+        channels_input=3,
+        channels_output=3,
+        channels_H=8,
+        max_H=256,
+        encoder_n_layers=3,
         kernel_size=4,
         stride=2,
         dropout=0.0,
-        tsfm_n_layers=3,
-        tsfm_n_head=8,
-        tsfm_d_model=512,
-        tsfm_d_inner=2048,
+        tsfm_n_layers=1,
+        tsfm_n_head=4,
+        tsfm_d_model=64,
+        tsfm_d_inner=128,
+        bottleneck="transformer",
     ):
         """
         Parameters:
@@ -289,6 +290,8 @@ class CleanUNetPytorch(nn.Module):
         self.encoder_n_layers = encoder_n_layers
         self.kernel_size = kernel_size
         self.stride = stride
+
+        self.bottleneck = bottleneck
 
         self.tsfm_n_layers = tsfm_n_layers
         self.tsfm_n_head = tsfm_n_head
@@ -351,19 +354,31 @@ class CleanUNetPytorch(nn.Module):
 
         # self attention block
         self.tsfm_conv1 = nn.Conv1d(channels_output, tsfm_d_model, kernel_size=1)
-        self.tsfm_encoder = TransformerEncoder(
-            d_word_vec=tsfm_d_model,
-            n_layers=tsfm_n_layers,
-            n_head=tsfm_n_head,
-            d_k=tsfm_d_model // tsfm_n_head,
-            d_v=tsfm_d_model // tsfm_n_head,
-            d_model=tsfm_d_model,
-            d_inner=tsfm_d_inner,
-            dropout=0.0,
-            n_position=0,
-            scale_emb=False,
-        )
-        self.tsfm_conv2 = nn.Conv1d(tsfm_d_model, channels_output, kernel_size=1)
+        if self.bottleneck == "transformer":
+            self.bottleneck_block = TransformerEncoder(
+                d_word_vec=tsfm_d_model,
+                n_layers=tsfm_n_layers,
+                n_head=tsfm_n_head,
+                d_k=tsfm_d_model // tsfm_n_head,
+                d_v=tsfm_d_model // tsfm_n_head,
+                d_model=tsfm_d_model,
+                d_inner=tsfm_d_inner,
+                dropout=0.0,
+                n_position=0,
+                scale_emb=False,
+            )
+            self.tsfm_conv2 = nn.Conv1d(tsfm_d_model, channels_output, kernel_size=1)
+        else:
+            self.bottleneck_block = torch.nn.LSTM(
+                input_size=tsfm_d_model,
+                hidden_size=tsfm_d_inner,
+                num_layers=tsfm_n_layers,
+                bidirectional=True,
+                batch_first=True,
+            )
+            self.tsfm_conv2 = nn.Conv1d(
+                2 * tsfm_d_inner, channels_output, kernel_size=1
+            )
 
         # weight scaling initialization
         for layer in self.modules():
@@ -380,12 +395,14 @@ class CleanUNetPytorch(nn.Module):
             skip_connections.append(x)
         skip_connections = skip_connections[::-1]
 
-        # attention mask for causal inference; for non-causal, set attn_mask to None
-        attn_mask = None
-
         x = self.tsfm_conv1(x)  # C 1024 -> 512
         x = x.permute(0, 2, 1)
-        x = self.tsfm_encoder(x, src_mask=attn_mask)
+        if self.bottleneck == "transformer":
+            # attention mask for causal inference; for non-causal, set attn_mask to None
+            attn_mask = None
+            x = self.bottleneck_block(x, src_mask=attn_mask)
+        elif self.bottleneck == "lstm":
+            x, _ = self.bottleneck_block(x)
         x = x.permute(0, 2, 1)
         x = self.tsfm_conv2(x)  # C 512 -> 1024
 

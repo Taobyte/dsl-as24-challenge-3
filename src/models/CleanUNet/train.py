@@ -42,11 +42,9 @@ def fit_clean_unet_pytorch(cfg: omegaconf.DictConfig) -> torch.nn.Module:
     ):
         tb = SummaryWriter(output_dir)
 
-    if cfg.model.checkpoint_model:
+    if cfg.model.load_checkpoint:
         net = get_trained_model(cfg, Model.CleanUNet)
-        logger.info("Checkpoint loaded successfully.")
     else:
-        # define model
         net = CleanUNetPytorch(**cfg.model.architecture).to(device)
 
     log_model_size(net)
