@@ -238,7 +238,7 @@ class LinearWarmupCosineDecay:
         lr_max,
         n_iter,
         iteration=0,
-        divider=25,
+        divider=10,
         warmup_proportion=0.3,
         phase=("linear", "cosine"),
     ):

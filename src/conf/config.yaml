@@ -7,7 +7,7 @@ seed: 123
 
 # data properties
 trace_length: 4096
-random: False
+random: True
 
 # butterworth settings
 butterworth_range: [1, 45]

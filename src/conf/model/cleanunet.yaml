@@ -1,5 +1,5 @@
 model_name: "CleanUNet"
-load_checkpoint: True
+load_checkpoint: False
 
 # data
 snr_lower: 0.1
@@ -9,7 +9,7 @@ pure_noise: False
 
 # training
 batch_size: 256
-lr: 0.0001
+lr: 0.001
 epochs: 200
 clipnorm: 1e9
 
@@ -19,7 +19,7 @@ min_delta: 1
 log_checkpoints: True
 checkpoint_freq: 25
 
-lr_schedule: False
+lr_schedule: True
 
 val_freq: 3
 

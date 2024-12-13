@@ -7,7 +7,6 @@ import omegaconf
 import torch
 from torch.utils.tensorboard import SummaryWriter
 import einops
-from tqdm import tqdm
 
 from src.utils import get_trained_model, Model
 from src.models.DeepDenoiser.dataset import get_dataloaders_pytorch
@@ -26,7 +25,7 @@ def fit_clean_unet_pytorch(cfg: omegaconf.DictConfig) -> torch.nn.Module:
         hydra.core.hydra_config.HydraConfig.get().runtime.output_dir
     )
 
-    train_dl, val_dl = get_dataloaders_pytorch(cfg)
+    train_dl, val_dl = get_dataloaders_pytorch(cfg, model=Model.CleanUNet)
     tb = SummaryWriter(output_dir)
 
     if cfg.model.load_checkpoint:
@@ -36,7 +35,6 @@ def fit_clean_unet_pytorch(cfg: omegaconf.DictConfig) -> torch.nn.Module:
 
     log_model_size(net)
 
-    # define optimizer
     optimizer = torch.optim.AdamW(net.parameters(), lr=cfg.model.lr)
 
     scheduler = None
@@ -50,6 +48,10 @@ def fit_clean_unet_pytorch(cfg: omegaconf.DictConfig) -> torch.nn.Module:
             divider=25,
             warmup_proportion=0.05,
             phase=("linear", "cosine"),
+        )
+
+        logger.info(
+            f"n_iter: {int((n_obs // cfg.model.batch_size) * cfg.model.epochs)}"
         )
 
     model = train_model(
@@ -133,7 +135,7 @@ def train_model(
         if tb:
             logger.info(f"Epoch {n_iter}")
         train_loss = 0
-        for eq, noise in tqdm(train_dl, total=len(train_dl)):
+        for eq, noise in train_dl:
             eq = eq.float().to(device)
             noise = noise.float().to(device)
             noisy_eq = eq + noise
@@ -150,9 +152,9 @@ def train_model(
             grad_norm = torch.nn.utils.clip_grad_norm_(
                 net.parameters(), cfg.model.clipnorm
             )
-            if cfg.model.lr_schedule:
-                scheduler.step()
             optimizer.step()
+            if scheduler:
+                scheduler.step()
 
             tb.add_scalar("Train/Gradient-Norm", grad_norm, n_iter)
             tb.add_scalar(
