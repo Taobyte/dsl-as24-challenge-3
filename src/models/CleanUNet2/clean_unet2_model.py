@@ -20,9 +20,9 @@ class CleanUNet2(nn.Module):
             param.requires_grad = False
 
         self.upsampling_block = nn.Sequential(
-            nn.ConvTranspose2d(6, 6, kernel_size=(4, 4), stride=(4, 4)),
+            nn.ConvTranspose2d(6, 6, kernel_size=(1, 4), stride=(1, 4)),
             nn.LeakyReLU(negative_slope=0.4),
-            nn.ConvTranspose2d(6, 6, kernel_size=(4, 4), stride=(4, 4)),
+            nn.ConvTranspose2d(6, 6, kernel_size=(1, 4), stride=(1, 4)),
             nn.LeakyReLU(negative_slope=0.4),
         )
 
