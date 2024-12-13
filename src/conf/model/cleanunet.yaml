@@ -1,23 +1,21 @@
 model_name: "CleanUNet"
-load_checkpoint: False
+load_checkpoint: True
 
 # data
-snr_lower: 0.1
-snr_upper: 2.0
 subset: null
 pure_noise: False
 
 # training
 batch_size: 256
-lr: 0.001
-epochs: 200
+lr: 0.0002
+epochs: 100
 clipnorm: 1e9
 
-patience: 5
+patience: null
 min_delta: 1
 
 log_checkpoints: True
-checkpoint_freq: 25
+checkpoint_freq: 10
 
 lr_schedule: True
 
@@ -48,11 +46,11 @@ architecture:
   stride: 2
   max_H: 256
 
-  bottleneck: "lstm"
+  bottleneck: "transformer"
   # transformer settings
-  tsfm_n_layers: 2
+  tsfm_n_layers: 1
   tsfm_n_head: 4
-  tsfm_d_model: 64
+  tsfm_d_model: 128
   tsfm_d_inner: 256
 
 

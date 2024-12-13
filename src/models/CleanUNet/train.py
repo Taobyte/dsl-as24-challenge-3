@@ -213,6 +213,6 @@ def train_model(
 
     tb.close()
 
-    torch.save(net.state_dict(), output_dir / "model.pth")
+    torch.save(net.state_dict(), output_dir / "model.pkl")
 
     return net

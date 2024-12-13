@@ -37,8 +37,8 @@ def get_dataloaders_pytorch(
             cfg.user.data.signal_path,
             cfg.user.data.noise_path,
             cfg.trace_length,
-            cfg.model.snr_lower,
-            cfg.model.snr_upper,
+            cfg.snr_lower,
+            cfg.snr_upper,
             Mode.TRAIN,
             model=model,
         )
@@ -46,8 +46,8 @@ def get_dataloaders_pytorch(
             cfg.user.data.signal_path,
             cfg.user.data.noise_path,
             cfg.trace_length,
-            cfg.model.snr_lower,
-            cfg.model.snr_upper,
+            cfg.snr_lower,
+            cfg.snr_upper,
             Mode.VALIDATION,
             model=model,
         )

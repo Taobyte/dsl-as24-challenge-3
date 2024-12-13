@@ -8,7 +8,7 @@ model_path: /work/scratch/ckeusch/dsl-as24-challenge-3/outputs/2024-12-12/10-42-
 
 # final models 
 deep_denoiser_folder: '/work/scratch/ckeusch/dsl-as24-challenge-3/outputs/2024-12-12/10-42-17'
-clean_unet_folder: '/work/scratch/ckeusch/dsl-as24-challenge-3/outputs/2024-12-13/08-32-17'
+clean_unet_folder: /work/scratch/ckeusch/dsl-as24-challenge-3/outputs/2024-12-13/11-54-33
 
 # prediction npz path
 prediction_path: /work/scratch/ckeusch/dsl-as24-challenge-3/outputs/2024-12-12/17-27-13/data.npz

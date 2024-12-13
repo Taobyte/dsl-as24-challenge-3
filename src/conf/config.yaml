@@ -8,6 +8,8 @@ seed: 123
 # data properties
 trace_length: 4096
 random: True
+snr_lower: 0.1
+snr_upper: 2.0
 
 # butterworth settings
 butterworth_range: [1, 45]
