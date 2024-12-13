@@ -1,6 +1,6 @@
 defaults: 
   - _self_
-  - model: cleanunet
+  - model: cleanunet2
   - user: clemens
 
 seed: 123

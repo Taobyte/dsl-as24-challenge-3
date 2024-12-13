@@ -11,6 +11,7 @@ import einops
 from src.utils import get_trained_model, Model
 from src.models.DeepDenoiser.dataset import get_dataloaders_pytorch
 from src.models.CleanUNet.clean_unet_pytorch import CleanUNetPytorch
+from src.models.CleanUNet2.clean_unet2_model import CleanUNet2
 from src.stft import MultiResolutionSTFTLoss
 from src.utils import LinearWarmupCosineDecay, log_model_size, EarlyStopper
 
@@ -20,7 +21,7 @@ logger = logging.getLogger()
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 
-def fit_clean_unet_pytorch(cfg: omegaconf.DictConfig) -> torch.nn.Module:
+def fit_clean_unet_pytorch(cfg: omegaconf.DictConfig, model: Model) -> torch.nn.Module:
     output_dir = pathlib.Path(
         hydra.core.hydra_config.HydraConfig.get().runtime.output_dir
     )
@@ -28,10 +29,16 @@ def fit_clean_unet_pytorch(cfg: omegaconf.DictConfig) -> torch.nn.Module:
     train_dl, val_dl = get_dataloaders_pytorch(cfg, model=Model.CleanUNet)
     tb = SummaryWriter(output_dir)
 
-    if cfg.model.load_checkpoint:
-        net = get_trained_model(cfg, Model.CleanUNet)
-    else:
-        net = CleanUNetPytorch(**cfg.model.architecture).to(device)
+    if model == Model.CleanUNet:
+        if cfg.model.load_checkpoint:
+            net = get_trained_model(cfg, Model.CleanUNet)
+        else:
+            net = CleanUNetPytorch(**cfg.model.architecture).to(device)
+    elif model == Model.CleanUNet2:
+        if cfg.model.load_checkpoint:
+            net = get_trained_model(cfg, Model.CleanUNet2)
+        else:
+            net = CleanUNet2(cfg).to(device)
 
     log_model_size(net)
 

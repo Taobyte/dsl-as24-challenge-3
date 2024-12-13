@@ -1,9 +1,8 @@
 model_name: "CleanUNet"
 load_checkpoint: True
 
-# data
+# dataset
 subset: null
-pure_noise: False
 
 # training
 batch_size: 256
@@ -51,7 +50,7 @@ architecture:
   # transformer settings
   tsfm_n_layers: 3
   tsfm_n_head: 4
-  tsfm_d_model: 256
-  tsfm_d_inner: 512
+  tsfm_d_model: 128
+  tsfm_d_inner: 256
 
 

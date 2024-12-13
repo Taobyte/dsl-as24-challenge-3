@@ -1,46 +1,53 @@
 model_name: "CleanUNet2"
+load_checkpoint: False
 
-# data
-snr_lower: 0.1
-snr_upper: 2.0
-
-# loss function
-loss: 'mae'
-frame_lengths: [100]
-frame_steps: [24]
-fft_sizes: [126]
-stft_lambda: 1.0
-sc_lambda: 1.0
-mag_lambda: 1.0
+# dataset
+subset: null
 
 # training
 batch_size: 256
 lr: 0.0002
-epochs: 4000
+epochs: 300
+use_amp: False
 clipnorm: 1e9
 
-val_freq: 1e9
+patience: 1e9
+min_delta: 1
+
+log_checkpoints: True
+checkpoint_freq: 60
+
 lr_schedule: True
 
+val_freq: 1e9
+
+# 'mae': L1 loss in time domain
+# 'stft': STFT Log Magnitude Loss + Spectogram Loss 
+# 'clean_unet_loss': mae + 0.5 * stft  
+loss: 'clean_unet_loss'
+frame_lengths: [100]
+frame_steps: [16]
+fft_sizes: [127]
+stft_lambda: 1.0
+sc_lambda: 0.5
+mag_lambda: 0.5
+
 # architecture
-clean_specnet_path: /cluster/scratch/ckeusch/dsl-as24-challenge-3/outputs/2024-12-10/14-26-52/checkpoints/2.pth
-clean_specnet:
-  n_channels: 3
-  n_layers: 3
-  channel_base: 8
-  dropout: 0.0
+clean_specnet_path: ${user.clemens.deep_denoiser_folder}
 
 clean_unet:
   # encoder/decoder settings   
   channels_input: 3 
   channels_output: 3      
-  channels_H: 64
+  channels_H: 8
   encoder_n_layers: 5
-  kernel_size: 5
-  max_H: 768
+  kernel_size: 4
+  stride: 2
+  max_H: 256
 
+  bottleneck: "transformer"
   # transformer settings
   tsfm_n_layers: 3
-  tsfm_n_head: 8
-  tsfm_d_model: 512
-  tsfm_d_inner: 1024
+  tsfm_n_head: 4
+  tsfm_d_model: 128
+  tsfm_d_inner: 256
