@@ -1,152 +1,242 @@
+import logging
 import pathlib
+import time
+
 import hydra
-import omegaconf 
-
+import omegaconf
 import torch
-import jax
-import numpy as np
-import keras
+from torch.utils.tensorboard import SummaryWriter
+import einops
 
-from src.metrics import AmpMetric
-from src.utils import Mode
-from src.callbacks import VisualizeCallback
-from src.models.CleanUNet.clean_unet_model import CleanUNet
-from src.models.CleanUNet.utils import CleanUNetLoss
-from src.models.CleanUNet.dataset import CleanUNetDataset, CleanUNetDatasetCSV
-from src.models.CleanUNet.validate import visualize_predictions_clean_unet
+<<<<<<< HEAD
+from metrics import AmpMetric
+from utils import Mode
+from callbacks import VisualizeCallback
+from models.CleanUNet.clean_unet_model import CleanUNet
+from models.CleanUNet.utils import CleanUNetLoss
+from models.CleanUNet.dataset import CleanUNetDataset, CleanUNetDatasetCSV
+from models.CleanUNet.validate import visualize_predictions_clean_unet
+=======
+from src.utils import get_trained_model, Model
+from src.models.DeepDenoiser.dataset import get_dataloaders_pytorch
+from src.models.CleanUNet.clean_unet_pytorch import CleanUNetPytorch
+from src.models.CleanUNet2.clean_unet2_model import CleanUNet2
+from src.stft import MultiResolutionSTFTLoss
+from src.utils import LinearWarmupCosineDecay, log_model_size, EarlyStopper
+>>>>>>> 579f5c53c4137155e4d5229184af147fa9d35de3
 
 
-def fit_clean_unet(cfg: omegaconf.DictConfig) -> keras.Model:
+logger = logging.getLogger()
 
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
+
+def fit_clean_unet_pytorch(cfg: omegaconf.DictConfig, model: Model) -> torch.nn.Module:
     output_dir = pathlib.Path(
         hydra.core.hydra_config.HydraConfig.get().runtime.output_dir
     )
 
-    model = CleanUNet(cfg.model.channels_input, 
-                      cfg.model.channels_output, 
-                      cfg.model.signal_length, 
-                      cfg.model.channels_H,
-                      cfg.model.max_H,
-                      cfg.model.encoder_n_layers,
-                      cfg.model.kernel_size,
-                      cfg.model.stride,
-                      cfg.model.tsfm_n_layers,
-                      cfg.model.tsfm_n_head,
-                      cfg.model.tsfm_d_model,
-                      cfg.model.tsfm_d_inner,
-                      cfg.model.bottleneck)
+    train_dl, val_dl = get_dataloaders_pytorch(cfg, model=Model.CleanUNet)
+    tb = SummaryWriter(output_dir)
 
-    sample_shape = np.zeros(
-        (cfg.model.batch_size, cfg.model.signal_length, cfg.model.channels_input)
-    )
-    model(sample_shape)
-
-    # metrics = [AmpMetric()]
-    metrics = []
-
-    print(f"type of omegaconf list {cfg.model.frame_lengths} is {type(cfg.model.frame_lengths)}")
-    print(type(list(cfg.model.frame_lengths)))
-
-    if cfg.model.loss == "stft":
-        loss = CleanUNetLoss(cfg.model.signal_length, list(cfg.model.frame_lengths), list(cfg.model.frame_steps), list(cfg.model.fft_sizes))
-    elif cfg.model.loss == "mae":
-        loss = keras.losses.MeanAbsoluteError()
-    elif cfg.model.loss == "mse":
-        loss = keras.losses.MeanSquaredError()
+    if model == Model.CleanUNet:
+        if cfg.model.load_checkpoint:
+            net = get_trained_model(cfg, Model.CleanUNet)
+        else:
+            net = CleanUNetPytorch(**cfg.model.architecture).to(device)
+    elif model == Model.CleanUNet2:
+        if cfg.model.load_checkpoint:
+            net = get_trained_model(cfg, Model.CleanUNet2)
+        else:
+            net = CleanUNet2(cfg).to(device)
     else:
-        print(f"loss function : {cfg.model.loss} not supported")
-    
+        raise NotImplementedError
+
+    log_model_size(net)
+
+    optimizer = torch.optim.AdamW(net.parameters(), lr=cfg.model.lr)
+
+    scheduler = None
+    n_obs = cfg.model.subset if cfg.model.subset else 20600
     if cfg.model.lr_schedule:
-        lr_schedule = keras.optimizers.schedules.CosineDecay(
-                        cfg.model.lr,
-                        cfg.model.decay_steps,
-                        alpha=0.0,
-                        name="CosineDecay",
-                        warmup_target=cfg.model.warmup_target,
-                        warmup_steps=cfg.model.warmup_steps,
-                    )
-    else:
-        lr_schedule = cfg.model.lr
-
-    model.compile(
-        loss=loss,
-        optimizer=keras.optimizers.AdamW(learning_rate=lr_schedule, clipnorm=cfg.model.clipnorm),
-        metrics=metrics
-    )
-
-    sample_shape = np.zeros(
-        (cfg.model.batch_size, cfg.model.signal_length, cfg.model.channels_input)
-    )
-    model(sample_shape)
-
-    model.summary()
-
-    callbacks = [
-        keras.callbacks.ModelCheckpoint(
-            filepath=output_dir / "checkpoints/model_at_epoch_{epoch}.keras"
-        ),
-        keras.callbacks.TensorBoard(
-            log_dir=output_dir / "logs",
-            histogram_freq=1,
-            write_graph=True,
-            write_images=True,
-            update_freq="epoch",
-        ),
-        keras.callbacks.TerminateOnNaN()
-    ]
-
-    if cfg.plot.visualization:
-        callbacks.append(VisualizeCallback(cfg))
-
-    if cfg.model.patience:
-         callbacks.append(keras.callbacks.EarlyStopping(monitor="val_loss", patience=cfg.model.patience))
-    
-    if not cfg.model.use_csv:
-        train_dataset = CleanUNetDataset(
-            cfg.user.data.signal_path + "/train/",
-            cfg.user.data.noise_path + "/train/",
-            cfg.model.signal_length
+        scheduler = LinearWarmupCosineDecay(
+            optimizer,
+            lr_max=cfg.model.lr,
+            n_iter=int((n_obs // cfg.model.batch_size) * cfg.model.epochs),
+            iteration=0,
+            divider=25,
+            warmup_proportion=0.05,
+            phase=("linear", "cosine"),
         )
-        val_dataset = CleanUNetDataset(
-            cfg.user.data.signal_path + "/validation/",
-            cfg.user.data.noise_path + "/validation/",
-            cfg.model.signal_length,
-            cfg.model.snr_lower,
-            cfg.model.snr_upper,
-            cfg.model.event_shift_start
+
+        logger.info(
+            f"n_iter: {int((n_obs // cfg.model.batch_size) * cfg.model.epochs)}"
         )
-    else:
-        train_dataset = CleanUNetDatasetCSV(
-            cfg.user.data.csv_path,
-            cfg.model.signal_length,
-            cfg.model.snr_lower,
-            cfg.model.snr_upper,
-            cfg.model.event_shift_start,
-            Mode.TRAIN
-        )
-        val_dataset = CleanUNetDatasetCSV(
-            cfg.user.data.csv_path,
-            cfg.model.signal_length,
-            cfg.model.snr_lower,
-            cfg.model.snr_upper,
-            cfg.model.event_shift_start,
-            Mode.VALIDATION
-        )
-        
-    train_dl = torch.utils.data.DataLoader(
-        train_dataset, batch_size=cfg.model.batch_size
+
+    model = train_model(
+        net,
+        optimizer,
+        scheduler,
+        train_dl,
+        val_dl,
+        cfg,
+        tb=tb,
     )
-    val_dl = torch.utils.data.DataLoader(val_dataset, batch_size=cfg.model.batch_size)
-
-    # jax.profiler.start_trace(output_dir)
-
-    model.fit(
-        train_dl, epochs=cfg.model.epochs, validation_data=val_dl, callbacks=callbacks
-    )
-
-    # jax.profiler.stop_trace()
-
-    if cfg.plot.visualization:
-        visualize_predictions_clean_unet(model, cfg.user.data.signal_path, cfg.user.data.noise_path, cfg.model.signal_length, cfg.plot.n_examples, cfg.snrs)
 
     return model
+
+
+def get_loss(
+    denoised_eq: torch.Tensor,
+    clean_eq: torch.Tensor,
+    stft_lambda: float,
+    sc_lambda: float,
+    mag_lambda: float,
+    cfg: omegaconf.DictConfig,
+) -> torch.Tensor:
+    stft_lambda = stft_lambda if stft_lambda else cfg.model.stft_lambda
+
+    time_domain_loss = torch.nn.L1Loss()
+    stft_loss = MultiResolutionSTFTLoss(
+        cfg.model.fft_sizes,
+        cfg.model.frame_lengths,
+        cfg.model.frame_steps,
+        sc_lambda=sc_lambda if sc_lambda else cfg.model.sc_lambda,
+        mag_lambda=mag_lambda if mag_lambda else cfg.model.mag_lambda,
+        transform_stft=False if cfg.model.loss == "stft" else True,
+    ).to(device)
+    if cfg.model.loss == "clean_unet_loss":
+        loss = time_domain_loss(denoised_eq, clean_eq)
+        spetrain_loss, mag_loss = stft_loss(denoised_eq, clean_eq)
+        loss += (spetrain_loss + mag_loss) * cfg.model.stft_lambda
+    elif cfg.model.loss == "stft":
+        denoised_eq = einops.rearrange(
+            denoised_eq, "b repeat c t ->(b repeat) t c", repeat=3
+        )
+        denoised_eq = torch.clamp(denoised_eq, min=1e-7)
+        clean_eq = einops.rearrange(clean_eq, "b repeat c t ->(b repeat) t c", repeat=3)
+        spetrain_loss, mag_loss = stft_loss(denoised_eq, clean_eq)
+        loss = (spetrain_loss + mag_loss) * stft_lambda
+
+    elif cfg.model.loss == "mae":
+        loss = time_domain_loss(denoised_eq, clean_eq)
+    else:
+        raise NotImplementedError
+
+    return loss
+
+
+def train_model(
+    net: torch.nn.Module,
+    optimizer: torch.optim.Optimizer,
+    scheduler,
+    train_dl: torch.utils.data.DataLoader,
+    val_dl: torch.utils.data.DataLoader,
+    cfg: omegaconf.DictConfig,
+    tb: SummaryWriter = None,
+    sc_lambda: float = None,
+    mag_lambda: float = None,
+    stft_lambda: float = None,
+) -> torch.nn.Module:
+    output_dir = pathlib.Path(
+        hydra.core.hydra_config.HydraConfig.get().runtime.output_dir
+    )
+
+    early_stopper = EarlyStopper(cfg.model.patience, cfg.model.min_delta)
+    scaler = torch.cuda.amp.GradScaler(enabled=cfg.model.use_amp)
+
+    n_iter = 0
+    starting_time = time.time()
+    for n_iter in range(cfg.model.epochs):
+        time0 = time.time()
+        net.train()
+        optimizer.zero_grad()
+        if tb:
+            logger.info(f"Epoch {n_iter}")
+        train_loss = 0
+        for eq, noise in train_dl:
+            eq = eq.float().to(device)
+            noise = noise.float().to(device)
+            noisy_eq = eq + noise
+            with torch.autocast(
+                device_type="cuda", dtype=torch.float16, enabled=cfg.model.use_amp
+            ):
+                denoised_eq = net(noisy_eq)
+                loss = get_loss(
+                    denoised_eq, eq, stft_lambda, sc_lambda, mag_lambda, cfg
+                )
+            scaler.scale(loss).backward()
+            scaler.step(optimizer)
+            scaler.update()
+
+            if torch.isnan(loss) or torch.isinf(loss):
+                logger.info("Terminated on NaN/INF triggered.")
+                break
+
+            train_loss += loss.item()
+            grad_norm = torch.nn.utils.clip_grad_norm_(
+                net.parameters(), cfg.model.clipnorm
+            )
+            if scheduler:
+                scheduler.step()
+
+            tb.add_scalar("Train/Gradient-Norm", grad_norm, n_iter)
+            tb.add_scalar(
+                "Train/learning-rate", optimizer.param_groups[0]["lr"], n_iter
+            )
+
+        time1 = time.time()
+        logger.info(f"train_loss: {train_loss} | time: {time1-time0}")
+        tb.add_scalar("Train/Train-Loss", train_loss, n_iter)
+
+        if n_iter > 0 and n_iter % cfg.model.val_freq == 0:
+            net.eval()
+            val_loss = 0.0
+            with torch.no_grad():
+                for eq, noise in val_dl:
+                    eq = eq.float().to(device)
+                    noise = noise.float().to(device)
+                    noisy_eq = eq + noise
+                    denoised_eq = net(noisy_eq)
+                    loss = get_loss(
+                        denoised_eq,
+                        eq,
+                        stft_lambda,
+                        sc_lambda,
+                        mag_lambda,
+                        cfg,
+                    )
+                    val_loss += loss.item()
+                logger.info(f"val_loss: {val_loss}")
+                tb.add_scalar("Validation/Val-Loss", val_loss, n_iter)
+
+                if early_stopper.early_stop(val_loss):
+                    logger.info(f"Early stopping triggered at epoch {n_iter}.")
+                    break
+        if (
+            cfg.model.log_checkpoints
+            and n_iter > 0
+            and n_iter % cfg.model.checkpoint_freq == 0
+        ):
+            checkpoint_name = "{}.pkl".format(n_iter)
+            torch.save(
+                {
+                    "iter": n_iter,
+                    "model_state_dict": net.state_dict(),
+                    "optimizer_state_dict": optimizer.state_dict(),
+                    "training_time_seconds": int(time.time() - time0),
+                },
+                output_dir / checkpoint_name,
+            )
+            logger.info("model at iteration %s is saved" % n_iter)
+
+        n_iter += 1
+
+    ending_time = time.time()
+    logger.info(f"Total time: {ending_time - starting_time}")
+
+    tb.close()
+
+    torch.save(net.state_dict(), output_dir / "model.pkl")
+
+    return net

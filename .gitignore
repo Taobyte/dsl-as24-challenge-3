@@ -1,8 +1,10 @@
 src/tests.ipynb
+metrics/*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
+*.out
 
 # C extensions
 *.so
@@ -84,6 +86,8 @@ target/
 /models/
 */outputs/
 /outputs/
+*/slurm_logs
+/slurm_logs
 
 # Slurm files
 slurm-*.out   

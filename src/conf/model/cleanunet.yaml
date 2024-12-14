@@ -1,49 +1,57 @@
 model_name: "CleanUNet"
-use_csv: True
+load_checkpoint: False
 
-# data
-snr_lower: 0.1
-snr_upper: 2.0
-event_shift_start: 5000
+# dataset
+subset: null
 
 # training
-batch_size: 256
-lr: 0.0001
-epochs: 30
-patience: null
+batch_size: 512
+lr: 0.0002
+epochs: 600
+use_amp: False
+clipnorm: 1e9
 
-lr_schedule: False
-decay_steps: 2340
-warmup_target: 0.01
-warmup_steps: 200
+patience: 1e9
+min_delta: 1
 
-seed: 123
-clipnorm: null
+log_checkpoints: True
+checkpoint_freq: 100
 
-# loss can be either 'stft' or 'mae'
-loss: 'mse'
+lr_schedule: True
 
-signal_length: 6120
-frame_lengths: [64, 128, 32]
-frame_steps: [16, 32, 8]
-fft_sizes: [128, 256, 64]
+val_freq: 10
 
-# architecture
-channels_input: 3 
-channels_output: 3
-dropout: 0.0
+# 'mae': L1 loss in time domain
+# 'stft': STFT Log Magnitude Loss + Spectogram Loss 
+# 'clean_unet_loss': mae + 0.5 * stft  
+loss: 'clean_unet_loss'
+# frame_lengths: [23, 46, 10]
+# frame_steps: [5, 10, 2]
+# fft_sizes: [64, 128, 32]
+frame_lengths: [100]
+frame_steps: [16] 
+fft_sizes: [127]
+stft_lambda: 1.0
+sc_lambda: 0.5
+mag_lambda: 0.5
 
-# encoder/decoder settings           
-channels_H: 8
-max_H: 768
-encoder_n_layers: 4
-kernel_size: 3
-stride: 2
+architecture:
+  # encoder/decoder settings   
+  channels_input: 3 
+  channels_output: 3
+  dropout: 0.0
+  channels_H: 8
+  encoder_n_layers: 5
+  kernel_size: 4
+  stride: 2
+  max_H: 256
 
-bottleneck: 'lstm'
+  #can be either 'lstm' or 'transformer'
+  bottleneck: "lstm"
+  # transformer settings
+  tsfm_n_layers: 3
+  tsfm_n_head: 4
+  tsfm_d_model: 128
+  tsfm_d_inner: 256
 
-# transformer settings
-tsfm_n_layers: 1
-tsfm_n_head: 4
-tsfm_d_model: 128
-tsfm_d_inner: 256
+

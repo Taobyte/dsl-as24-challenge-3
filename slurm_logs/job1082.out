@@ -1,0 +1,98 @@
+[2024-12-12 15:13:06,770][root][INFO] - seed: 123
+trace_length: 4096
+random: false
+training: true
+multi_gpu: null
+test: false
+plot:
+  metrics: false
+  visualization: false
+  n_examples: 10
+  vis_freq: 5
+snrs:
+- 0.1
+- 0.3
+- 0.5
+- 0.7
+- 1.0
+- 1.2
+- 1.5
+- 1.8
+- 2.0
+- 2.5
+- 3.5
+size_testset: 500
+model:
+  model_name: CleanUNet
+  snr_lower: 0.1
+  snr_upper: 2.0
+  random: true
+  subset: null
+  pure_noise: false
+  batch_size: 32
+  lr: 1.0e-05
+  epochs: 20000
+  clipnorm: 1.0
+  checkpoint_model: null
+  patience: 5
+  delta: 10
+  log_checkpoints: true
+  checkpoint_freq: 5000
+  lr_schedule: true
+  validation: false
+  val_freq: 1000000000.0
+  loss: clean_unet_loss
+  frame_lengths:
+  - 100
+  frame_steps:
+  - 24
+  fft_sizes:
+  - 126
+  stft_lambda: 1.0
+  sc_lambda: 0.5
+  mag_lambda: 0.5
+  architecture:
+    channels_input: 3
+    channels_output: 3
+    dropout: 0.0
+    channels_H: 8
+    encoder_n_layers: 5
+    kernel_size: 4
+    stride: 2
+    max_H: 768
+    tsfm_n_layers: 1
+    tsfm_n_head: 4
+    tsfm_d_model: 32
+    tsfm_d_inner: 64
+user:
+  data:
+    signal_path: /work/courses/dsl/team3/earthquake_data/event
+    noise_path: /work/courses/dsl/team3/earthquake_data/noise
+    filename: /work/courses/dsl/team3/earthquake_data/
+  model_path: /work/scratch/ckeusch/dsl-as24-challenge-3/outputs/2024-12-12/10-42-17/checkpoints/epoch_9.pth
+  metrics_model_path: /cluster/scratch/ckeusch/dsl-as24-challenge-3/outputs/2024-12-06/11-02-09/metrics_model.csv
+  metrics_butterworth_path: /cluster/scratch/ckeusch/dsl-as24-challenge-3/outputs/2024-12-03/10-59-47/metrics_butterworth.csv
+  metrics_deepdenoiser_path: /cluster/scratch/ckeusch/dsl-as24-challenge-3/outputs/2024-11-08/DeepDenoiser
+    Metrics/metrics_model.csv
+  wandb: false
+
+[2024-12-12 15:13:11,251][root][INFO] - CleanUNetPytorch Parameters: 0.195443M
+Error executing job with overrides: []
+Traceback (most recent call last):
+  File "/work/scratch/ckeusch/dsl-as24-challenge-3/src/main.py", line 42, in main
+    model = train_model(cfg)
+            ^^^^^^^^^^^^^^^^
+  File "/work/scratch/ckeusch/dsl-as24-challenge-3/src/train.py", line 13, in train_model
+    model = fit_clean_unet_pytorch(cfg)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/work/scratch/ckeusch/dsl-as24-challenge-3/src/models/CleanUNet/train.py", line 78, in fit_clean_unet_pytorch
+    model = train_model(
+            ^^^^^^^^^^^^
+  File "/work/scratch/ckeusch/dsl-as24-challenge-3/src/models/CleanUNet/train.py", line 151, in train_model
+    early_stopper = EarlyStopper(cfg.model.patience, cfg.model.min_delta)
+                                                     ^^^^^^^^^^^^^^^^^^^
+omegaconf.errors.ConfigAttributeError: Key 'min_delta' is not in struct
+    full_key: model.min_delta
+    object_type=dict
+
+Set the environment variable HYDRA_FULL_ERROR=1 for a complete stack trace.

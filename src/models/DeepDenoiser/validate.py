@@ -1,120 +1,91 @@
-import omegaconf 
+import omegaconf
+from omegaconf import OmegaConf
 import hydra
-import pathlib 
+import pathlib
 
-import keras
 import torch
-import numpy as np 
 import matplotlib.pyplot as plt
 from tqdm import tqdm
 
-from src.utils import Mode
-from src.models.DeepDenoiser.dataset import InputSignals, get_signal_noise_assoc
-from src.metrics import cross_correlation, max_amplitude_difference, p_wave_onset_difference
+from src.models.DeepDenoiser.dataset import get_dataloaders_pytorch
+from src.models.DeepDenoiser.deep_denoiser_pytorch import DeepDenoiser
+from src.stft import get_stft, get_istft, get_mask
 
-def get_metrics_deepdenoiser(
-    model: keras.Model, assoc: list, snr: int, cfg: omegaconf.DictConfig, idx: int = 0
+
+def get_metrics_deepdenoiser():
+    pass
+
+
+def get_predictions_deepdenoiser(
+    eq: torch.Tensor, noise: torch.Tensor, cfg: omegaconf.DictConfig
 ):
-    """compute metrics for deepdenoiser model
+    eq = eq.float()
+    noise = noise.float()
+    config_path = cfg.user.deep_denoiser_folder + "/.hydra/config.yaml"
+    config = OmegaConf.load(config_path)
 
-    Args:
-        - model: the keras model to score
-        - assoc: list of (event, noise, snr, shift) associations
-        - snr: the signal to noise ratio at which to score
-        - cfg: the config for batch size
-        - idx: which coordinate to score (i.e. 0=Z, 1=N, 2=E)
-    Returns:
-        - a dictionary with results (mean and std) for the cross-correlation,
-          maximum amplitude difference (percentage) and p wave onset shift (timesteps)
-    """
-    test_dataset = InputSignals(assoc, Mode.TEST, snr)
-    test_dl = torch.utils.data.DataLoader(
-        test_dataset, cfg.model.batch_size, shuffle=False
+    trace_length = config.trace_length
+    n_fft = config.model.architecture.n_fft
+    hop_length = config.model.architecture.hop_length
+    win_length = config.model.architecture.win_length
+
+    noisy_eq = eq + noise
+    stft_eq = get_stft(eq, n_fft, hop_length, win_length)
+
+    model = DeepDenoiser(**config.model.architecture)
+    model.eval()
+
+    with torch.no_grad():
+        mask = model(noisy_eq)
+    masked_stft = stft_eq * mask
+
+    istft = get_istft(masked_stft, n_fft, hop_length, win_length, trace_length)
+
+    # print(istft.min())
+    # print(istft.max())
+
+    return istft
+
+
+def plot_spectograms(cfg: omegaconf.DictConfig) -> None:
+    output_dir = pathlib.Path(
+        hydra.core.hydra_config.HydraConfig.get().runtime.output_dir
     )
-    ccs = []
-    amplitudes = []
-    onsets = []
-    for noisy_batch, eq_batch, shifts in test_dl:
-        # get predictions
-        predicted_mask = model(noisy_batch)
-        stft_real, stft_imag = keras.ops.stft(noisy_batch, 100, 24, 126)
-        stft = np.concatenate([stft_real, stft_imag], axis=1)
-        masked = stft * predicted_mask
-        time_domain_result = keras.ops.istft(
-            (masked[:, :3, :, :], masked[:, 3:6, :, :]), 100, 24, 126
-        )
 
-        # compute metrics
-        eq_batch = eq_batch.numpy()
-        time_domain_result = np.array(time_domain_result)
-        corr = [
-            cross_correlation(a, b)
-            for a, b in zip(eq_batch[:, idx, :], time_domain_result[:, idx, :])
-        ]
-        ccs.extend(corr)
-        max_amplitude_differences = [
-            max_amplitude_difference(a, b)
-            for a, b in zip(eq_batch[:, idx, :], time_domain_result[:, idx, :])
-        ]
-        amplitudes.extend(max_amplitude_differences)
-        onset = [
-            p_wave_onset_difference(a, b, shift)
-            for a, b, shift in zip(
-                eq_batch[:, idx, :], time_domain_result[:, idx, :], shifts
-            )
-        ]
-        onsets.extend(onset)
+    test_dl = get_dataloaders_pytorch(cfg, return_test=True)
+    model = DeepDenoiser(**cfg.model.architecture)
+    checkpoint = torch.load(
+        cfg.user.model_path, map_location=torch.device("cpu"), weights_only=False
+    )
+    model.load_state_dict(checkpoint)
+    model.eval()
+    with torch.no_grad():
+        for snr in tqdm(cfg.snrs, total=len(cfg.snrs)):
+            eq, noise = next(iter(test_dl))
+            eq = eq.float()
+            noise = noise.float()
+            noisy_eq = eq + noise
+            predictions = model(noisy_eq)
 
-    return np.array(ccs), np.array(amplitudes), np.array(onsets)
+            mask = get_mask(eq, noise, cfg)
 
+            fig, axs = plt.subplots(cfg.plot.n_examples, 3, figsize=(12, 8))
 
-def visualize_predictions_deep_denoiser(model_path: str, signal_path: str, noise_path:str, signal_length: int, n_examples: int, snrs:list[int], channel:int = 0) -> None:
-    
-    print("Visualizing predictions")
-    output_dir = pathlib.Path(hydra.core.hydra_config.HydraConfig.get().runtime.output_dir)
+            for i in range(cfg.plot.n_examples):
+                axs[i, 0].plot(range(cfg.trace_length), noisy_eq[i, 0, :])
+                im1 = axs[i, 1].imshow(mask[i, 0, :, :], cmap="viridis", aspect="auto")
+                _ = axs[i, 2].imshow(
+                    predictions[i, 0, :, :], cmap="viridis", aspect="auto"
+                )
 
-    for snr in tqdm(snrs, total=len(snrs)):
+            column_titles = ["Noisy Earthquake", "Ground Truth Mask", "Predicted Mask"]
+            for j, title in enumerate(column_titles):
+                axs[0, j].set_title(title)
+            cbar_ax = fig.add_axes([0.92, 0.15, 0.02, 0.7])
+            cbar = fig.colorbar(im1, cax=cbar_ax)
+            cbar.set_label("Value")
 
-        assoc = get_signal_noise_assoc(signal_path, noise_path, Mode.TEST, size_testset = 1000, snr=lambda: snr)
-
-        test_dl = torch.utils.data.DataLoader(InputSignals(assoc, Mode.TEST, snr), batch_size=n_examples)
-        model = keras.saving.load_model(model_path)
-        noisy_batch, ground_truth, _ = next(iter(test_dl))
-        
-        # get predictions
-        predicted_mask = model(noisy_batch)
-        stft_real, stft_imag = keras.ops.stft(noisy_batch, 100, 24, 126)
-        stft = np.concatenate([stft_real, stft_imag], axis=1)
-        masked = stft * predicted_mask
-        predictions = keras.ops.istft(
-            (masked[:, :3, :, :], masked[:, 3:6, :, :]), 100, 24, 126
-        )
-
-        _, axs = plt.subplots(n_examples, 3,  figsize=(15, n_examples * 3))
-        time = range(signal_length)
-
-        for i in tqdm(range(n_examples), total=n_examples):
-
-            axs[i,0].plot(time, noisy_batch[i,channel, :]) # noisy earthquake
-            axs[i,1].plot(time, ground_truth[i,channel, :]) # ground truth noise
-            axs[i,2].plot(time, predictions[i,channel, :]) # predicted noise
-
-            row_y_values = []
-            row_y_values.extend(noisy_batch[i, channel, :].numpy())
-            row_y_values.extend(ground_truth[i,channel, :].numpy())
-            row_y_values.extend(predictions[i, channel, :].numpy())
-            
-            # Get the y-axis limits for this row
-            y_min = np.min(row_y_values)
-            y_max = np.max(row_y_values)
-
-            for j in range(3):
-                axs[i, j].set_ylim(y_min, y_max)
-        
-        column_titles = ["Noisy Earthquake", "Ground Truth Signal", "Prediction"]
-        for col, title in enumerate(column_titles):
-            axs[0, col].set_title(title)
-        
-        plt.tight_layout()
-        plt.subplots_adjust(top=0.9)
-        plt.savefig(output_dir / f'visualization_snr_{snr}.png')
+            plt.suptitle(f"SNR: {snr}", fontsize=16)
+            plt.tight_layout(rect=[0, 0, 0.9, 0.95])
+            plt.savefig(output_dir / f"visualization_snr_{snr}.png")
+            plt.close(fig)
