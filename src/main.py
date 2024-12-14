@@ -12,6 +12,7 @@ from train import train_model
 from validate import compute_metrics, create_prediction_csv
 from plot import visualize_predictions, overlay_plot, metrics_plot
 from dayplots import plot_day
+from src.utils import wilcoxon_test
 
 
 def setup_logging(cfg: omegaconf.DictConfig):
@@ -54,7 +55,8 @@ def main(cfg: omegaconf.DictConfig):
         """
         # df = create_prediction_csv(cfg)
         compute_metrics(cfg)
-
+    elif cfg.wilcoxon_test:
+        wilcoxon_test(cfg)
     elif cfg.plot.metrics:
         metrics_plot(cfg)
     elif cfg.plot.visualization:

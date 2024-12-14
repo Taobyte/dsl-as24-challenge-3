@@ -145,35 +145,67 @@ def log_inference_speed(net: torch.nn.Module, test_dl: DataLoader) -> float:
     return inference_speed
 
 
-def wilcoxon_test(
-    metrics_deepdenoiser_path: str, metrics_model_path: str, model_name: str
-) -> pd.DataFrame:
+def wilcoxon_test(cfg: omegaconf.DictConfig) -> pd.DataFrame:
     """
-    Compute wilcoxon significance test for baseline DeepDenoiser against trained model
+    Compute Wilcoxon significance test for baseline DeepDenoiser against trained model ColdDiffusion.
 
     Args:
-        metrics_deepdenoiser_path (str): path to folder containing deepdenoiser metrics (cc.csv, mar.csv, pw.csv)
-        metrics_model_path (str): path to folder containing model metrics (cc.csv, mar.csv, pw.csv)
-        model_name (str): name of the model used in the wilcoxon significance test
+        cfg (omegaconf.DictConfig): Configuration object with necessary paths and SNR values.
 
     Returns:
-        pd.DataFrame: DataFrame storing p-values for each snr and metric
+        pd.DataFrame: DataFrame storing p-values, mean of metric for DeepDenoiser / mean of metric for ColdDiffusion for each SNR and metric.
     """
     output_dir = pathlib.Path(
         hydra.core.hydra_config.HydraConfig.get().runtime.output_dir
     )
-    metrics = ["cc", "mar", "pw"]
-    p_values = {}
-    for metric in metrics:
-        deep_df = pd.read_csv(metrics_deepdenoiser_path + f"/{metric}.csv")
-        model_df = pd.read_csv(metrics_model_path + f"/{metric}.csv")
-        p = {}
-        for column in deep_df.columns:
-            p[column] = wilcoxon(deep_df[column], model_df[column])
-        p_values[metric] = p
 
-    df = pd.DataFrame(p_values)
-    df.to_csv(output_dir / f"p_values_{model_name}.csv")
+    metrics_folder = cfg.user.metrics_folder
+
+    p_values = {}
+    for snr in cfg.snrs:
+        deep_df = pd.read_csv(
+            metrics_folder + f"/DeepDenoiser/snr_{snr}_metrics_DeepDenoiser.csv"
+        )
+        model_df = pd.read_csv(
+            metrics_folder + f"/ColdDiffusion/snr_{snr}_metrics_ColdDiffusion.csv"
+        )
+        # Drop extra column if present
+        if len(model_df.columns) == 4:
+            model_df = model_df.drop(model_df.columns[0], axis=1)
+
+        # Compute mean values for both models
+        mean_deep = deep_df.mean().values
+        mean_model = model_df.mean().values
+
+        # Compute Wilcoxon test p-values and store results
+        p = {}
+        for i, column in enumerate(deep_df.columns):
+            p[column] = [
+                wilcoxon(deep_df[column], model_df[column]).pvalue,
+                mean_deep[i],
+                mean_model[i],
+            ]
+        p_values[str(snr)] = p
+
+    # Transform the results into a tidy DataFrame
+    results = []
+    for snr, metrics in p_values.items():
+        for metric, values in metrics.items():
+            results.append([snr, metric, values[0], values[1], values[2]])
+
+    df = pd.DataFrame(
+        results,
+        columns=[
+            "snr",
+            "metric",
+            "p_value",
+            "deep_denoiser_mean",
+            "cold_diffusion_mean",
+        ],
+    )
+
+    # Save to CSV
+    df.to_csv(output_dir / "p_values_ColdDiffusion.csv", index=False)
 
     return df
 
