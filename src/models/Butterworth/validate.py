@@ -1,5 +1,9 @@
+import pathlib
+
+import hydra
 import omegaconf
 import numpy as np
+import pandas as pd
 from tqdm import tqdm
 
 from src.models.Butterworth.butterworth_filter import bandpass_obspy
@@ -11,17 +15,16 @@ from src.metrics import (
 )
 
 
-def get_metrics_butterworth(cfg: omegaconf.DictConfig):
-    """get baseline results for butterworth bandpass filter
+def get_metrics_butterworth(cfg: omegaconf.DictConfig) -> None:
+    """
+    Saves metrics on test set for butterworth filter
 
     Args:
-        - assoc: list of (event, noise, snr, shift) associations
-        - snr: the signal to noise ratio at which we score
-        - idx: which coordinate to score (i.e. 0=Z, 1=N, 2=E)
-    Returns:
-        - a dictionary with results (mean and std) for the cross-correlation,
-          maximum amplitude difference (percentage) and p wave onset shift (timesteps)
+        - cfg (omegaconf.DictConfig): hydra config
     """
+    output_dir = pathlib.Path(
+        hydra.core.hydra_config.HydraConfig.get().runtime.output_dir
+    )
 
     freq_range = cfg.freq_range
     sampling_rate = cfg.sampling_rate
@@ -48,26 +51,18 @@ def get_metrics_butterworth(cfg: omegaconf.DictConfig):
                 axis=-1,
                 arr=noisy_eq,
             )
+            ccs.append(cross_correlation(eq, filtered))
+            amplitudes.append(max_amplitude_difference(eq, filtered))
+            onsets.append(p_wave_onset_difference(eq, filtered, shift=shifts))
 
-        ccs.append(cross_correlation(eq, filtered))
-        amplitudes.append(max_amplitude_difference(eq, filtered))
-        onsets.append(p_wave_onset_difference(eq, filtered, shift=shifts))
+        ccs = np.concatenate(ccs)
+        amplitudes = np.concatenate(amplitudes)
+        onsets = np.concatenate(onsets)
 
-    amplitudes = np.array(amplitudes)
-
-    # cross, SNR, max amplitude difference
-    cross_correlation_mean = np.mean(ccs)
-    cross_correlation_std = np.std(ccs)
-    max_amplitude_difference_mad = np.mean(np.abs(1 - amplitudes))
-    max_amplitude_difference_std = np.std(np.abs(1 - amplitudes))
-    p_wave_onset_difference_mean = np.mean(onsets)
-    p_wave_onset_difference_std = np.std(onsets)
-
-    return [
-        cross_correlation_mean,
-        cross_correlation_std,
-        max_amplitude_difference_mad,
-        max_amplitude_difference_std,
-        p_wave_onset_difference_mean,
-        p_wave_onset_difference_std,
-    ]
+        snr_metrics = {
+            "cross_correlation": ccs,
+            "max_amplitude_difference": amplitudes,
+            "p_wave_onset_difference": onsets,
+        }
+        df = pd.DataFrame(snr_metrics)
+        df.to_csv(output_dir / f"snr_{snr}_metrics_Butterworth.csv", index=False)

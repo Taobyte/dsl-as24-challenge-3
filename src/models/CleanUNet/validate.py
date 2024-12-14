@@ -9,10 +9,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 from tqdm import tqdm
 
-<<<<<<< HEAD
-from metrics import cross_correlation, max_amplitude_difference, p_wave_onset_difference
-from models.CleanUNet.dataset import CleanUNetDataset
-=======
 from src.utils import get_trained_model, Model
 from src.metrics import (
     cross_correlation_torch,
@@ -23,7 +19,6 @@ from src.dataset import get_dataloaders_pytorch
 
 logger = logging.getLogger()
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
->>>>>>> 579f5c53c4137155e4d5229184af147fa9d35de3
 
 
 def get_metrics_clean_unet(cfg: omegaconf.DictConfig) -> pd.DataFrame:

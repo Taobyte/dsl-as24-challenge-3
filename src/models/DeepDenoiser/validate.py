@@ -1,19 +1,68 @@
+import pathlib
+import logging
+
 import omegaconf
 from omegaconf import OmegaConf
 import hydra
-import pathlib
 
+import numpy as np
+import pandas as pd
 import torch
 import matplotlib.pyplot as plt
 from tqdm import tqdm
 
+from src.utils import get_trained_model, Model
+from src.metrics import (
+    cross_correlation_torch,
+    max_amplitude_difference_torch,
+    p_wave_onset_difference_torch,
+)
 from src.models.DeepDenoiser.dataset import get_dataloaders_pytorch
 from src.models.DeepDenoiser.deep_denoiser_pytorch import DeepDenoiser
 from src.stft import get_stft, get_istft, get_mask
 
+logger = logging.getLogger()
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-def get_metrics_deepdenoiser():
-    pass
+
+def get_metrics_deepdenoiser(cfg: omegaconf.DictConfig):
+    logger.info("Computing metrics on testset for CleanUNet.")
+    output_dir = pathlib.Path(
+        hydra.core.hydra_config.HydraConfig.get().runtime.output_dir
+    )
+
+    model = get_trained_model(cfg, Model.DeepDenoiser)
+
+    for snr in cfg.snrs:
+        test_dl = get_dataloaders_pytorch(cfg, return_test=True)
+        ccs, amplitudes, onsets = [], [], []
+        with torch.no_grad():
+            for eq, noise, shifts in tqdm(test_dl, total=len(test_dl)):
+                eq = eq.float().to(device)
+                noise = noise.float().to(device)
+                shifts = torch.from_numpy(np.array(shifts)).to(device)
+                noisy_eq = snr * eq + noise
+
+                mask = model(noisy_eq)
+                denoised_mask = noisy_eq * mask
+                prediction = get_istft(denoised_mask)
+
+                ccs.append(cross_correlation_torch(eq, prediction))
+                amplitudes.append(max_amplitude_difference_torch(eq, prediction))
+                onsets.append(p_wave_onset_difference_torch(eq, prediction, shifts))
+
+            ccs = torch.concatenate(ccs, dim=0)
+            amplitudes = torch.concatenate(amplitudes, dim=0)
+            onsets = torch.concatenate(onsets, dim=0)
+            snr_metrics = {
+                "cross_correlation": ccs.cpu().numpy(),
+                "max_amplitude_difference": amplitudes.cpu().numpy(),
+                "p_wave_onset_difference": onsets.cpu().numpy(),
+            }
+            df = pd.DataFrame(snr_metrics)
+            df.to_csv(output_dir / f"snr_{snr}_metrics_CleanUNet.csv", index=False)
+
+    return df
 
 
 def get_predictions_deepdenoiser(

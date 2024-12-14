@@ -116,10 +116,8 @@ def metrics_plot(cfg: omegaconf.DictConfig) -> None:
 
     # Adjust layout to prevent overlap
     plt.tight_layout(rect=[0, 0, 1, 0.95])
-    plt.savefig(output_dir / 'metrics.png')
+    plt.savefig(output_dir / "metrics.png")
     plt.show()
-
-    plt.savefig(output_dir / "metrics.jpg")
 
 
 def overlay_plot(cfg: omegaconf.DictConfig):
