@@ -104,13 +104,19 @@ def metrics_plot(cfg: omegaconf.DictConfig) -> None:
         ax.tick_params(axis="both", which="minor", labelsize=10)
 
         if i == 1:
-            ax.set_ylim(0, 1000)
+            ax.set_yscale("log")
+        #     ax.set_ylim(0, 5)
+        # elif i == 2:
+        #     ax.set_ylim(0, 1000)
+        # elif i == 0:
+        #     ax.set_ylim(0, 1)
 
     # Set the title for the entire figure
     fig.suptitle("Comparison of Denoising Models", fontsize=16)
 
     # Adjust layout to prevent overlap
     plt.tight_layout(rect=[0, 0, 1, 0.95])
+    plt.savefig(output_dir / 'metrics.png')
     plt.show()
 
     plt.savefig(output_dir / "metrics.jpg")

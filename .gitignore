@@ -1,8 +1,10 @@
 src/tests.ipynb
+metrics/*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
+*.out
 
 # C extensions
 *.so

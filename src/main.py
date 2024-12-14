@@ -1,6 +1,7 @@
 import random
 import logging
 import pathlib
+import os
 
 import hydra
 import omegaconf
@@ -10,6 +11,7 @@ import torch as th
 from train import train_model
 from validate import compute_metrics, create_prediction_csv
 from plot import visualize_predictions, overlay_plot, metrics_plot
+from dayplots import plot_day
 
 
 def setup_logging(cfg: omegaconf.DictConfig):
@@ -33,10 +35,6 @@ def main(cfg: omegaconf.DictConfig):
     random.seed(seed)
     np.random.seed(seed)
     th.manual_seed(seed)
-
-    output_dir = pathlib.Path(
-        hydra.core.hydra_config.HydraConfig.get().runtime.output_dir
-    )
 
     if cfg.training:
         model = train_model(cfg)
@@ -63,6 +61,9 @@ def main(cfg: omegaconf.DictConfig):
         visualize_predictions(cfg)
     elif cfg.plot.overlay_plot:
         overlay_plot(cfg)
+
+    elif cfg.plot.dayplot:
+        plot_day(cfg)
 
 
 if __name__ == "__main__":

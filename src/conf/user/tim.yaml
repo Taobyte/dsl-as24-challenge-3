@@ -1,0 +1,25 @@
+data:
+  signal_path: '/home/tim/Documents/Data-Science_MSc/DSLab/earthquake_data/event'
+  noise_path: '/home/tim/Documents/Data-Science_MSc/DSLab/earthquake_data/noise'
+  datapath: '/home/tim/Documents/Data-Science_MSc/DSLab/earthquake_data/'
+  train_file: '/home/tim/Documents/Data-Science_MSc/DSLab/earthquake_data/dataset_train_001.dat'
+  val_file: '/home/tim/Documents/Data-Science_MSc/DSLab/earthquake_data/dataset_val_001.dat'
+  test_data_file: '/home/tim/Documents/Data-Science_MSc/DSLab/earthquake_data/'
+
+# testing
+outside_repo: True
+model_path: '/home/tim/Documents/Data-Science_MSc/DSLab/models/DeepDenoiser_l5_e3.keras'
+test_model_path: '/home/tim/Documents/Data-Science_MSc/DSLab/models/ColdDiffusion_lr_0.01_e70.keras'
+path_model: '/home/tim/Documents/Data-Science_MSc/DSLab/models/chkpt_epoch_15_20_cosine_cold_diffusion.pth'
+
+# model dir
+model_dir: '/home/tim/Documents/Data-Science_MSc/DSLab/models/'
+
+wandb: True
+
+# plotting
+plot_n: 5
+plot_channel: 0
+metrics_deepdenoiser_path: '/home/tim/Documents/Data-Science_MSc/DSLab/metrics/deep_denoiser_metrics.csv' 
+metrics_model_path: "/home/tim/Documents/Data-Science_MSc/DSLab/dsl-as24-challenge-3/outputs/2024-11-22/10-59-47/metrics_model.csv"
+metrics_butterworth_path: "/home/tim/Documents/Data-Science_MSc/DSLab/dsl-as24-challenge-3/outputs/2024-11-22/10-59-47/metrics_butterworth.csv"

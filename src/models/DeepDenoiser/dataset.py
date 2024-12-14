@@ -99,22 +99,21 @@ def get_signal_noise_assoc(
         noise_files = glob.glob(f"{noise_path}/train/**/*.npz", recursive=True)
 
     elif mode == Mode.VALIDATION:
-        signal_files = glob.glob(f"{signal_path}/validation/**/*.npz", recursive=True)[
-            :-size_testset
-        ]
-        noise_files = glob.glob(f"{noise_path}/validation/**/*.npz", recursive=True)[
-            :-size_testset
-        ]
 
+        signal_files = glob.glob(f"{signal_path}/validation/**/*.npz", recursive=True) #[:-size_testset]
+        noise_files = glob.glob(f"{noise_path}/validation/**/*.npz", recursive=True) #[:-size_testset]
+    
     elif mode == Mode.TEST:
-        print(f"{signal_path}/test/**/*.npz")
-        signal_files = glob.glob(f"{signal_path}/test/**/*.npz", recursive=True)
-        noise_files = glob.glob(f"{noise_path}/test/**/*.npz", recursive=True)
 
+        signal_files = glob.glob(f"{signal_path}/**/*.npz", recursive=True)
+        noise_files = glob.glob(f"{noise_path}/**/*.npz", recursive=True)
+    
     else:
         assert False, f"Mode {mode} not supported!"
 
     # shuffle
+    signal_files = signal_files + signal_files
+    noise_files = noise_files + noise_files
     random.shuffle(signal_files)
     random.shuffle(noise_files)
 
@@ -122,8 +121,12 @@ def get_signal_noise_assoc(
     for i in range(len(signal_files)):
         n = np.random.randint(0, len(noise_files))
         snr_random = snr()
-        eq_shift = np.random.randint(1000, 6000)
-        assoc.append((signal_files[i], noise_files[n], snr_random, eq_shift))
+        r = np.random.randint(0, 5)
+        if r == 0 and not (mode == Mode.TEST):
+            event_shift = np.random.randint(0,1000)
+        else:
+            event_shift = np.random.randint(2500,6000)
+        assoc.append((signal_files[i], noise_files[n], snr_random, event_shift))
 
     return assoc
 
