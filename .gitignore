@@ -86,6 +86,8 @@ target/
 /models/
 */outputs/
 /outputs/
+*/slurm_logs
+/slurm_logs
 
 # Slurm files
 slurm-*.out   

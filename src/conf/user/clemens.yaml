@@ -1,18 +1,20 @@
 data:
-  signal_path: '/cluster/scratch/ckeusch/data/signal/'
-  noise_path: '/cluster/scratch/ckeusch/data/noise/'
-  csv_path: '/cluster/scratch/ckeusch/dsl-as24-challenge-3/data/'
+  signal_path: '/work/courses/dsl/team3/earthquake_data/event'
+  noise_path: '/work/courses/dsl/team3/earthquake_data/noise'
+  filename: '/work/courses/dsl/team3/earthquake_data/'
 
 # testing
-# model_path: /cluster/scratch/ckeusch/dsl-as24-challenge-3/outputs/2024-11-08/15-27-39/DeepDenoiser_lr_0.001_e10.keras # DeepDenoiser
-# model_path: /cluster/scratch/ckeusch/dsl-as24-challenge-3/outputs/2024-11-08/09-05-09/WaveDecompNet_lr_0.001_e5.keras # WaveDecompNet
-# model_path: /cluster/scratch/ckeusch/dsl-as24-challenge-3/outputs/2024-11-04/11-35-27/checkpoints/model_at_epoch_10.keras # ColdDiffusion
-model_path: /cluster/scratch/ckeusch/dsl-as24-challenge-3/outputs/2024-11-11/12-35-51/checkpoints/model_at_epoch_8.keras # CleanUNet
-# model_path: '/cluster/scratch/ckeusch/dsl-as24-challenge-3/outputs/2024-11-06/15-22-50/checkpoints/model_at_epoch_7.keras' # ColdDiffusion stft loss
+model_path: /work/scratch/ckeusch/dsl-as24-challenge-3/outputs/2024-12-12/10-42-17/checkpoints/epoch_9.pth
 
-# plotting
-metrics_model_path: /cluster/scratch/ckeusch/dsl-as24-challenge-3/outputs/2024-11-06/14-41-34/metrics_model.csv # ColdDiffusion 1 step
-metrics_butterworth_path: /cluster/scratch/ckeusch/dsl-as24-challenge-3/outputs/2024-11-02/10-10-22/metrics_butterworth.csv
-metrics_deepdenoiser_path: /cluster/scratch/ckeusch/dsl-as24-challenge-3/outputs/2024-11-08/DeepDenoiser Metrics/metrics_model.csv
+# final models 
+deep_denoiser_folder: '/work/scratch/ckeusch/dsl-as24-challenge-3/outputs/2024-12-12/10-42-17'
+clean_unet_folder: /work/scratch/ckeusch/dsl-as24-challenge-3/outputs/2024-12-13/21-09-54
+clean_unet2_folder: ''
+
+# prediction npz path
+prediction_path: /work/scratch/ckeusch/dsl-as24-challenge-3/outputs/2024-12-12/17-27-13/data.npz
+
+# plotting 
+metrics_folder: "/work/scratch/ckeusch/dsl-as24-challenge-3/metrics" 
 
 wandb: False

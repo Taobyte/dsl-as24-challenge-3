@@ -10,8 +10,7 @@ from tqdm import tqdm
 
 from metrics import cross_correlation, max_amplitude_difference, p_wave_onset_difference
 from utils import Mode
-from models.ColdDiffusion.dataset import ColdDiffusionDataset, TestColdDiffusionDataset
-from models.ColdDiffusion.ColdDiffusion_keras import ColdDiffusion
+from models.ColdDiffusion.dataset import TestColdDiffusionDataset
 import models.ColdDiffusion.utils.testing as testing
 from models.ColdDiffusion.train_validate import load_model_and_weights
 
