@@ -10,8 +10,7 @@ from tqdm import tqdm
 
 from metrics import cross_correlation, max_amplitude_difference, p_wave_onset_difference
 from utils import Mode
-from models.ColdDiffusion.dataset import ColdDiffusionDataset, TestColdDiffusionDataset
-from models.ColdDiffusion.ColdDiffusion_keras import ColdDiffusion
+from models.ColdDiffusion.dataset import TestColdDiffusionDataset
 import models.ColdDiffusion.utils.testing as testing
 from models.ColdDiffusion.train_validate import load_model_and_weights
 
@@ -82,10 +81,9 @@ def get_metrics_cold_diffusion(
                 t = torch.Tensor([cfg.model.T - 1]).long().to(device)
                 restored_dir = testing.direct_denoising(model, signal_noisy.to(device).float(), t).cpu()
                 corr, max_amplitude_differences, onset = compute_metrs(eq_batch.numpy(), restored_dir.numpy(), shifts)
-                ccs.append(corr)
+                ccs.extend(corr)
                 amplitudes.extend(max_amplitude_differences)
                 onsets.extend(onset)
-                return np.array(ccs), np.array(amplitudes), np.array(onsets)
             else:
                 t = cfg.model.T - 1
                 restored_sample = testing.sample(
@@ -98,7 +96,11 @@ def get_metrics_cold_diffusion(
                 ccs_sample.extend(corr)
                 amplitudes_sample.extend(max_amplitude_differences)
                 onsets_sample.extend(onset)
-                return np.array(ccs_sample), np.array(amplitudes_sample), np.array(onsets_sample)
+
+        if not cfg.model.sampling:
+            return np.array(ccs), np.array(amplitudes), np.array(onsets)
+        else:
+            return np.array(ccs_sample), np.array(amplitudes_sample), np.array(onsets_sample)
 
 
 def visualize_predictions_cold_diffusion(cfg):

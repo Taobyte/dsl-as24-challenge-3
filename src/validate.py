@@ -18,7 +18,6 @@ from models.DeepDenoiser.dataset import get_signal_noise_assoc, InputSignals
 from models.WaveDecompNet.validate import get_metrics_wave_decomp_net
 from models.CleanUNet.validate import get_metrics_clean_unet
 from models.ColdDiffusion.validate import get_metrics_cold_diffusion
-from models.ColdDiffusion.ColdDiffusion_keras import ColdDiffusion
 from models.ColdDiffusion.dataset import TestColdDiffusionDataset
 from metrics import cross_correlation, p_wave_onset_difference, max_amplitude_difference
 
@@ -74,7 +73,9 @@ def compute_metrics(cfg: omegaconf.DictConfig) -> pd.DataFrame:
         )
     else:
     """
-
+    output_dir = pathlib.Path(
+        hydra.core.hydra_config.HydraConfig.get().runtime.output_dir
+    )
     if cfg.model.model_name == "ColdDiffusion":
         model = None
     else:
@@ -83,6 +84,14 @@ def compute_metrics(cfg: omegaconf.DictConfig) -> pd.DataFrame:
     for snr in tqdm.tqdm(cfg.snrs, total=len(cfg.snrs)):
 
         cross_correlations, max_amplitude_differences, p_wave_onset_differences = get_metrics(model, assoc, snr, cfg)
+
+        preds_snr = {
+            "cross_correlation": cross_correlations.flatten(),
+            "max_amplitude_difference": max_amplitude_differences,
+            "p_wave_onset_difference": p_wave_onset_differences,
+        }
+        preds_snr = pd.DataFrame(preds_snr)
+        preds_snr.to_csv(output_dir / f"snr_{snr}_metrics_{cfg.model.model_name}.csv")
 
         # cross, SNR, max amplitude difference
         cross_correlation_mean = np.mean(cross_correlations)
@@ -111,13 +120,11 @@ def compute_metrics(cfg: omegaconf.DictConfig) -> pd.DataFrame:
         preds_butterworth["p_wave_mean"].append(butti[4])
         preds_butterworth["p_wave_std"].append(butti[5])
 
+
     df = pd.DataFrame(predictions)
     df_butti = pd.DataFrame(preds_butterworth)
     df["snr"] = cfg.snrs
     df_butti["snr"] = cfg.snrs
-    output_dir = pathlib.Path(
-        hydra.core.hydra_config.HydraConfig.get().runtime.output_dir
-    )
     df.to_csv(output_dir / "metrics_model.csv")
     df_butti.to_csv(output_dir / "metrics_butterworth.csv")
 
