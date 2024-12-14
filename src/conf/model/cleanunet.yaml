@@ -7,7 +7,7 @@ subset: null
 # training
 batch_size: 512
 lr: 0.0002
-epochs: 100
+epochs: 600
 use_amp: False
 clipnorm: 1e9
 
@@ -15,11 +15,11 @@ patience: 1e9
 min_delta: 1
 
 log_checkpoints: True
-checkpoint_freq: 10
+checkpoint_freq: 100
 
 lr_schedule: True
 
-val_freq: 5
+val_freq: 10
 
 # 'mae': L1 loss in time domain
 # 'stft': STFT Log Magnitude Loss + Spectogram Loss 
@@ -46,7 +46,8 @@ architecture:
   stride: 2
   max_H: 256
 
-  bottleneck: "transformer"
+  #can be either 'lstm' or 'transformer'
+  bottleneck: "lstm"
   # transformer settings
   tsfm_n_layers: 3
   tsfm_n_head: 4

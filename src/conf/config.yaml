@@ -1,6 +1,6 @@
 defaults: 
   - _self_
-  - model: cleanunet2
+  - model: cleanunet
   - user: clemens
 
 seed: 123
@@ -15,8 +15,8 @@ snr_upper: 2.0
 butterworth_range: [1, 45]
 sampling_rate: 100
 
-training: True
-test: False
+training: False
+test: True
 plot:
   metrics: False
   channel_idx: 0

@@ -24,8 +24,13 @@ def get_predictions_deepdenoiser(
     config_path = cfg.user.deep_denoiser_folder + "/.hydra/config.yaml"
     config = OmegaConf.load(config_path)
 
+    trace_length = config.trace_length
+    n_fft = config.model.architecture.n_fft
+    hop_length = config.model.architecture.hop_length
+    win_length = config.model.architecture.win_length
+
     noisy_eq = eq + noise
-    stft_eq = get_stft(eq, config)
+    stft_eq = get_stft(eq, n_fft, hop_length, win_length)
 
     model = DeepDenoiser(**config.model.architecture)
     model.eval()
@@ -34,7 +39,10 @@ def get_predictions_deepdenoiser(
         mask = model(noisy_eq)
     masked_stft = stft_eq * mask
 
-    istft = get_istft(masked_stft, config)
+    istft = get_istft(masked_stft, n_fft, hop_length, win_length, trace_length)
+
+    # print(istft.min())
+    # print(istft.max())
 
     return istft
 
