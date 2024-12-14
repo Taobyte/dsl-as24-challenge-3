@@ -30,11 +30,12 @@ def get_dataloaders_pytorch(
         subset (int): whether to use only subset number of training and validation datapoints
         model (Model): specifies model used with dataloaders (needed for DeepDenoiser due to ground truth masks)
     """
+
     if return_test:
         test_dataset = EQDataset(cfg.user.data.filename, Mode.TEST)
         test_dl = th.utils.data.DataLoader(
             test_dataset,
-            batch_size=cfg.plot.n_examples,
+            batch_size=cfg.plot.n_examples if not cfg.test else cfg.model.batch_size,
             shuffle=False,
             num_workers=1,
         )
@@ -270,7 +271,11 @@ class EQDataset(Dataset):
 
     def __getitem__(self, index):
         if self.mode == Mode.TEST:
-            return (self.file_eq[index], self.file_noise[index], self.assoc[index][3])
+            return (
+                self.file_eq[index],
+                self.file_noise[index],
+                int(self.assoc[index][3]),
+            )
         return (self.file_eq[index], self.file_noise[index])
 
 

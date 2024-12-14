@@ -28,6 +28,7 @@ class Mode(Enum):
 
 
 class Model(Enum):
+    Butterworth = "Butterworth"
     DeepDenoiser = "DeepDenoiser"
     ColdDiffusion = "ColdDiffusion"
     CleanUNet = "CleanUNet"

@@ -5,6 +5,7 @@ import hydra
 import pathlib
 import torch
 import pandas as pd
+import numpy as np
 import matplotlib.pyplot as plt
 from tqdm import tqdm
 
@@ -14,13 +15,13 @@ from src.metrics import (
     max_amplitude_difference_torch,
     p_wave_onset_difference_torch,
 )
-from src.models.DeepDenoiser.dataset import get_dataloaders_pytorch
+from src.dataset import get_dataloaders_pytorch
 
 logger = logging.getLogger()
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 
-def get_metrics_clean_unet(model, cfg: omegaconf.DictConfig) -> pd.DataFrame:
+def get_metrics_clean_unet(cfg: omegaconf.DictConfig) -> pd.DataFrame:
     logger.info("Computing metrics on testset for CleanUNet.")
     output_dir = pathlib.Path(
         hydra.core.hydra_config.HydraConfig.get().runtime.output_dir
@@ -35,7 +36,7 @@ def get_metrics_clean_unet(model, cfg: omegaconf.DictConfig) -> pd.DataFrame:
             for eq, noise, shifts in tqdm(test_dl, total=len(test_dl)):
                 eq = eq.float().to(device)
                 noise = noise.float().to(device)
-                shifts = shifts.to(device)
+                shifts = torch.from_numpy(np.array(shifts)).to(device)
                 noisy_eq = snr * eq + noise
 
                 prediction = model(noisy_eq)
@@ -47,12 +48,12 @@ def get_metrics_clean_unet(model, cfg: omegaconf.DictConfig) -> pd.DataFrame:
             amplitudes = torch.concatenate(amplitudes, dim=0)
             onsets = torch.concatenate(onsets, dim=0)
             snr_metrics = {
-                "cross_correlation": ccs.numpy(),
-                "max_amplitude_difference": amplitudes.numpy(),
-                "p_wave_onset_difference": onsets.numpy(),
+                "cross_correlation": ccs.cpu().numpy(),
+                "max_amplitude_difference": amplitudes.cpu().numpy(),
+                "p_wave_onset_difference": onsets.cpu().numpy(),
             }
             df = pd.DataFrame(snr_metrics)
-            df.to_csv(output_dir / f"snr_{snr}_metrics_CleanUNet.csv")
+            df.to_csv(output_dir / f"snr_{snr}_metrics_CleanUNet.csv", index=False)
 
     return df
 

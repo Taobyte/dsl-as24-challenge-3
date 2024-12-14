@@ -9,7 +9,7 @@ import torch as th
 
 from train import train_model
 from validate import compute_metrics, create_prediction_csv
-from plot import compare_model_and_baselines, visualize_predictions, overlay_plot
+from plot import visualize_predictions, overlay_plot, metrics_plot
 
 
 def setup_logging(cfg: omegaconf.DictConfig):
@@ -54,17 +54,11 @@ def main(cfg: omegaconf.DictConfig):
                 label3="DeepDenoiser",
             )
         """
-        df = create_prediction_csv(cfg)
+        # df = create_prediction_csv(cfg)
+        compute_metrics(cfg)
 
     elif cfg.plot.metrics:
-        compare_model_and_baselines(
-            cfg.user.metrics_model_path,
-            cfg.user.metrics_butterworth_path,
-            cfg.user.metrics_deepdenoiser_path,
-            label1=cfg.model.model_name,
-            label2="Butterworth",
-            label3="DeepDenoiser",
-        )
+        metrics_plot(cfg)
     elif cfg.plot.visualization:
         visualize_predictions(cfg)
     elif cfg.plot.overlay_plot:

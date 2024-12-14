@@ -16,9 +16,9 @@ butterworth_range: [1, 45]
 sampling_rate: 100
 
 training: False
-test: True
+test: False
 plot:
-  metrics: False
+  metrics: True
   channel_idx: 0
   n_examples: 10
   visualization: False

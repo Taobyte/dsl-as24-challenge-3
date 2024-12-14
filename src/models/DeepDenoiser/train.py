@@ -4,19 +4,18 @@ import logging
 import time
 
 import torch
-import numpy as np
-import wandb
 import hydra
 import omegaconf
 from tqdm import tqdm
 
-from src.utils import Mode, log_model_size
+from src.utils import log_model_size
 from torch.utils.tensorboard import SummaryWriter
 
 from models.DeepDenoiser.dataset import get_dataloaders_pytorch
 from models.DeepDenoiser.deep_denoiser_pytorch import DeepDenoiser
 
 logger = logging.getLogger()
+
 
 def fit_deep_denoiser_pytorch(cfg: omegaconf.DictConfig) -> torch.nn.Module:
     output_dir = pathlib.Path(
@@ -92,6 +91,8 @@ def fit_deep_denoiser_pytorch(cfg: omegaconf.DictConfig) -> torch.nn.Module:
                         f"New model saved at epoch: {epoch} | best_val_loss: {best_val_loss}"
                     )
 
-    torch.save(model.state_dict(), output_dir / f"checkpoints/deep_denoiser_{epoch}.pth")
+    torch.save(
+        model.state_dict(), output_dir / f"checkpoints/deep_denoiser_{epoch}.pth"
+    )
 
     return model

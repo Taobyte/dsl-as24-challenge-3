@@ -12,10 +12,8 @@ def get_istft(
 ) -> torch.Tensor:
     window = torch.hann_window(win_length)
     stft_eq = einops.rearrange(stft_eq, "b (c f) w h -> (b c) w h f", c=3, f=2)
-    print(stft_eq.shape)
     stft_eq = stft_eq.contiguous()
     stft_eq = torch.view_as_complex(stft_eq)
-    print(stft_eq.shape)
     eq = torch.istft(
         stft_eq,
         n_fft,
