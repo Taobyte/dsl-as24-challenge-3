@@ -11,16 +11,55 @@ from obspy.signal.trigger import z_detect
 
 
 def cross_correlation(eq: ndarray, denoised_eq: ndarray, shift: int = 0) -> float:
-    max_eq = np.max(eq) + 1e-12
-    max_denoised = np.max(denoised_eq) + 1e-12
-    corr = correlate(eq / max_eq, denoised_eq / max_denoised, shift=shift)
-    return np.max(corr)
+    """
+    Computes the cross correlation of clean earthquake and denoised earthquake
+    Args:
+        eq (ndarray): clean earthquake numpy array with shape (B, C, T)
+        denoised_eq (ndarray): denoised earthquake numpy array with shape (B, C, T)
+    Returns:
+        float: mean of the maximum cross correlation of the channels
+    """
+    B, C, T = eq.shape
+
+    # Store cross-correlations for each channel
+    channel_correlations = []
+
+    for c in range(C):
+        # Normalize each channel by its max value to avoid amplitude bias
+        max_eq_channel = np.max(np.abs(eq[:, c, :])) + 1e-12
+        max_denoised_channel = np.max(np.abs(denoised_eq[:, c, :])) + 1e-12
+
+        # Compute cross-correlation for this channel
+        corr = correlate(
+            eq[:, c, :] / max_eq_channel,
+            denoised_eq[:, c, :] / max_denoised_channel,
+            shift=shift,
+        )
+
+        # Take the maximum correlation for this channel
+        channel_correlations.append(np.max(corr))
+
+    # Return the mean of cross-correlations across channels
+    return np.mean(channel_correlations)
 
 
 def max_amplitude_difference(eq: ndarray, denoised_eq: ndarray) -> float:
-    max_eq = np.max(eq) + 1e-12
-    max_denoised = np.max(denoised_eq)
-    return np.abs(max_denoised / max_eq)
+    """
+    Computes the maximum amplitdue difference of clean earthquake and denoised earthquake
+    Args:
+        eq (ndarray): clean earthquake numpy array with shape (B, C, T)
+        denoised_eq (ndarray): denoised earthquake numpy array with shape (B, C, T)
+    Returns:
+        float: mean of maximum amplitude difference of the channels
+    """
+
+    channel_max_ratios = []
+    for c in range(eq.shape[1]):
+        max_eq_channel = np.max(eq[:, c, :]) + 1e-12
+        max_denoised_channel = np.max(denoised_eq[:, c, :]) + 1e-12
+        channel_max_ratios.append(np.abs(max_denoised_channel / max_eq_channel))
+
+    return np.mean(channel_max_ratios)
 
 
 def find_onset(denoised_eq, threshold=0.05, nsta=20):
@@ -30,10 +69,24 @@ def find_onset(denoised_eq, threshold=0.05, nsta=20):
 
 
 def p_wave_onset_difference(eq: ndarray, denoised_eq: ndarray, shift: int) -> float:
+    """
+    Computes the p-wave onset difference of clean earthquake and denoised earthquake
+    Args:
+        eq (ndarray): clean earthquake numpy array with shape (B, C, T)
+        denoised_eq (ndarray): denoised earthquake numpy array with shape (B, C, T)
+    Returns:
+        float: mean of the p-wave onset difference of the channels
+    """
     ground_truth = 6000 - shift
-    denoised_p_wave_onset = find_onset(denoised_eq)
 
-    return np.abs(ground_truth - denoised_p_wave_onset)
+    # Compute P wave onset for each channel
+    channel_onset_diffs = []
+    for c in range(denoised_eq.shape[1]):
+        denoised_p_wave_onset = find_onset(denoised_eq[:, c, :])
+        channel_onset_diffs.append(np.abs(ground_truth - denoised_p_wave_onset))
+
+    # Return mean of channel-wise onset differences
+    return np.mean(channel_onset_diffs)
 
 
 # ======================================= TORCH METRICS ==================================================

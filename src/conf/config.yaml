@@ -1,6 +1,6 @@
 defaults: 
   - _self_
-  - model: cleanunet
+  - model: butterworth
   - user: clemens
 
 seed: 123
@@ -12,13 +12,13 @@ snr_lower: 0.1
 snr_upper: 2.0
 
 # butterworth settings
-butterworth_range: [1, 45]
+freq_range: [1, 45]
 sampling_rate: 100
 
 training: False
-test: False
+test: True
 plot:
-  metrics: True
+  metrics: False
   channel_idx: 0
   n_examples: 10
   visualization: False

@@ -1,8 +1,8 @@
 import omegaconf
-import torch
 import numpy as np
+from tqdm import tqdm
 
-from butterworth_filter import bandpass_obspy
+from src.models.Butterworth.butterworth_filter import bandpass_obspy
 from src.dataset import get_dataloaders_pytorch
 from src.metrics import (
     cross_correlation,
@@ -31,7 +31,7 @@ def get_metrics_butterworth(cfg: omegaconf.DictConfig):
     amplitudes = []
     onsets = []
     for snr in cfg.snrs:
-        for eq, noise, shifts in test_dl:
+        for eq, noise, shifts in tqdm(test_dl, total=len(test_dl)):
             noisy_eq = (snr * eq + noise).numpy()
             eq = eq.numpy()
             shifts = shifts.numpy()
@@ -48,7 +48,6 @@ def get_metrics_butterworth(cfg: omegaconf.DictConfig):
                 axis=-1,
                 arr=noisy_eq,
             )
-            print(filtered.shape)
 
         ccs.append(cross_correlation(eq, filtered))
         amplitudes.append(max_amplitude_difference(eq, filtered))

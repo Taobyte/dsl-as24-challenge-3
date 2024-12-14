@@ -350,6 +350,7 @@ class EQRandomDataset(Dataset):
         ]
         noise_stacked = np.stack([Z_noise, N_noise, E_noise], axis=0)
 
+        # TODO: change scaling
         max_val = max(np.max(np.abs(noise_stacked)), np.max(np.abs(eq_stacked))) + 1e-12
         eq_stacked /= max_val
         noise_stacked /= max_val
