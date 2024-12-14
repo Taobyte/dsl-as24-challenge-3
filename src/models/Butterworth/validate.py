@@ -30,14 +30,12 @@ def get_metrics_butterworth(cfg: omegaconf.DictConfig) -> None:
     sampling_rate = cfg.sampling_rate
 
     test_dl = get_dataloaders_pytorch(cfg, return_test=True)
-    ccs = []
-    amplitudes = []
-    onsets = []
+
     for snr in cfg.snrs:
+        ccs, amplitudes, onsets = [], [], []
         for eq, noise, shifts in tqdm(test_dl, total=len(test_dl)):
             noisy_eq = (snr * eq + noise).numpy()
-            eq = eq.numpy()
-            shifts = shifts.numpy()
+            eq, noise = eq.numpy(), noise.numpy()
 
             filtered = np.apply_along_axis(
                 lambda x: bandpass_obspy(
@@ -51,13 +49,15 @@ def get_metrics_butterworth(cfg: omegaconf.DictConfig) -> None:
                 axis=-1,
                 arr=noisy_eq,
             )
-            ccs.append(cross_correlation(eq, filtered))
+
+            cc_res = cross_correlation(eq, filtered)
+            ccs.append(cc_res)
             amplitudes.append(max_amplitude_difference(eq, filtered))
             onsets.append(p_wave_onset_difference(eq, filtered, shift=shifts))
 
-        ccs = np.concatenate(ccs)
-        amplitudes = np.concatenate(amplitudes)
-        onsets = np.concatenate(onsets)
+        ccs = np.concatenate(ccs, axis=0)
+        amplitudes = np.concatenate(amplitudes, axis=0)
+        onsets = np.concatenate(onsets, axis=0)
 
         snr_metrics = {
             "cross_correlation": ccs,

@@ -9,12 +9,16 @@ import seaborn as sns
 
 from src.utils import Model
 from src.models.CleanUNet.validate import visualize_predictions_clean_unet
-from src.models.DeepDenoiser.validate import plot_spectograms
+from src.models.DeepDenoiser.validate import (
+    plot_spectograms,
+    visualize_predictions_deepdenoiser,
+)
 
 
 def visualize_predictions(cfg: omegaconf.DictConfig):
     if cfg.model.model_name == Model.DeepDenoiser.value:
-        plot_spectograms(cfg)
+        # plot_spectograms(cfg)
+        visualize_predictions_deepdenoiser(cfg)
     elif cfg.model.model_name == Model.CleanUNet.value:
         visualize_predictions_clean_unet(cfg)
     elif cfg.model.model_name == Model.CleanUNet2.value:
@@ -29,7 +33,7 @@ def metrics_plot(cfg: omegaconf.DictConfig) -> None:
     output_dir = pathlib.Path(
         hydra.core.hydra_config.HydraConfig.get().runtime.output_dir
     )
-    models = ["Butterworth", "CleanUNet"]
+    models = cfg.plot.models
     metrics_folder_path = cfg.user.metrics_folder
     snrs = cfg.snrs
 
@@ -44,13 +48,21 @@ def metrics_plot(cfg: omegaconf.DictConfig) -> None:
         "p_wave_std",
     ]
 
-    # compute mean and std for each model and metric
+    # Compute mean and std for each model and metric
     for model in models:
         rows = []
         for snr in snrs:
             df = pd.read_csv(
-                metrics_folder_path + f"/CleanUNet/snr_{snr}_metrics_CleanUNet.csv"
+                metrics_folder_path + f"/{model}/snr_{snr}_metrics_{model}.csv"
             )
+            if len(df.columns) == 4:
+                df = df[
+                    [
+                        "cross_correlation",
+                        "max_amplitude_difference",
+                        "p_wave_onset_difference",
+                    ]
+                ]
             mean = df.mean()
             std = df.std()
             row = [snr] + list(mean.values) + list(std.values)
@@ -59,9 +71,6 @@ def metrics_plot(cfg: omegaconf.DictConfig) -> None:
         df = pd.DataFrame(rows, columns=column_names)
         dataframes[model] = df
 
-    # Create a figure and axes for 3 subplots
-    fig, axs = plt.subplots(nrows=1, ncols=3, figsize=(18, 6))
-
     # Define the metrics and their labels
     metrics = [
         ("cc_mean", "cc_std", "Cross Correlation (CC)"),
@@ -69,13 +78,14 @@ def metrics_plot(cfg: omegaconf.DictConfig) -> None:
         ("p_wave_mean", "p_wave_std", "P Wave Onset"),
     ]
 
-    colors = ["cornflowerblue", "olivedrab", "tomato"]
-    ecolors = ["lightsteelblue", "yellowgreen", "salmon"]
+    sns.set_theme(style="whitegrid")
+    colors = sns.color_palette("muted", len(models))
+    ecolors = sns.color_palette("pastel", len(models))
+
+    fig, axs = plt.subplots(nrows=1, ncols=3, figsize=(18, 6))
 
     # Plot each metric
     for i, (ax, (mean_col, std_col, ylabel)) in enumerate(zip(axs, metrics)):
-        # Model
-
         for j, model in enumerate(models):
             df = dataframes[model]
             ax.errorbar(
@@ -98,23 +108,14 @@ def metrics_plot(cfg: omegaconf.DictConfig) -> None:
         ax.legend(fontsize=12)
         ax.spines["top"].set_visible(False)
         ax.spines["right"].set_visible(False)
-        ax.spines["left"].set_linewidth(1.5)
-        ax.spines["bottom"].set_linewidth(1.5)
         ax.tick_params(axis="both", which="major", labelsize=12)
-        ax.tick_params(axis="both", which="minor", labelsize=10)
 
         if i == 1:
             ax.set_yscale("log")
-        #     ax.set_ylim(0, 5)
-        # elif i == 2:
-        #     ax.set_ylim(0, 1000)
-        # elif i == 0:
-        #     ax.set_ylim(0, 1)
+        elif i == 0:
+            ax.set_ylim(0, 1)
 
-    # Set the title for the entire figure
     fig.suptitle("Comparison of Denoising Models", fontsize=16)
-
-    # Adjust layout to prevent overlap
     plt.tight_layout(rect=[0, 0, 1, 0.95])
     plt.savefig(output_dir / "metrics.png")
     plt.show()

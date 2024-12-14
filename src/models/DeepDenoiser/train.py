@@ -11,7 +11,7 @@ from tqdm import tqdm
 from src.utils import log_model_size
 from torch.utils.tensorboard import SummaryWriter
 
-from models.DeepDenoiser.dataset import get_dataloaders_pytorch
+from src.dataset import get_dataloaders_pytorch
 from models.DeepDenoiser.deep_denoiser_pytorch import DeepDenoiser
 
 logger = logging.getLogger()
@@ -21,7 +21,6 @@ def fit_deep_denoiser_pytorch(cfg: omegaconf.DictConfig) -> torch.nn.Module:
     output_dir = pathlib.Path(
         hydra.core.hydra_config.HydraConfig.get().runtime.output_dir
     )
-    os.makedirs(output_dir / "checkpoints", exist_ok=True)
 
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     logger.info(f"Using device {device}")
@@ -43,12 +42,13 @@ def fit_deep_denoiser_pytorch(cfg: omegaconf.DictConfig) -> torch.nn.Module:
         model.train()
         train_loss = 0.0
         time0 = time.time()
-        for iter, (noisy_eq, gt_mask) in enumerate(train_dl):
+        for iter, (eq, noise, mask) in enumerate(train_dl):
             optimizer.zero_grad()
-            noisy_eq = noisy_eq.to(device)
-            gt_mask = gt_mask.to(device)
+            eq, noise, mask = eq.float(), noise.float(), mask.float()
+            noisy_eq = (eq + noise).to(device)
+            mask = mask.to(device)
             predicted_mask = model(noisy_eq)
-            loss = bce_loss(predicted_mask, gt_mask)
+            loss = bce_loss(predicted_mask, mask)
             loss.backward()
             optimizer.step()
             train_loss += loss.item()
@@ -70,11 +70,12 @@ def fit_deep_denoiser_pytorch(cfg: omegaconf.DictConfig) -> torch.nn.Module:
             model.eval()
             with torch.no_grad():
                 val_loss = 0.0
-                for noisy_eq, gt_mask in tqdm(val_dl, total=len(val_dl)):
-                    noisy_eq = noisy_eq.to(device)
-                    gt_mask = gt_mask.to(device)
+                for eq, noise, mask in tqdm(val_dl, total=len(val_dl)):
+                    eq, noise, mask = eq.float(), noise.float(), mask.float()
+                    noisy_eq = (eq + noise).to(device)
+                    mask = mask.to(device)
                     predicted_mask = model(noisy_eq)
-                    loss = bce_loss(predicted_mask, gt_mask)
+                    loss = bce_loss(predicted_mask, mask)
                     val_loss += loss.item()
                 val_loss /= len(val_dl)
                 tb.add_scalar("validation_loss", val_loss, epoch)
@@ -84,7 +85,7 @@ def fit_deep_denoiser_pytorch(cfg: omegaconf.DictConfig) -> torch.nn.Module:
                 if val_loss < best_val_loss:
                     torch.save(
                         model.state_dict(),
-                        output_dir / f"checkpoints/epoch_{epoch}.pth",
+                        output_dir / f"epoch_{epoch}.pth",
                     )
                     best_val_loss = val_loss
                     logger.info(

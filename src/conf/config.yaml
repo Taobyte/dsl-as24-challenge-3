@@ -1,6 +1,6 @@
 defaults: 
   - _self_
-  - model: cleanunet
+  - model: butterworth
   - user: clemens
 
 seed: 123
@@ -11,15 +11,22 @@ random: True
 snr_lower: 0.1
 snr_upper: 2.0
 
+# STFT properties
+n_fft: 127
+hop_length: 16
+win_length: 100
+
 # butterworth settings
 freq_range: [1, 45]
 sampling_rate: 100
 
-training: True
+training: False
 test: False
+wilcoxon_test: True
 plot:
   metrics: False
   channel_idx: 0
+  models: ["Butterworth", "DeepDenoiser", "CleanUNet", "ColdDiffusion"]
   n_examples: 10
   visualization: False
   overlay_plot: False

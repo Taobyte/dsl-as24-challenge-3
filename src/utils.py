@@ -36,7 +36,9 @@ class Model(Enum):
     CleanUNet2 = "CleanUNet2"
 
 
-def get_trained_model(cfg: omegaconf.DictConfig, model_type: Model) -> torch.nn.Module:
+def get_trained_model(
+    cfg: omegaconf.DictConfig, model_type: Model
+) -> tuple[torch.nn.Module, omegaconf.DictConfig]:
     if model_type == Model.DeepDenoiser:
         config_path = cfg.user.deep_denoiser_folder + "/.hydra/config.yaml"
         config = OmegaConf.load(config_path)
@@ -68,7 +70,7 @@ def get_trained_model(cfg: omegaconf.DictConfig, model_type: Model) -> torch.nn.
 
     logger.info(f"Trained model {model_type} loaded successfully.")
 
-    return model
+    return model, config
 
 
 def log_model_size(net: torch.nn.Module) -> int:

@@ -17,8 +17,7 @@ from src.metrics import (
     max_amplitude_difference_torch,
     p_wave_onset_difference_torch,
 )
-from src.models.DeepDenoiser.dataset import get_dataloaders_pytorch
-from src.models.DeepDenoiser.deep_denoiser_pytorch import DeepDenoiser
+from src.dataset import get_dataloaders_pytorch
 from src.stft import get_stft, get_istft, get_mask
 
 logger = logging.getLogger()
@@ -31,7 +30,11 @@ def get_metrics_deepdenoiser(cfg: omegaconf.DictConfig):
         hydra.core.hydra_config.HydraConfig.get().runtime.output_dir
     )
 
-    model = get_trained_model(cfg, Model.DeepDenoiser)
+    model, config = get_trained_model(cfg, Model.DeepDenoiser)
+    n_fft = config.model.architecture.n_fft
+    hop_length = config.model.architecture.hop_length
+    win_length = config.model.architecture.win_length
+    trace_length = config.trace_length
 
     for snr in cfg.snrs:
         test_dl = get_dataloaders_pytorch(cfg, return_test=True)
@@ -42,10 +45,13 @@ def get_metrics_deepdenoiser(cfg: omegaconf.DictConfig):
                 noise = noise.float().to(device)
                 shifts = torch.from_numpy(np.array(shifts)).to(device)
                 noisy_eq = snr * eq + noise
+                stft_noisy_eq = get_stft(noisy_eq, n_fft, hop_length, win_length)
 
-                mask = model(noisy_eq)
-                denoised_mask = noisy_eq * mask
-                prediction = get_istft(denoised_mask)
+                mask = torch.nn.functional.sigmoid(model(noisy_eq))
+                denoised_mask = stft_noisy_eq * mask
+                prediction = get_istft(
+                    denoised_mask, n_fft, hop_length, win_length, trace_length
+                )
 
                 ccs.append(cross_correlation_torch(eq, prediction))
                 amplitudes.append(max_amplitude_difference_torch(eq, prediction))
@@ -60,7 +66,7 @@ def get_metrics_deepdenoiser(cfg: omegaconf.DictConfig):
                 "p_wave_onset_difference": onsets.cpu().numpy(),
             }
             df = pd.DataFrame(snr_metrics)
-            df.to_csv(output_dir / f"snr_{snr}_metrics_CleanUNet.csv", index=False)
+            df.to_csv(output_dir / f"snr_{snr}_metrics_DeepDenoiser.csv", index=False)
 
     return df
 
@@ -70,28 +76,24 @@ def get_predictions_deepdenoiser(
 ):
     eq = eq.float()
     noise = noise.float()
-    config_path = cfg.user.deep_denoiser_folder + "/.hydra/config.yaml"
-    config = OmegaConf.load(config_path)
 
-    trace_length = config.trace_length
-    n_fft = config.model.architecture.n_fft
-    hop_length = config.model.architecture.hop_length
-    win_length = config.model.architecture.win_length
+    trace_length = cfg.trace_length
+    n_fft = cfg.model.architecture.n_fft
+    hop_length = cfg.model.architecture.hop_length
+    win_length = cfg.model.architecture.win_length
+
+    model = get_trained_model(cfg, Model.DeepDenoiser)
 
     noisy_eq = eq + noise
-    stft_eq = get_stft(eq, n_fft, hop_length, win_length)
+    stft_noisy_eq = get_stft(noisy_eq, n_fft, hop_length, win_length)
 
-    model = DeepDenoiser(**config.model.architecture)
     model.eval()
 
     with torch.no_grad():
-        mask = model(noisy_eq)
-    masked_stft = stft_eq * mask
+        mask = torch.nn.functional.sigmoid(model(noisy_eq))
+    masked_stft = stft_noisy_eq * mask
 
     istft = get_istft(masked_stft, n_fft, hop_length, win_length, trace_length)
-
-    # print(istft.min())
-    # print(istft.max())
 
     return istft
 
@@ -101,22 +103,21 @@ def plot_spectograms(cfg: omegaconf.DictConfig) -> None:
         hydra.core.hydra_config.HydraConfig.get().runtime.output_dir
     )
 
+    n_fft = cfg.model.architecture.n_fft
+    hop_length = cfg.model.architecture.hop_length
+    win_length = cfg.model.architecture.win_length
+
     test_dl = get_dataloaders_pytorch(cfg, return_test=True)
-    model = DeepDenoiser(**cfg.model.architecture)
-    checkpoint = torch.load(
-        cfg.user.model_path, map_location=torch.device("cpu"), weights_only=False
-    )
-    model.load_state_dict(checkpoint)
+    model = get_trained_model(cfg, Model.DeepDenoiser)
     model.eval()
     with torch.no_grad():
         for snr in tqdm(cfg.snrs, total=len(cfg.snrs)):
-            eq, noise = next(iter(test_dl))
-            eq = eq.float()
-            noise = noise.float()
+            eq, noise, shift = next(iter(test_dl))
+            eq, noise = eq.float(), noise.float()
             noisy_eq = eq + noise
             predictions = model(noisy_eq)
 
-            mask = get_mask(eq, noise, cfg)
+            mask = get_mask(eq, noise, n_fft, hop_length, win_length)
 
             fig, axs = plt.subplots(cfg.plot.n_examples, 3, figsize=(12, 8))
 
@@ -135,6 +136,52 @@ def plot_spectograms(cfg: omegaconf.DictConfig) -> None:
             cbar.set_label("Value")
 
             plt.suptitle(f"SNR: {snr}", fontsize=16)
-            plt.tight_layout(rect=[0, 0, 0.9, 0.95])
             plt.savefig(output_dir / f"visualization_snr_{snr}.png")
             plt.close(fig)
+
+
+def visualize_predictions_deepdenoiser(cfg: omegaconf.DictConfig) -> None:
+    logger.info("Visualizing predictions for DeepDenoiser")
+    output_dir = pathlib.Path(
+        hydra.core.hydra_config.HydraConfig.get().runtime.output_dir
+    )
+
+    n_examples = cfg.plot.n_examples
+    channel_idx = cfg.plot.channel_idx
+    trace_length = cfg.trace_length
+    n_fft = cfg.n_fft
+    hop_length = cfg.hop_length
+    win_length = cfg.win_length
+
+    model = get_trained_model(cfg, Model.DeepDenoiser)
+
+    for snr in tqdm(cfg.snrs, total=len(cfg.snrs)):
+        test_dl = get_dataloaders_pytorch(cfg, return_test=True)
+        eq, noise, _ = next(iter(test_dl))
+        eq, noise = eq.float(), noise.float()
+        noisy_eq = snr * eq + noise
+        stft_noisy_eq = get_stft(noisy_eq, n_fft, hop_length, win_length)
+        with torch.no_grad():
+            mask = torch.nn.functional.sigmoid(model(noisy_eq))
+
+        predictions = get_istft(
+            stft_noisy_eq * mask, n_fft, hop_length, win_length, trace_length
+        )
+
+        _, axs = plt.subplots(n_examples, 3, figsize=(15, n_examples * 3))
+        time = range(cfg.trace_length)
+        for i in tqdm(range(n_examples), total=n_examples):
+            axs[i, 0].plot(time, noisy_eq[i, channel_idx, :])
+            axs[i, 1].plot(time, eq[i, channel_idx, :])
+            axs[i, 2].plot(time, predictions.numpy()[i, channel_idx, :])
+
+            for j in range(3):
+                axs[i, j].set_ylim(-2, 2)
+
+        column_titles = ["Noisy Earthquake", "Ground Truth Signal", "Prediction"]
+        for col, title in enumerate(column_titles):
+            axs[0, col].set_title(title)
+
+        plt.tight_layout()
+        plt.subplots_adjust(top=0.9)
+        plt.savefig(output_dir / f"visualization_snr_{snr}.png")

@@ -1,7 +1,7 @@
 import os
 import pathlib
 import hydra
-import omegaconf 
+import omegaconf
 
 import torch
 import numpy as np
@@ -11,8 +11,8 @@ import wandb
 from models.ColdDiffusion.utils.utils_diff import create_dataloader
 from models.ColdDiffusion.train_validate import train_model
 
-def fit_cold_diffusion(cfg: omegaconf.DictConfig):
 
+def fit_cold_diffusion(cfg: omegaconf.DictConfig):
     output_dir = pathlib.Path(
         hydra.core.hydra_config.HydraConfig.get().runtime.output_dir
     )
@@ -32,7 +32,7 @@ def fit_cold_diffusion(cfg: omegaconf.DictConfig):
                 "num_workers": cfg.model.num_workers,
             },
         )
-        wandb.run.name = "{}".format(str(output_dir).split('outputs/')[-1])
+        wandb.run.name = "{}".format(str(output_dir).split("outputs/")[-1])
 
     # create the dataloaders
     tr_dl, val_dl = create_dataloader(cfg, is_noise=False)

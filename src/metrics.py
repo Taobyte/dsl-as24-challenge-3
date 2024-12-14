@@ -26,21 +26,29 @@ def cross_correlation(eq: ndarray, denoised_eq: ndarray, shift: int = 0) -> floa
 
     for c in range(C):
         # Normalize each channel by its max value to avoid amplitude bias
-        max_eq_channel = np.max(np.abs(eq[:, c, :])) + 1e-12
-        max_denoised_channel = np.max(np.abs(denoised_eq[:, c, :])) + 1e-12
+        max_eq_channel = np.max(np.abs(eq[:, c, :]), axis=1, keepdims=True) + 1e-12
+        max_denoised_channel = (
+            np.max(np.abs(denoised_eq[:, c, :]), axis=1, keepdims=True) + 1e-12
+        )
 
-        # Compute cross-correlation for this channel
-        corr = correlate(
-            eq[:, c, :] / max_eq_channel,
-            denoised_eq[:, c, :] / max_denoised_channel,
-            shift=shift,
+        eq_channel = eq[:, c, :] / max_eq_channel
+        denoised_eq_channel = denoised_eq[:, c, :] / max_denoised_channel
+
+        corr = np.array(
+            [
+                correlate(eq_channel[i], denoised_eq_channel[i], shift=shift)
+                for i in range(len(eq))
+            ]
         )
 
         # Take the maximum correlation for this channel
-        channel_correlations.append(np.max(corr))
+        channel_correlations.append(np.max(corr, axis=1, keepdims=True))
+
+    ccs = np.concatenate(channel_correlations, axis=1)
+    mean = np.mean(ccs, axis=1)
 
     # Return the mean of cross-correlations across channels
-    return np.mean(channel_correlations)
+    return mean
 
 
 def max_amplitude_difference(eq: ndarray, denoised_eq: ndarray) -> float:
@@ -55,11 +63,15 @@ def max_amplitude_difference(eq: ndarray, denoised_eq: ndarray) -> float:
 
     channel_max_ratios = []
     for c in range(eq.shape[1]):
-        max_eq_channel = np.max(eq[:, c, :]) + 1e-12
-        max_denoised_channel = np.max(denoised_eq[:, c, :]) + 1e-12
+        max_eq_channel = np.max(eq[:, c, :], axis=1, keepdims=True) + 1e-12
+        max_denoised_channel = (
+            np.max(denoised_eq[:, c, :], axis=1, keepdims=True) + 1e-12
+        )
         channel_max_ratios.append(np.abs(max_denoised_channel / max_eq_channel))
 
-    return np.mean(channel_max_ratios)
+    channel_max_ratios = np.concatenate(channel_max_ratios, axis=1)
+
+    return np.mean(channel_max_ratios, axis=1)
 
 
 def find_onset(denoised_eq, threshold=0.05, nsta=20):
@@ -82,11 +94,18 @@ def p_wave_onset_difference(eq: ndarray, denoised_eq: ndarray, shift: int) -> fl
     # Compute P wave onset for each channel
     channel_onset_diffs = []
     for c in range(denoised_eq.shape[1]):
-        denoised_p_wave_onset = find_onset(denoised_eq[:, c, :])
-        channel_onset_diffs.append(np.abs(ground_truth - denoised_p_wave_onset))
+        channel = denoised_eq[:, c, :]
+        denoised_p_wave_onset = np.array(
+            [find_onset(channel[i]) for i in range(len(channel))]
+        )
+        channel_onset_diffs.append(
+            np.abs(ground_truth - denoised_p_wave_onset)[:, np.newaxis]
+        )
+
+    channel_onset_diffs = np.concatenate(channel_onset_diffs, axis=1)
 
     # Return mean of channel-wise onset differences
-    return np.mean(channel_onset_diffs)
+    return np.mean(channel_onset_diffs, axis=1)
 
 
 # ======================================= TORCH METRICS ==================================================

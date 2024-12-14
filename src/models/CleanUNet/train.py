@@ -9,7 +9,7 @@ from torch.utils.tensorboard import SummaryWriter
 import einops
 
 from src.utils import get_trained_model, Model
-from src.models.DeepDenoiser.dataset import get_dataloaders_pytorch
+from src.dataset import get_dataloaders_pytorch
 from src.models.CleanUNet.clean_unet_pytorch import CleanUNetPytorch
 from src.models.CleanUNet2.clean_unet2_model import CleanUNet2
 from src.stft import MultiResolutionSTFTLoss

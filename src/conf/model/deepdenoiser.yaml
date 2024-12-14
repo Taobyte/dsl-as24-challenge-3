@@ -9,7 +9,7 @@ snr_upper: 2.0
 
 architecture:
   n_channels: 3
-  n_layers: 5
+  n_layers: 3
   channel_base: 8
   dropout: 0.0
 
@@ -19,8 +19,8 @@ architecture:
   hop_length: 16
 
 # Training parameters
-batch_size: 64
-epochs: 10
+batch_size: 128
+epochs: 20
 lr: 0.0001
 clip_norm: 1e9
 

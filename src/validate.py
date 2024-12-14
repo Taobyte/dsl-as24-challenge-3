@@ -4,11 +4,9 @@ import hydra
 import omegaconf
 import numpy as np
 
-from src.utils import Mode, Model
-from src.models.DeepDenoiser.dataset import (
-    get_signal_noise_assoc,
-    get_dataloaders_pytorch,
-)
+from src.utils import Model
+from src.dataset import get_dataloaders_pytorch
+
 from models.Butterworth.butterworth_filter import bandpass_obspy
 from models.Butterworth.validate import get_metrics_butterworth
 from models.DeepDenoiser.validate import (
@@ -22,7 +20,7 @@ def compute_metrics(cfg: omegaconf.DictConfig) -> None:
     if cfg.model.model_name == Model.Butterworth.value:
         get_metrics_butterworth(cfg)
     elif cfg.model.model_name == Model.DeepDenoiser.value:
-        raise NotImplementedError
+        get_metrics_deepdenoiser(cfg)
     elif cfg.model.model_name == Model.CleanUNet.value:
         get_metrics_clean_unet(cfg)
     else:

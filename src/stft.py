@@ -2,6 +2,8 @@ import torch
 import torch.nn.functional as F
 import einops
 
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
 
 def get_istft(
     stft_eq: torch.Tensor,
@@ -10,7 +12,7 @@ def get_istft(
     win_length: int,
     trace_length: int,
 ) -> torch.Tensor:
-    window = torch.hann_window(win_length)
+    window = torch.hann_window(win_length).to(device)
     stft_eq = einops.rearrange(stft_eq, "b (c f) w h -> (b c) w h f", c=3, f=2)
     stft_eq = stft_eq.contiguous()
     stft_eq = torch.view_as_complex(stft_eq)
@@ -31,19 +33,36 @@ def get_istft(
 def get_stft(
     eq: torch.Tensor, n_fft: int, hop_length: int, win_length: int
 ) -> torch.Tensor:
-    B, C, T = eq.shape
-    window = torch.hann_window(win_length)
-    eq = einops.rearrange(eq, "b c t -> (b c) t", b=B, c=C)
-    eq_stft = torch.stft(
-        eq,
-        n_fft,
-        hop_length,
-        win_length,
-        window,
-        return_complex=True,
-    )
-    stft_eq = torch.view_as_real(eq_stft)
-    stft_eq = einops.rearrange(stft_eq, "(b c) w h f -> b (c f) w h", b=B, c=C, f=2)
+    window = torch.hann_window(win_length).to(device)
+
+    if len(eq.shape) == 2:
+        eq_stft = torch.stft(
+            eq,
+            n_fft,
+            hop_length,
+            win_length,
+            window,
+            return_complex=True,
+        )
+        stft_eq = torch.view_as_real(eq_stft)
+        stft_eq = einops.rearrange(stft_eq, "c w h f -> (c f) w h")
+
+    elif len(eq.shape) == 3:
+        B, C, T = eq.shape
+
+        eq = einops.rearrange(eq, "b c t -> (b c) t", b=B, c=C)
+        eq_stft = torch.stft(
+            eq,
+            n_fft,
+            hop_length,
+            win_length,
+            window,
+            return_complex=True,
+        )
+        stft_eq = torch.view_as_real(eq_stft)
+        stft_eq = einops.rearrange(stft_eq, "(b c) w h f -> b (c f) w h", b=B, c=C, f=2)
+    else:
+        raise NotImplementedError
 
     return stft_eq
 

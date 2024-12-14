@@ -337,7 +337,8 @@ class EQRandomDataset(Dataset):
         E_eq = eq["earthquake_waveform_E"][eq_shift : eq_shift + self.trace_length]
         eq_stacked = np.stack([Z_eq, N_eq, E_eq], axis=0)
 
-        noise_shift = np.random.randint(0, 17000 - self.trace_length)
+        # noise_shift = np.random.randint(0, 17000 - self.trace_length)
+        noise_shift = 0
 
         Z_noise = noise["noise_waveform_Z"][
             noise_shift : noise_shift + self.trace_length
@@ -350,10 +351,10 @@ class EQRandomDataset(Dataset):
         ]
         noise_stacked = np.stack([Z_noise, N_noise, E_noise], axis=0)
 
-        # TODO: change scaling
-        max_val = max(np.max(np.abs(noise_stacked)), np.max(np.abs(eq_stacked))) + 1e-12
-        eq_stacked /= max_val
-        noise_stacked /= max_val
+        max_val_eq = np.max(np.abs(eq_stacked)) + 1e-10
+        eq_stacked /= max_val_eq
+        max_val_noise = np.max(np.abs(eq_stacked)) + 1e-10
+        noise_stacked /= max_val_noise
 
         signal_std = np.std(
             eq_stacked[:, 6000 - eq_shift : 6500 - eq_shift], axis=1
@@ -371,8 +372,7 @@ class EQRandomDataset(Dataset):
 
         if self.model == Model.DeepDenoiser:
             mask = get_mask(
-                eq_stacked,
-                noise_stacked,
+                eq_stacked, noise_stacked, self.n_fft, self.hop_length, self.win_length
             )
             return (eq_stacked, noise_stacked, mask)
 
