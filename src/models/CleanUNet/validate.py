@@ -58,6 +58,12 @@ def get_metrics_clean_unet(cfg: omegaconf.DictConfig) -> pd.DataFrame:
     return df
 
 
+def get_predictions_cleanunet(
+    eq: torch.Tensor, noise: torch.Tensor, cfg: omegaconf.DictConfig
+) -> torch.Tensor:
+    pass
+
+
 def visualize_predictions_clean_unet(cfg: omegaconf.DictConfig) -> None:
     logger.info("Visualizing predictions for CleanUNet")
     output_dir = pathlib.Path(

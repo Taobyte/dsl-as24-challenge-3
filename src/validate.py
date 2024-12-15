@@ -13,7 +13,8 @@ from models.DeepDenoiser.validate import (
     get_metrics_deepdenoiser,
     get_predictions_deepdenoiser,
 )
-from models.CleanUNet.validate import get_metrics_clean_unet
+from models.CleanUNet.validate import get_metrics_clean_unet, get_predictions_cleanunet
+from models.ColdDiffusion.validate import get_predictions_colddiffusion
 
 
 def compute_metrics(cfg: omegaconf.DictConfig) -> None:
@@ -59,6 +60,8 @@ def create_prediction_csv(cfg: omegaconf.DictConfig) -> None:
         )
 
         deepdenoiser = get_predictions_deepdenoiser(eq, noise, cfg)
+        cleanunet = get_predictions_cleanunet(eq, noise, cfg)
+        colddiffusion = get_predictions_colddiffusion(eq, noise, cfg)
 
         np.savez(
             output_dir / f"snr_{snr}_predictions.npz",

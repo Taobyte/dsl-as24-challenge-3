@@ -79,7 +79,9 @@ def get_dataloaders_pytorch(
     if subset:
         train_dataset = Subset(train_dataset, indices=range(subset))
         val_dataset = Subset(train_dataset, indices=range(subset))
-        logger.info(f"Dataloader uses subset dataset with number of training datapoints: {subset.}")
+        logger.info(
+            f"Dataloader uses subset dataset with number of training datapoints: {subset}."
+        )
 
     train_dl = th.utils.data.DataLoader(
         train_dataset, batch_size=cfg.model.batch_size, num_workers=2, pin_memory=True
