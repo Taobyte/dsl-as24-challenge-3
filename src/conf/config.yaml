@@ -1,13 +1,13 @@
 defaults: 
   - _self_
-  - model: butterworth
+  - model: cleanunet
   - user: clemens
 
 seed: 123
 
 # data properties
 trace_length: 4096
-random: True
+random: False
 snr_lower: 0.1
 snr_upper: 2.0
 
@@ -20,9 +20,9 @@ win_length: 100
 freq_range: [1, 45]
 sampling_rate: 100
 
-training: False
+training: True
 test: False
-wilcoxon_test: True
+wilcoxon_test: False
 plot:
   metrics: False
   channel_idx: 0

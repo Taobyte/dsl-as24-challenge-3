@@ -16,7 +16,7 @@ def train_model(cfg: omegaconf.DictConfig) -> torch.nn.Module:
         model = fit_clean_unet_pytorch(cfg, Model.CleanUNet2)
     elif cfg.model.model_name == "ColdDiffusion":
         # model = fit_cold_diffusion(cfg)
-        pass
+        raise NotImplementedError
     else:
         raise NotImplementedError
 

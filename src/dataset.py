@@ -32,12 +32,16 @@ def get_dataloaders_pytorch(
     """
 
     if return_test:
+        batch_size = cfg.plot.n_examples if not cfg.test else cfg.model.batch_size
         test_dataset = EQDataset(cfg.user.data.filename, Mode.TEST)
         test_dl = th.utils.data.DataLoader(
             test_dataset,
-            batch_size=cfg.plot.n_examples if not cfg.test else cfg.model.batch_size,
+            batch_size=batch_size,
             shuffle=False,
             num_workers=1,
+        )
+        logger.info(
+            f"Test dataloader created succesfully with batch size: {batch_size}."
         )
         return test_dl
 
@@ -46,8 +50,8 @@ def get_dataloaders_pytorch(
             cfg.user.data.signal_path,
             cfg.user.data.noise_path,
             cfg.trace_length,
-            cfg.model.snr_lower,
-            cfg.model.snr_upper,
+            cfg.snr_lower,
+            cfg.snr_upper,
             Mode.TRAIN,
             model=model,
         )
@@ -55,20 +59,27 @@ def get_dataloaders_pytorch(
             cfg.user.data.signal_path,
             cfg.user.data.noise_path,
             cfg.trace_length,
-            cfg.model.snr_lower,
-            cfg.model.snr_upper,
+            cfg.snr_lower,
+            cfg.snr_upper,
             Mode.VALIDATION,
             model=model,
         )
 
+        logger.info(
+            f"Random train/validation dataloader created successfully with batch size: {cfg.model.batch_size}."
+        )
     else:
         assert model != Model.DeepDenoiser
         train_dataset = EQDataset(cfg.user.data.filename, Mode.TRAIN)
         val_dataset = EQDataset(cfg.user.data.filename, Mode.VALIDATION)
+        logger.info(
+            f"Deterministic train/validation dataloader created successfully with batch size: {cfg.model.batch_size}."
+        )
 
     if subset:
         train_dataset = Subset(train_dataset, indices=range(subset))
         val_dataset = Subset(train_dataset, indices=range(subset))
+        logger.info(f"Dataloader uses subset dataset with number of training datapoints: {subset.}")
 
     train_dl = th.utils.data.DataLoader(
         train_dataset, batch_size=cfg.model.batch_size, num_workers=2, pin_memory=True

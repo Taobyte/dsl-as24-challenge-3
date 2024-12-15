@@ -36,7 +36,6 @@ def create_prediction_csv(cfg: omegaconf.DictConfig) -> None:
         pd.DataFrame: Dataframe with columns ['eq' , 'noise', 'noisy_eq', 'shift', 'deepdenoiser', 'cleanunet', 'colddiffusion'
     """
 
-    # models = ["DeepDenoiser"]
     output_dir = pathlib.Path(
         hydra.core.hydra_config.HydraConfig.get().runtime.output_dir
     )
@@ -59,7 +58,7 @@ def create_prediction_csv(cfg: omegaconf.DictConfig) -> None:
             arr=noisy_eq.numpy(),
         )
 
-        predictions = get_predictions_deepdenoiser(eq, noise, cfg)
+        deepdenoiser = get_predictions_deepdenoiser(eq, noise, cfg)
 
         np.savez(
             output_dir / f"snr_{snr}_predictions.npz",
@@ -68,5 +67,5 @@ def create_prediction_csv(cfg: omegaconf.DictConfig) -> None:
             noisy_eq=noisy_eq.numpy(),
             shift=np.array(shift),
             butterworth=butterworth,
-            deepdenoiser=predictions.numpy(),
+            deepdenoiser=deepdenoiser.numpy(),
         )
