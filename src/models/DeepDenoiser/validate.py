@@ -71,31 +71,27 @@ def get_metrics_deepdenoiser(cfg: omegaconf.DictConfig):
     return df
 
 
-def get_predictions_deepdenoiser(
-    eq: torch.Tensor, noise: torch.Tensor, cfg: omegaconf.DictConfig
-):
-    eq = eq.float()
-    noise = noise.float()
-
+def get_predictions_deepdenoiser(noisy_eq: torch.Tensor, cfg: omegaconf.DictConfig):
+    logger.info("Make predictions with DeepDenoiser.")
     trace_length = cfg.trace_length
-    n_fft = cfg.model.architecture.n_fft
-    hop_length = cfg.model.architecture.hop_length
-    win_length = cfg.model.architecture.win_length
+    n_fft = cfg.n_fft
+    hop_length = cfg.hop_length
+    win_length = cfg.win_length
 
-    model = get_trained_model(cfg, Model.DeepDenoiser)
-
-    noisy_eq = eq + noise
+    model, _ = get_trained_model(cfg, Model.DeepDenoiser)
     stft_noisy_eq = get_stft(noisy_eq, n_fft, hop_length, win_length)
 
-    model.eval()
+    print(noisy_eq.shape)
 
     with torch.no_grad():
-        mask = torch.nn.functional.sigmoid(model(noisy_eq))
+        mask = model(noisy_eq)
+        print(mask)
+        mask = torch.nn.functional.sigmoid(mask)
     masked_stft = stft_noisy_eq * mask
 
     istft = get_istft(masked_stft, n_fft, hop_length, win_length, trace_length)
 
-    return istft
+    return istft.cpu()
 
 
 def plot_spectograms(cfg: omegaconf.DictConfig) -> None:

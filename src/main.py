@@ -1,7 +1,6 @@
 import random
 import logging
 import pathlib
-import os
 
 import hydra
 import omegaconf
@@ -38,23 +37,11 @@ def main(cfg: omegaconf.DictConfig):
     th.manual_seed(seed)
 
     if cfg.training:
-        model = train_model(cfg)
-
+        train_model(cfg)
     elif cfg.test:
-        """
-        model_df, butterworth_df = compute_metrics(cfg)
-        if cfg.plot.metrics:
-            compare_model_and_baselines(
-                output_dir / "metrics_model.csv",
-                output_dir / "metrics_butterworth.csv",
-                cfg.user.metrics_deepdenoiser_path,
-                label1=cfg.model.model_name,
-                label2="Butterworth",
-                label3="DeepDenoiser",
-            )
-        """
-        # df = create_prediction_csv(cfg)
         compute_metrics(cfg)
+    elif cfg.predictions:
+        create_prediction_csv(cfg)
     elif cfg.wilcoxon_test:
         wilcoxon_test(cfg)
     elif cfg.plot.metrics:
@@ -63,7 +50,6 @@ def main(cfg: omegaconf.DictConfig):
         visualize_predictions(cfg)
     elif cfg.plot.overlay_plot:
         overlay_plot(cfg)
-
     elif cfg.plot.dayplot:
         plot_day(cfg)
 

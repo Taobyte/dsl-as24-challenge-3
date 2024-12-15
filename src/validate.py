@@ -1,6 +1,8 @@
 import pathlib
+import logging
 
 import hydra
+import torch
 import omegaconf
 import numpy as np
 
@@ -15,6 +17,10 @@ from models.DeepDenoiser.validate import (
 )
 from models.CleanUNet.validate import get_metrics_clean_unet, get_predictions_cleanunet
 from models.ColdDiffusion.validate import get_predictions_colddiffusion
+
+
+logger = logging.getLogger()
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 
 def compute_metrics(cfg: omegaconf.DictConfig) -> None:
@@ -44,13 +50,15 @@ def create_prediction_csv(cfg: omegaconf.DictConfig) -> None:
     for snr in cfg.snrs:
         test_dl = get_dataloaders_pytorch(cfg, return_test=True)
         eq, noise, shift = next(iter(test_dl))
+
         noisy_eq = snr * eq + noise
+        noisy_eq = noisy_eq.float()
 
         butterworth = np.apply_along_axis(
             lambda x: bandpass_obspy(
                 x,
-                freqmin=cfg.butterworth_range[0],
-                freqmax=cfg.butterworth_range[1],
+                freqmin=cfg.freq_range[0],
+                freqmax=cfg.freq_range[1],
                 df=cfg.sampling_rate,
                 corners=4,
                 zerophase=False,
@@ -59,16 +67,20 @@ def create_prediction_csv(cfg: omegaconf.DictConfig) -> None:
             arr=noisy_eq.numpy(),
         )
 
-        deepdenoiser = get_predictions_deepdenoiser(eq, noise, cfg)
-        cleanunet = get_predictions_cleanunet(eq, noise, cfg)
-        colddiffusion = get_predictions_colddiffusion(eq, noise, cfg)
+        noisy_eq = noisy_eq.to(device)
+
+        deepdenoiser = get_predictions_deepdenoiser(noisy_eq, cfg)
+        cleanunet = get_predictions_cleanunet(noisy_eq, cfg)
+        colddiffusion = get_predictions_colddiffusion(noisy_eq, cfg)
 
         np.savez(
             output_dir / f"snr_{snr}_predictions.npz",
             eq=eq.numpy(),
             noise=noise.numpy(),
-            noisy_eq=noisy_eq.numpy(),
+            noisy_eq=noisy_eq.cpu().numpy(),
             shift=np.array(shift),
             butterworth=butterworth,
             deepdenoiser=deepdenoiser.numpy(),
+            cleanunet=cleanunet.numpy(),
+            colddiffusion=colddiffusion.numpy(),
         )

@@ -16,12 +16,27 @@ n_fft: 127
 hop_length: 16
 win_length: 100
 
+# TODO: add ColdDiffusion to get_trained_model function
+# diffusion model settings
+T: 20
+dim: 32
+dim_multiples: [1, 2, 4, 4, 8]
+attn_dim_head: 64 #  32
+attn_heads: 8 #  4
+resnet_norm_groups: 8
+channels: 3
+scheduler_type: 'cosine'
+s: 0.008
+penalization: 3.0
+learned_sinusoidal_cond: False
+
 # butterworth settings
 freq_range: [1, 45]
 sampling_rate: 100
 
 training: True
 test: False
+predictions: False
 wilcoxon_test: False
 plot:
   metrics: False

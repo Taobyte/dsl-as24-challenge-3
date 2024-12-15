@@ -6,6 +6,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
+from tqdm import tqdm
 
 from src.utils import Model
 from src.models.CleanUNet.validate import visualize_predictions_clean_unet
@@ -128,70 +129,128 @@ def overlay_plot(cfg: omegaconf.DictConfig):
     Args:
         cfg (omegaconf.DictConfig): Configuration dictionary
     """
-    plt.style.use("seaborn-v0_8-whitegrid")
-    sns.set_palette("deep")
-
-    fig, axs = plt.subplots(1, 3, figsize=(18, 6), dpi=300)
-
     output_dir = pathlib.Path(
         hydra.core.hydra_config.HydraConfig.get().runtime.output_dir
     )
 
-    data = np.load(cfg.user.prediction_path)
+    sns.set_theme(style="whitegrid")
+    colors = sns.color_palette("muted", 5)
 
     channel_idx = cfg.plot.channel_idx
     trace_length = cfg.trace_length
 
-    deepdenoiser_normalized = data["deepdenoiser"][0, channel_idx, :] / np.max(
-        np.abs(data["deepdenoiser"][0, channel_idx, :])
-    )
+    for snr in tqdm(cfg.snrs, total=len(cfg.snrs)):
+        data = np.load(cfg.user.prediction_path + f"/snr_{snr}_predictions.npz")
+        n = len(data["noisy_eq"])
+        fig, axs = plt.subplots(n, 5, figsize=(18, 6 * 5), dpi=300)
+        for i in range(n):
+            print(data["shift"][i])
+            lower_bound = max(0, 6000 - data["shift"][i] - 200)
+            upper_bound = min(4096, 6000 - data["shift"][i] + 500)
+            length = upper_bound - lower_bound  # length = range(trace_length)
+            length = range(length)
 
-    axs[0].plot(
-        range(trace_length),
-        data["noisy_eq"][0, channel_idx, :],
-        linewidth=2,
-        color=sns.color_palette("deep")[0],
-    )
-    axs[0].set_title("Noisy Earthquake Signal", fontsize=12, fontweight="bold")
-    axs[0].set_ylim(-2, 2)
-    axs[0].set_xlabel("Time", fontsize=10)
-    axs[0].set_ylabel("Amplitude", fontsize=10)
+            axs[i, 0].plot(
+                length,
+                data["noisy_eq"][i, channel_idx, lower_bound:upper_bound],
+                linewidth=2,
+                color=colors[4],
+            )
+            axs[i, 0].set_title(
+                "Noisy Earthquake Signal", fontsize=12, fontweight="bold"
+            )
+            axs[i, 0].set_ylim(-2, 2)
+            axs[i, 0].set_xlabel("Time", fontsize=10)
+            axs[i, 0].set_ylabel("Amplitude", fontsize=10)
 
-    axs[1].plot(
-        range(trace_length),
-        data["eq"][0, channel_idx, :],
-        linewidth=2,
-        color=sns.color_palette("deep")[1],
-    )
-    axs[1].set_title("Original Earthquake Signal", fontsize=12, fontweight="bold")
-    axs[1].set_ylim(-2, 2)
-    axs[1].set_xlabel("Time", fontsize=10)
-    axs[1].set_ylabel("Amplitude", fontsize=10)
+            axs[i, 1].plot(
+                length,
+                data["eq"][i, channel_idx, lower_bound:upper_bound],
+                linewidth=2,
+                color=colors[4],
+            )
+            axs[i, 1].set_title(
+                "Original Earthquake Signal", fontsize=12, fontweight="bold"
+            )
+            axs[i, 1].set_ylim(-2, 2)
+            axs[i, 1].set_xlabel("Time", fontsize=10)
+            axs[i, 1].set_ylabel("Amplitude", fontsize=10)
 
-    axs[2].plot(
-        range(trace_length),
-        data["butterworth"][0, channel_idx, :],
-        color=sns.color_palette("deep")[2],
-        linewidth=2,
-        label="Butterworth Filtered",
-    )
-    axs[2].plot(
-        range(trace_length),
-        deepdenoiser_normalized,
-        color=sns.color_palette("deep")[3],
-        linewidth=2,
-        label="Deep Denoiser",
-    )
-    axs[2].set_title("Filtered Signals Comparison", fontsize=12, fontweight="bold")
-    axs[2].set_ylim(-2, 2)
-    axs[2].set_xlabel("Time", fontsize=10)
-    axs[2].set_ylabel("Normalized Amplitude", fontsize=10)
-    axs[2].legend(fontsize=9)
+            axs[i, 2].plot(
+                length,
+                data["butterworth"][i, channel_idx, lower_bound:upper_bound],
+                color=colors[0],
+                linewidth=2,
+                label="Butterworth",
+            )
+            axs[i, 2].plot(
+                length,
+                data["deepdenoiser"][i, channel_idx, lower_bound:upper_bound],
+                color=colors[1],
+                linewidth=2,
+                label="DeepDenoiser",
+            )
+            axs[i, 2].set_title(
+                "Filtered Signals Comparison", fontsize=12, fontweight="bold"
+            )
+            axs[i, 2].set_ylim(-2, 2)
+            axs[i, 2].set_xlabel("Time", fontsize=10)
+            axs[i, 2].set_ylabel("Normalized Amplitude", fontsize=10)
+            axs[i, 2].legend(fontsize=9)
 
-    plt.tight_layout()
-    fig.suptitle("Earthquake Signal Analysis", fontsize=14, fontweight="bold", y=1.05)
+            axs[i, 3].plot(
+                length,
+                data["butterworth"][i, channel_idx, lower_bound:upper_bound],
+                color=colors[0],
+                linewidth=2,
+                label="Butterworth",
+            )
+            axs[i, 3].plot(
+                length,
+                data["cleanunet"][i, channel_idx, lower_bound:upper_bound],
+                color=colors[2],
+                linewidth=2,
+                label="CleanUNet",
+            )
+            axs[i, 3].set_title(
+                "Filtered Signals Comparison", fontsize=12, fontweight="bold"
+            )
+            axs[i, 3].set_ylim(-2, 2)
+            axs[i, 3].set_xlabel("Time", fontsize=10)
+            axs[i, 3].set_ylabel("Normalized Amplitude", fontsize=10)
+            axs[i, 3].legend(fontsize=9)
 
-    output_path = output_dir / "overlay_plot.png"
-    fig.savefig(output_path, bbox_inches="tight")
+            axs[i, 4].plot(
+                length,
+                data["butterworth"][i, channel_idx, lower_bound:upper_bound],
+                color=colors[0],
+                linewidth=2,
+                label="Butterworth",
+            )
+            axs[i, 4].plot(
+                length,
+                data["colddiffusion"][i, channel_idx, lower_bound:upper_bound],
+                color=colors[3],
+                linewidth=2,
+                label="ColdDiffusion",
+            )
+            axs[i, 4].set_title(
+                "Filtered Signals Comparison", fontsize=12, fontweight="bold"
+            )
+            axs[i, 4].set_ylim(-2, 2)
+            axs[i, 4].set_xlabel("Time", fontsize=10)
+            axs[i, 4].set_ylabel("Normalized Amplitude", fontsize=10)
+            axs[i, 4].legend(fontsize=9)
 
-    plt.close(fig)
+        plt.tight_layout()
+        fig.suptitle(
+            f"Earthquake Signal Analysis SNR={snr}",
+            fontsize=14,
+            fontweight="bold",
+            y=1.05,
+        )
+
+        output_path = output_dir / f"overlay_plot_snr_{snr}.png"
+        fig.savefig(output_path, bbox_inches="tight")
+
+        plt.close(fig)

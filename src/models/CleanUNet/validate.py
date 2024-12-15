@@ -27,7 +27,7 @@ def get_metrics_clean_unet(cfg: omegaconf.DictConfig) -> pd.DataFrame:
         hydra.core.hydra_config.HydraConfig.get().runtime.output_dir
     )
 
-    model = get_trained_model(cfg, Model.CleanUNet)
+    model, config = get_trained_model(cfg, Model.CleanUNet)
 
     for snr in cfg.snrs:
         test_dl = get_dataloaders_pytorch(cfg, return_test=True)
@@ -59,9 +59,16 @@ def get_metrics_clean_unet(cfg: omegaconf.DictConfig) -> pd.DataFrame:
 
 
 def get_predictions_cleanunet(
-    eq: torch.Tensor, noise: torch.Tensor, cfg: omegaconf.DictConfig
+    noisy_eq: torch.Tensor, cfg: omegaconf.DictConfig
 ) -> torch.Tensor:
-    pass
+    logger.info("Make predictions with CleanUNet.")
+
+    model, config = get_trained_model(cfg, Model.CleanUNet)
+
+    with torch.no_grad():
+        predictions = model(noisy_eq.to(device))
+
+    return predictions.cpu()
 
 
 def visualize_predictions_clean_unet(cfg: omegaconf.DictConfig) -> None:

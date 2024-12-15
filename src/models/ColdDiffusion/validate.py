@@ -1,6 +1,7 @@
 import omegaconf
 import hydra
 import pathlib
+import logging
 
 import torch
 import numpy as np
@@ -12,7 +13,8 @@ from models.ColdDiffusion.dataset import TestColdDiffusionDataset
 import models.ColdDiffusion.utils.testing as testing
 from models.ColdDiffusion.train_validate import load_model_and_weights
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+logger = logging.getLogger()
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 
 def get_metrics_cold_diffusion(
@@ -109,17 +111,15 @@ def get_metrics_cold_diffusion(
 
 
 def get_predictions_colddiffusion(
-    eq: torch.Tensor, noise: torch.Tensor, cfg: omegaconf.DictConfig
+    noisy_eq: torch.Tensor, cfg: omegaconf.DictConfig
 ) -> torch.Tensor:
-    testing.initialize_parameters(cfg.model.T)
-    model = load_model_and_weights(cfg.user.path_model, cfg)
+    logger.info("Make predictions with ColdDiffusion.")
+    testing.initialize_parameters(cfg.T)
+    model = load_model_and_weights(cfg.user.cold_diffusion_path, cfg)
     model = model.to(device)
 
-    noisy_eq = eq + noise
-    noisy_eq = noisy_eq.to(device)
-
     with torch.no_grad():
-        t = torch.Tensor([cfg.model.T - 1]).long().to(device)
+        t = torch.Tensor([cfg.T - 1]).long().to(device)
         restored_dir = testing.direct_denoising(
             model, noisy_eq.to(device).float(), t
         ).cpu()
