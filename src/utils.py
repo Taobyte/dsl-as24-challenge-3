@@ -31,9 +31,42 @@ class Model(Enum):
     Butterworth = "Butterworth"
     DeepDenoiser = "DeepDenoiser"
     ColdDiffusion = "ColdDiffusion"
-    CleanUNet = "CleanUNet"
+    CleanUNetLSTM = "CleanUNetLSTM"
+    CleanUNetTransformer = "CleanUNetTransformer"
     CleanSpecNet = "CleanSpecNet"
     CleanUNet2 = "CleanUNet2"
+
+
+def test_inference_speed(cfg: omegaconf.DictConfig) -> None:
+    from src.dataset import get_dataloaders_pytorch
+
+    deepdenoiser, deepdenoiser_config = get_trained_model(cfg, Model.DeepDenoiser)
+    cleanunet, cleanunet_config = get_trained_model(cfg, Model.CleanUNetTransformer)
+
+    test_dl = get_dataloaders_pytorch(cfg, return_test=True)
+
+    warmup_iterations = cfg.inference_speed.warmup_iterations
+    timing_iterations = cfg.inference_speed.timing_iterations
+
+    log_inference_speed(
+        deepdenoiser,
+        test_dl,
+        warmup_iterations,
+        timing_iterations,
+        deepdenoiser_config.model.model_name,
+    )
+    log_model_size(
+        deepdenoiser,
+        deepdenoiser_config.model.model_name,
+    )
+    log_inference_speed(
+        cleanunet,
+        test_dl,
+        warmup_iterations,
+        timing_iterations,
+        cleanunet_config.model.model_name,
+    )
+    log_model_size(cleanunet, cleanunet_config.model.model_name)
 
 
 def get_trained_model(
@@ -47,14 +80,15 @@ def get_trained_model(
             cfg.user.deep_denoiser_folder + "/model.pth",
             map_location=torch.device("cpu"),
         )
-    elif model_type == Model.CleanUNet:
-        config_path = cfg.user.clean_unet_folder + "/.hydra/config.yaml"
+    elif model_type == Model.CleanUNetTransformer:
+        config_path = cfg.user.clean_unet_folder_transformer + "/.hydra/config.yaml"
         config = OmegaConf.load(config_path)
         model = CleanUNetPytorch(**config.model.architecture).to(device)
         checkpoint = torch.load(
-            cfg.user.clean_unet_folder + "/model.pkl",
+            cfg.user.clean_unet_folder_transformer + "/model.pkl",
             map_location=torch.device("cpu"),
         )
+
     elif model_type == Model.CleanUNet2:
         raise NotImplementedError
     elif model_type == Model.ColdDiffusion:
@@ -73,7 +107,7 @@ def get_trained_model(
     return model, config
 
 
-def log_model_size(net: torch.nn.Module) -> int:
+def log_model_size(net: torch.nn.Module, model_name: str) -> int:
     """
     Print the number of parameters of a network
 
@@ -91,10 +125,17 @@ def log_model_size(net: torch.nn.Module) -> int:
         logger.info(
             "{} Parameters: {:.6f}M".format(net.__class__.__name__, params / 1e6)
         )
+
     return params
 
 
-def log_inference_speed(net: torch.nn.Module, test_dl: DataLoader) -> float:
+def log_inference_speed(
+    net: torch.nn.Module,
+    test_dl: DataLoader,
+    warmup_iterations: int,
+    timing_iterations: int,
+    model_name: str,
+) -> float:
     """
     Measures the inference speed of a PyTorch model on a test DataLoader.
 
@@ -107,21 +148,18 @@ def log_inference_speed(net: torch.nn.Module, test_dl: DataLoader) -> float:
         float: Inference speed in samples per second.
     """
 
-    device = "cuda" if torch.cuda.is_available() else "cpu"
     net.eval()
     net.to(device)
 
     logger.info(f"Using device {device} for inference speed calculation.")
 
-    warmup_iterations = 5
-    timing_iterations = 20
-
     # Warm-up
     with torch.no_grad():
         for _ in range(warmup_iterations):
-            for batch in test_dl:
-                inputs = batch[0].to(device)
-                _ = net(inputs)
+            for eq, noise, shift in test_dl:
+                eq, noise = eq.float(), noise.float()
+                noisy_eq = (eq + noise).to(device)
+                _ = net(noisy_eq)
                 break
 
     start_time = time.perf_counter()
@@ -129,10 +167,11 @@ def log_inference_speed(net: torch.nn.Module, test_dl: DataLoader) -> float:
 
     with torch.no_grad():
         for _ in range(timing_iterations):
-            for batch in test_dl:
-                inputs = batch[0].to(device)
-                _ = net(inputs)
-                total_samples += inputs.size(0)
+            for eq, noise, shift in test_dl:
+                eq, noise = eq.float(), noise.float()
+                noisy_eq = (eq + noise).to(device)
+                _ = net(noisy_eq)
+                total_samples += noisy_eq.size(0)
                 break
 
     end_time = time.perf_counter()
@@ -140,7 +179,7 @@ def log_inference_speed(net: torch.nn.Module, test_dl: DataLoader) -> float:
 
     # Calculate samples per second
     inference_speed = total_samples / elapsed_time
-    logger.info(f"Inference Speed: {inference_speed:.2f} samples/sec")
+    logger.info(f"Inference Speed of {model_name}: {inference_speed:.2f} samples/sec")
 
     return inference_speed
 
@@ -273,7 +312,7 @@ class LinearWarmupCosineDecay:
         lr_max,
         n_iter,
         iteration=0,
-        divider=10,
+        divider=25,
         warmup_proportion=0.3,
         phase=("linear", "cosine"),
     ):

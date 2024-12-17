@@ -5,9 +5,9 @@ load_checkpoint: False
 subset: null
 
 # training
-batch_size: 512
-lr: 0.0001
-epochs: 100
+batch_size: 256
+lr: 0.0002
+epochs: 3000
 use_amp: False
 clipnorm: 1e9
 
@@ -15,11 +15,11 @@ patience: 1e9
 min_delta: 1
 
 log_checkpoints: False
-checkpoint_freq: 20
+checkpoint_freq: 200
 
-lr_schedule: False
+lr_schedule: True
 
-val_freq: 1
+val_freq: 10
 
 # 'mae': L1 loss in time domain
 # 'stft': STFT Log Magnitude Loss + Spectogram Loss 
@@ -40,18 +40,18 @@ architecture:
   channels_input: 3 
   channels_output: 3
   dropout: 0.0
-  channels_H: 8
+  channels_H: 32
   encoder_n_layers: 5
   kernel_size: 4
   stride: 2
   max_H: 256
 
   #can be either 'lstm' or 'transformer'
-  bottleneck: "lstm"
+  bottleneck: "transformer"
   # transformer settings
-  tsfm_n_layers: 3
-  tsfm_n_head: 4
-  tsfm_d_model: 128
-  tsfm_d_inner: 256
+  tsfm_n_layers: 5
+  tsfm_n_head: 8
+  tsfm_d_model: 256
+  tsfm_d_inner: 512
 
 

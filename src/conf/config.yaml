@@ -1,13 +1,13 @@
 defaults: 
   - _self_
-  - model: cleanunet
+  - model: deepdenoiser
   - user: clemens
 
 seed: 123
 
 # data properties
 trace_length: 4096
-random: False
+random: True
 snr_lower: 0.1
 snr_upper: 2.0
 
@@ -34,17 +34,32 @@ learned_sinusoidal_cond: False
 freq_range: [1, 45]
 sampling_rate: 100
 
-training: True
+training: False
 test: False
+inference_speed:
+  test: False
+  warmup_iterations: 5
+  timing_iterations: 20
 predictions: False
 wilcoxon_test: False
 plot:
   metrics: False
   channel_idx: 0
-  models: ["Butterworth", "DeepDenoiser", "CleanUNet", "ColdDiffusion"]
-  n_examples: 10
+  models: ["Butterworth", "DeepDenoiser", "CleanUNetTransformer", "ColdDiffusion"]
+  #models: ["CleanUNetTransformer", "CleanUNetLSTM"]
+  n_examples: 3
   visualization: False
-  overlay_plot: False
+  overlay_plot:
+    plot: True
+    specific: [[24, 0.5], [26, 1.5], [6, 2.5]] # (idx_example, snr)
+    # specific: null
+    # range: [30, 60] # [6000 - lower, 6000 + upper] 
+    range: null
+    use_overlay: False
+    compare_clean: True
+    opacity: 0.8
+  training_run:
+    plot: False
   dayplot: False
 
 snrs: [0.1, 0.3, 0.5, 0.7, 1.0, 1.2, 1.5, 1.8, 2.0, 2.5, 3.5]

@@ -53,6 +53,7 @@ def create_prediction_csv(cfg: omegaconf.DictConfig) -> None:
 
         noisy_eq = snr * eq + noise
         noisy_eq = noisy_eq.float()
+        eq = snr * eq
 
         butterworth = np.apply_along_axis(
             lambda x: bandpass_obspy(
@@ -61,7 +62,7 @@ def create_prediction_csv(cfg: omegaconf.DictConfig) -> None:
                 freqmax=cfg.freq_range[1],
                 df=cfg.sampling_rate,
                 corners=4,
-                zerophase=False,
+                zerophase=True,
             ),
             axis=2,
             arr=noisy_eq.numpy(),

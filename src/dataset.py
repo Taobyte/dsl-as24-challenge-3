@@ -340,7 +340,6 @@ class EQRandomDataset(Dataset):
 
     def __getitem__(self, idx) -> tuple[Tensor, Tensor]:
         eq = np.load(self.signal_files[idx], allow_pickle=True)
-        noise = np.load(self.noise_files[idx], allow_pickle=True)
 
         snr_random = np.random.uniform(self.snr_lower, self.snr_upper)
         eq_shift = np.random.randint(6000 - (self.trace_length - 500), 6000)
@@ -351,8 +350,10 @@ class EQRandomDataset(Dataset):
         eq_stacked = np.stack([Z_eq, N_eq, E_eq], axis=0)
 
         # noise_shift = np.random.randint(0, 17000 - self.trace_length)
-        noise_shift = 0
+        random_noise_idx = np.random.randint(len(self.noise_files))
+        noise = np.load(self.noise_files[random_noise_idx], allow_pickle=True)
 
+        noise_shift = 0
         Z_noise = noise["noise_waveform_Z"][
             noise_shift : noise_shift + self.trace_length
         ]
@@ -364,9 +365,9 @@ class EQRandomDataset(Dataset):
         ]
         noise_stacked = np.stack([Z_noise, N_noise, E_noise], axis=0)
 
-        max_val_eq = np.max(np.abs(eq_stacked)) + 1e-10
+        max_val_eq = np.max(np.abs(eq_stacked)) + 1e-12
         eq_stacked /= max_val_eq
-        max_val_noise = np.max(np.abs(eq_stacked)) + 1e-10
+        max_val_noise = np.max(np.abs(eq_stacked)) + 1e-12
         noise_stacked /= max_val_noise
 
         signal_std = np.std(

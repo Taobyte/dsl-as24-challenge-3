@@ -7,14 +7,15 @@ data:
 model_path: /work/scratch/ckeusch/dsl-as24-challenge-3/outputs/2024-12-12/10-42-17/checkpoints/epoch_9.pth
 
 # final models 
-deep_denoiser_folder: /work/scratch/ckeusch/dsl-as24-challenge-3/outputs/2024-12-14/15-03-38
-clean_unet_folder: /work/scratch/ckeusch/dsl-as24-challenge-3/outputs/2024-12-13/21-09-54
+deep_denoiser_folder: /work/scratch/ckeusch/dsl-as24-challenge-3/models/DeepDenoiser/15-03-38
+clean_unet_folder_transformer: /work/scratch/ckeusch/dsl-as24-challenge-3/outputs/2024-12-13/21-09-54
+clean_unet_folder_lstm: /work/scratch/ckeusch/dsl-as24-challenge-3/outputs/2024-12-14/02-34-10
 clean_unet2_folder: ''
 
 cold_diffusion_path: /work/scratch/ckeusch/dsl-as24-challenge-3/src/models/ColdDiffusion/chkpt_epoch_45_20_cosine_cold_diffusion.pth
 
 # prediction npz path
-prediction_path: /work/scratch/ckeusch/dsl-as24-challenge-3/outputs/2024-12-15/12-30-17
+prediction_path: /work/scratch/ckeusch/dsl-as24-challenge-3/outputs/2024-12-16/16-58-02
 
 # plotting 
 metrics_folder: "/work/scratch/ckeusch/dsl-as24-challenge-3/metrics" 

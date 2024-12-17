@@ -45,6 +45,7 @@ def get_metrics_deepdenoiser(cfg: omegaconf.DictConfig):
                 noise = noise.float().to(device)
                 shifts = torch.from_numpy(np.array(shifts)).to(device)
                 noisy_eq = snr * eq + noise
+                eq = snr * eq
                 stft_noisy_eq = get_stft(noisy_eq, n_fft, hop_length, win_length)
 
                 mask = torch.nn.functional.sigmoid(model(noisy_eq))
@@ -80,8 +81,6 @@ def get_predictions_deepdenoiser(noisy_eq: torch.Tensor, cfg: omegaconf.DictConf
 
     model, _ = get_trained_model(cfg, Model.DeepDenoiser)
     stft_noisy_eq = get_stft(noisy_eq, n_fft, hop_length, win_length)
-
-    print(noisy_eq.shape)
 
     with torch.no_grad():
         mask = model(noisy_eq)

@@ -36,6 +36,7 @@ def get_metrics_butterworth(cfg: omegaconf.DictConfig) -> None:
         for eq, noise, shifts in tqdm(test_dl, total=len(test_dl)):
             noisy_eq = (snr * eq + noise).numpy()
             eq, noise = eq.numpy(), noise.numpy()
+            eq = snr * eq
 
             filtered = np.apply_along_axis(
                 lambda x: bandpass_obspy(
@@ -44,7 +45,7 @@ def get_metrics_butterworth(cfg: omegaconf.DictConfig) -> None:
                     freqmax=freq_range[1],
                     df=sampling_rate,
                     corners=4,
-                    zerophase=False,
+                    zerophase=True,
                 ),
                 axis=-1,
                 arr=noisy_eq,

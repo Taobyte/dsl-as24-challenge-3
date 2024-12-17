@@ -38,6 +38,7 @@ def get_metrics_clean_unet(cfg: omegaconf.DictConfig) -> pd.DataFrame:
                 noise = noise.float().to(device)
                 shifts = torch.from_numpy(np.array(shifts)).to(device)
                 noisy_eq = snr * eq + noise
+                eq = snr * eq
 
                 prediction = model(noisy_eq)
                 ccs.append(cross_correlation_torch(eq, prediction))
@@ -63,7 +64,7 @@ def get_predictions_cleanunet(
 ) -> torch.Tensor:
     logger.info("Make predictions with CleanUNet.")
 
-    model, config = get_trained_model(cfg, Model.CleanUNet)
+    model, config = get_trained_model(cfg, Model.CleanUNetTransformer)
 
     with torch.no_grad():
         predictions = model(noisy_eq.to(device))
