@@ -72,6 +72,14 @@ def test_inference_speed(cfg: omegaconf.DictConfig) -> None:
 def get_trained_model(
     cfg: omegaconf.DictConfig, model_type: Model
 ) -> tuple[torch.nn.Module, omegaconf.DictConfig]:
+    """
+    This function returns the trained model from a training run done with hydra.
+    Args:
+        cfg (omegaconf.DictConfig): hydra config
+        model_type (Model): type of model to load (e.g Model.DeepDenoiser)
+    Returns:
+        model, config: returns the model in evaluation mode and config used for training the model
+    """
     if model_type == Model.DeepDenoiser:
         config_path = cfg.user.deep_denoiser_folder + "/.hydra/config.yaml"
         config = OmegaConf.load(config_path)
@@ -243,6 +251,10 @@ def wilcoxon_test(cfg: omegaconf.DictConfig) -> pd.DataFrame:
         ],
     )
 
+    logger.info(
+        "Pairwise non-parametric wilcoxon test comparing DeepDenoiser and ColdDiffusion model."
+    )
+
     # Save to CSV
     df.to_csv(output_dir / "p_values_ColdDiffusion.csv", index=False)
 
@@ -251,6 +263,8 @@ def wilcoxon_test(cfg: omegaconf.DictConfig) -> pd.DataFrame:
 
 # https://stackoverflow.com/questions/71998978/early-stopping-in-pytorch
 class EarlyStopper:
+    "Early Stopping class used in training loop for better readability."
+
     def __init__(self, patience=1, min_delta=0):
         self.patience = patience
         self.min_delta = min_delta

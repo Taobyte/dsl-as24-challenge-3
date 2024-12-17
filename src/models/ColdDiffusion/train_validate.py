@@ -4,7 +4,6 @@ import hydra
 from tqdm.auto import tqdm
 import wandb
 import torch.nn.functional as F
-import pdb
 from models.ColdDiffusion.scheduler import *
 from torch.optim import Adam
 from models.ColdDiffusion.utils.model import Unet1D

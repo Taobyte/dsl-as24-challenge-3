@@ -37,7 +37,7 @@ sampling_rate: 100
 training: False
 test: False
 inference_speed:
-  test: False
+  test: True
   warmup_iterations: 5
   timing_iterations: 20
 predictions: False
@@ -50,13 +50,14 @@ plot:
   n_examples: 3
   visualization: False
   overlay_plot:
-    plot: True
+    plot: False
     specific: [[24, 0.5], [26, 1.5], [6, 2.5]] # (idx_example, snr)
     # specific: null
     # range: [30, 60] # [6000 - lower, 6000 + upper] 
+    # range 
     range: null
     use_overlay: False
-    compare_clean: True
+    compare_clean: False
     opacity: 0.8
   training_run:
     plot: False

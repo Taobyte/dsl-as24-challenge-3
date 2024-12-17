@@ -38,6 +38,13 @@ def visualize_predictions(cfg: omegaconf.DictConfig):
 
 
 def metrics_plot(cfg: omegaconf.DictConfig) -> None:
+    """
+    Creates metric plot that compares different models. All parameters used in this function are specified in the main hydra config.
+    Args:
+        cfg (omegaconf.DictConfig): hydra config
+    Returns:
+        None
+    """
     output_dir = pathlib.Path(
         hydra.core.hydra_config.HydraConfig.get().runtime.output_dir
     )
@@ -157,10 +164,10 @@ def overlay_plot(cfg: omegaconf.DictConfig):
         specific = cfg.plot.overlay_plot.specific
         logger.info(f"Plotting chosen rows: {specific}.")
         n = len(specific)
-        fig, axs = plt.subplots(n, 4, figsize=(22, n * 4), dpi=300)
+        fig, axs = plt.subplots(n, 6, figsize=(22, n * 4), dpi=300)
         for i, (idx, snr) in enumerate(specific):
             data = np.load(cfg.user.prediction_path + f"/snr_{snr}_predictions.npz")
-            plot_single_row(
+            _plot_single_row(
                 i,
                 idx,
                 axs,
@@ -198,9 +205,9 @@ def overlay_plot(cfg: omegaconf.DictConfig):
         for snr in tqdm(cfg.snrs, total=len(cfg.snrs)):
             data = np.load(cfg.user.prediction_path + f"/snr_{snr}_predictions.npz")
             n = len(data["noisy_eq"])
-            fig, axs = plt.subplots(n, 5, figsize=(18, n * 3), dpi=300)
+            fig, axs = plt.subplots(n, 6, figsize=(18, n * 3), dpi=300)
             for i in range(n):
-                plot_single_row(
+                _plot_single_row(
                     i,
                     i,
                     axs,
@@ -228,7 +235,7 @@ def overlay_plot(cfg: omegaconf.DictConfig):
             plt.close(fig)
 
 
-def plot_single_row(
+def _plot_single_row(
     i: int,
     idx: int,
     axs,
@@ -262,14 +269,16 @@ def plot_single_row(
         label="Noisy Earthquake",
     )
     axs[i, 0].set_title("Noisy Earthquake", fontsize=12, fontweight="bold")
-    """
+
     axs[i, 1].plot(
         length, clean_eq, linewidth=2, color=colors[0], label="Clean Earthquake"
     )
     axs[i, 1].set_title("Clean Earthquake", fontsize=12, fontweight="bold")
-    """
 
-    axs[i, 1].plot(
+    axs[i, 2].plot(length, clean_eq, linewidth=2, color=colors[4], label="Butterworth")
+    axs[i, 2].set_title("Butterworth", fontsize=12, fontweight="bold")
+
+    axs[i, 3].plot(
         length,
         data["deepdenoiser"][idx, channel_idx, lower_bound:upper_bound],
         color=colors[1],
@@ -277,9 +286,9 @@ def plot_single_row(
         label="DeepDenoiser",
         alpha=opacity,
     )
-    axs[i, 1].set_title("DeepDenoiser", fontsize=12, fontweight="bold")
+    axs[i, 3].set_title("DeepDenoiser", fontsize=12, fontweight="bold")
 
-    axs[i, 3].plot(
+    axs[i, 5].plot(
         length,
         data["cleanunet"][idx, channel_idx, lower_bound:upper_bound],
         color=colors[2],
@@ -287,9 +296,9 @@ def plot_single_row(
         label="CleanUNet",
         alpha=opacity,
     )
-    axs[i, 3].set_title("CleanUNet", fontsize=12, fontweight="bold")
+    axs[i, 5].set_title("CleanUNet", fontsize=12, fontweight="bold")
 
-    axs[i, 2].plot(
+    axs[i, 4].plot(
         length,
         data["colddiffusion"][idx, channel_idx, lower_bound:upper_bound],
         color=colors[3],
@@ -297,10 +306,10 @@ def plot_single_row(
         label="ColdDiffusion",
         alpha=opacity,
     )
-    axs[i, 2].set_title("ColdDiffusion", fontsize=12, fontweight="bold")
+    axs[i, 4].set_title("ColdDiffusion", fontsize=12, fontweight="bold")
 
     if use_overlay:
-        for k in range(3):
+        for k in range(4):
             axs[i, (k + 1)].plot(
                 length,
                 clean_eq if compare_clean else butterworth,
@@ -311,7 +320,7 @@ def plot_single_row(
             )
 
     # plot p-wave onset
-    for k in range(4):
+    for k in range(6):
         axs[i, k].vlines(
             x=trace_range[0]
             if trace_range
