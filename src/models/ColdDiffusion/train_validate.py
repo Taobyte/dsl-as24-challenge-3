@@ -1,20 +1,28 @@
-import torch
 import pathlib
+import logging
+
+import torch
+import torch.nn.functional as F
+import torch.optim.lr_scheduler as lr_scheduler
+from torch.optim import Adam
+import numpy as np
 import hydra
+import omegaconf
 from tqdm.auto import tqdm
 import wandb
-import torch.nn.functional as F
+
 from models.ColdDiffusion.scheduler import *
-from torch.optim import Adam
 from models.ColdDiffusion.utils.model import Unet1D
-import torch.optim.lr_scheduler as lr_scheduler
 import models.ColdDiffusion.utils.testing as testing
 
+logger = logging.getLogger()
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 
 ### Model Parameters
-def create_model_and_optimizer(cfg):
+def create_model_and_optimizer(
+    cfg: omegaconf.DictConfig,
+) -> tuple[torch.nn.Module, torch.optim.Optimizer]:
     """
     Creates the Unet1D model and the Adam optimizer using the given arguments.
 
@@ -25,14 +33,7 @@ def create_model_and_optimizer(cfg):
         model (Unet1D): The instantiated model.
         optimizer (Adam): The instantiated optimizer.
     """
-    model = Unet1D(
-        dim=cfg.model.dim,
-        dim_mults=cfg.model.dim_multiples,
-        channels=cfg.model.channels,
-        learned_sinusoidal_cond=cfg.model.learned_sinusoidal_cond,
-        attn_dim_head=cfg.model.attn_dim_head,
-        attn_heads=cfg.model.attn_heads,
-    )
+    model = Unet1D(**cfg.model.architecture)
     if cfg.model.continue_from_pretrained:
         model.load_state_dict(
             torch.load(
@@ -44,7 +45,9 @@ def create_model_and_optimizer(cfg):
     return model, optimizer
 
 
-def load_model_and_weights(path_model, cfg):
+def load_model_and_weights(
+    cfg: omegaconf.DictConfig,
+) -> tuple[torch.nn.Module, omegaconf.DictConfig]:
     """
     Loads the Unet1D model and its weights from the specified path.
 
@@ -54,27 +57,24 @@ def load_model_and_weights(path_model, cfg):
     Returns:
         model (Unet1D): The model with loaded weights.
     """
-    model = Unet1D(
-        dim=cfg.dim,
-        dim_mults=cfg.dim_multiples,
-        channels=cfg.channels,
-        learned_sinusoidal_cond=cfg.learned_sinusoidal_cond,
-        attn_dim_head=cfg.attn_dim_head,
-        attn_heads=cfg.attn_heads,
-    )
+    path = cfg.user.colddiffusion_folder
+    config_path = path + "/.hydra/config.yaml"
+    config = omegaconf.OmegaConf.load(config_path)
+
+    model = Unet1D(**cfg.model.architecture)
     model.load_state_dict(
-        torch.load(path_model, map_location=device, weights_only=True)
+        torch.load(path + "/model.pth", map_location=device, weights_only=True)
     )
-    return model
+    return model, config
 
 
 ### Loss
 def p_losses(
-    cfg,
-    denoise_model,
-    eq_in,
-    noise_real,
-    t,
+    cfg: omegaconf.DictConfig,
+    denoise_model: torch.nn.Module,
+    eq_in: torch.Tensor,
+    noise_real: torch.Tensor,
+    t: int,
     sqrt_alphas_cumprod,
     sqrt_one_minus_alphas_cumprod,
     device,
@@ -138,7 +138,14 @@ def p_losses(
     return final_loss
 
 
-def train_one_epoch(model, optimizer, tr_dl, tr_dl_noise, cfg, device):
+def train_one_epoch(
+    model: torch.nn.Module,
+    optimizer: torch.optim.Optimizer,
+    tr_dl: torch.utils.data.DataLoader,
+    tr_dl_noise: torch.utils.data.DataLoader,
+    cfg: omegaconf.DictConfig,
+    device,
+):
     """
     Trains the model for one epoch.
 
@@ -186,7 +193,13 @@ def train_one_epoch(model, optimizer, tr_dl, tr_dl_noise, cfg, device):
     return curr_train_loss
 
 
-def validate_model(model, val_dl, val_dl_noise, cfg, device=device):
+def validate_model(
+    model: torch.nn.Module,
+    val_dl: torch.utils.data.DataLoader,
+    val_dl_noise: torch.utils.data.DataLoader,
+    cfg: omegaconf.DictConfig,
+    device=device,
+) -> float:
     """
     Validates the model on the validation dataset.
 
@@ -228,7 +241,13 @@ def validate_model(model, val_dl, val_dl_noise, cfg, device=device):
     return curr_val_loss
 
 
-def train_model(cfg, tr_dl, tr_dl_noise, val_dl, val_dl_noise):
+def train_model(
+    cfg: omegaconf.DictConfig,
+    tr_dl: torch.utils.data.DataLoader,
+    tr_dl_noise: torch.utils.data.DataLoader,
+    val_dl: torch.utils.data.DataLoader,
+    val_dl_noise: torch.utils.data.DataLoader,
+) -> float:
     """
     Trains the model for multiple epochs and validates it.
 
@@ -245,19 +264,18 @@ def train_model(cfg, tr_dl, tr_dl_noise, val_dl, val_dl_noise):
     output_dir = pathlib.Path(
         hydra.core.hydra_config.HydraConfig.get().runtime.output_dir
     )
-    print(
+    logger.info(
         f"Trial: T={cfg.model.T}, scheduler_type = {cfg.model.scheduler_type}, s={cfg.model.s}, Range_RNF=None"
     )
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     model, optimizer = create_model_and_optimizer(cfg)
-    # print(model)
     model = model.to(device)
     min_loss = np.inf
     scheduler = lr_scheduler.StepLR(optimizer, step_size=5, gamma=0.1)
     for epoch in range(cfg.model.epochs):
         train_loss = train_one_epoch(model, optimizer, tr_dl, tr_dl_noise, cfg, device)
-        print(f"Epoch: {epoch}, Train Loss: {train_loss}")
+        logger.info(f"Epoch: {epoch}, Train Loss: {train_loss}")
         if cfg.user.wandb:
             wandb.log({"Train Loss": train_loss}, step=epoch)  # Log train loss to wandb
         val_loss = validate_model(model, val_dl, val_dl_noise, cfg, device)
@@ -273,13 +291,17 @@ def train_model(cfg, tr_dl, tr_dl_noise, val_dl, val_dl_noise):
             torch.save(model.state_dict(), save_path)
             # if cfg.user.wandb:
             #     wandb.save(save_path)  # Log the model checkpoint to wandb
-            print(f"Best Epoch (so far): {epoch+1}")
+            logger.info(f"Best Epoch (so far): {epoch+1}")
     if cfg.user.wandb:
         wandb.finish()  # End the wandb run after training is complete
     return min_loss
 
 
-def test_model(cfg, test_loader, noise_test_loader):
+def test_model(
+    cfg: omegaconf.DictConfig,
+    test_loader: torch.utils.data.DataLoader,
+    noise_test_loader: torch.utils.data.DataLoader,
+) -> tuple[list[np.ndarray], list[np.ndarray], list[np.ndarray], list[np.ndarray]]:
     """
     Tests the model on the test dataset and saves the results.
 

@@ -12,17 +12,18 @@ from metrics import cross_correlation, max_amplitude_difference, p_wave_onset_di
 from models.ColdDiffusion.dataset import TestColdDiffusionDataset
 import models.ColdDiffusion.utils.testing as testing
 from models.ColdDiffusion.train_validate import load_model_and_weights
+from src.utils import get_trained_model, Model
 
 logger = logging.getLogger()
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 
 def get_metrics_cold_diffusion(
-    model,
+    model: torch.nn.Module,
     snr: int,
     cfg: omegaconf.DictConfig,
     idx: int = 0,
-):
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """compute metrics for colddiffusion model
 
     Args:
@@ -115,8 +116,7 @@ def get_predictions_colddiffusion(
 ) -> torch.Tensor:
     logger.info("Make predictions with ColdDiffusion.")
     testing.initialize_parameters(cfg.T)
-    model = load_model_and_weights(cfg.user.cold_diffusion_path, cfg)
-    model = model.to(device)
+    model, config = get_trained_model(cfg, Model.ColdDiffusion)
 
     with torch.no_grad():
         t = torch.Tensor([cfg.T - 1]).long().to(device)
@@ -127,8 +127,8 @@ def get_predictions_colddiffusion(
     return restored_dir
 
 
-def visualize_predictions_cold_diffusion(cfg):
-    print("Visualizing predictions")
+def visualize_predictions_cold_diffusion(cfg: omegaconf.DictConfig) -> None:
+    logger.info("Visualizing predictions")
     output_dir = pathlib.Path(
         hydra.core.hydra_config.HydraConfig.get().runtime.output_dir
     )
@@ -144,7 +144,7 @@ def visualize_predictions_cold_diffusion(cfg):
     with torch.no_grad():
         for snr in tqdm(cfg.snrs, total=len(cfg.snrs)):
             n_examples = cfg.user.plot_n
-            signal_length = cfg.model.signal_length
+            signal_length = cfg.trace_length
             channel = cfg.user.plot_channel
             eq, noise, _ = next(iter(test_dl))
             noisy = eq * snr + noise

@@ -33,7 +33,7 @@ def get_dataloaders_pytorch(
 
     if return_test:
         batch_size = cfg.plot.n_examples if not cfg.test else cfg.model.batch_size
-        test_dataset = EQDataset(cfg.user.data.filename, Mode.TEST)
+        test_dataset = EQDataset(cfg.user.data.data_path, Mode.TEST)
         test_dl = th.utils.data.DataLoader(
             test_dataset,
             batch_size=batch_size,
@@ -70,8 +70,8 @@ def get_dataloaders_pytorch(
         )
     else:
         assert model != Model.DeepDenoiser
-        train_dataset = EQDataset(cfg.user.data.filename, Mode.TRAIN)
-        val_dataset = EQDataset(cfg.user.data.filename, Mode.VALIDATION)
+        train_dataset = EQDataset(cfg.user.data.data_path, Mode.TRAIN)
+        val_dataset = EQDataset(cfg.user.data.data_path, Mode.VALIDATION)
         logger.info(
             f"Deterministic train/validation dataloader created successfully with batch size: {cfg.model.batch_size}."
         )

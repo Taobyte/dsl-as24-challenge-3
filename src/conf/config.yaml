@@ -1,6 +1,6 @@
 defaults: 
   - _self_
-  - model: deepdenoiser
+  - model: colddiffusion
   - user: clemens
 
 seed: 123
@@ -14,7 +14,7 @@ snr_upper: 2.0
 # STFT properties
 n_fft: 127
 hop_length: 16
-win_length: 100
+win_length: 1000
 
 # TODO: add ColdDiffusion to get_trained_model function
 # diffusion model settings
@@ -34,10 +34,10 @@ learned_sinusoidal_cond: False
 freq_range: [1, 45]
 sampling_rate: 100
 
-training: False
+training: True
 test: False
 inference_speed:
-  test: True
+  test: False
   warmup_iterations: 5
   timing_iterations: 20
 predictions: False

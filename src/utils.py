@@ -15,6 +15,7 @@ from enum import Enum
 
 from src.models.CleanUNet.clean_unet_pytorch import CleanUNetPytorch
 from src.models.DeepDenoiser.deep_denoiser_pytorch import DeepDenoiser
+from src.models.ColdDiffusion.train_validate import load_model_and_weights
 
 logger = logging.getLogger()
 
@@ -100,7 +101,9 @@ def get_trained_model(
     elif model_type == Model.CleanUNet2:
         raise NotImplementedError
     elif model_type == Model.ColdDiffusion:
-        raise NotImplementedError
+        config = None
+        model = load_model_and_weights(cfg.user.cold_diffusion_path, cfg)
+        model = model.to(device)
     else:
         raise NotImplementedError
 

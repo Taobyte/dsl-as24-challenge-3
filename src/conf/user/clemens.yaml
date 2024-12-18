@@ -1,7 +1,7 @@
 data:
   signal_path: '/work/courses/dsl/team3/earthquake_data/event'
   noise_path: '/work/courses/dsl/team3/earthquake_data/noise'
-  filename: '/work/courses/dsl/team3/earthquake_data/'
+  data_path: '/work/courses/dsl/team3/earthquake_data/'
 
 # testing
 model_path: /work/scratch/ckeusch/dsl-as24-challenge-3/outputs/2024-12-12/10-42-17/checkpoints/epoch_9.pth

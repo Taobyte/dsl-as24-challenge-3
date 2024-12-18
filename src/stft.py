@@ -150,8 +150,8 @@ class LogSTFTMagnitudeLoss(torch.nn.Module):
             Tensor: Log STFT magnitude loss value.
 
         """
-
-        return F.l1_loss(torch.log(y_mag), torch.log(x_mag)) / self.trace_length
+        # maybe add / self.trace_length
+        return F.l1_loss(torch.log(y_mag), torch.log(x_mag))
 
 
 class STFTLoss(torch.nn.Module):
