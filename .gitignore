@@ -1,5 +1,4 @@
 src/tests.ipynb
-metrics/*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -83,7 +82,6 @@ target/
 /data/
 */wandb/
 /wandb/
-/models/
 */outputs/
 /outputs/
 */slurm_logs

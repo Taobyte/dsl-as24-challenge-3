@@ -1,0 +1,83 @@
+seed: 123
+trace_length: 4096
+random: true
+snr_lower: 0.1
+snr_upper: 2.0
+butterworth_range:
+- 1
+- 45
+sampling_rate: 100
+training: true
+test: false
+plot:
+  metrics: false
+  channel_idx: 0
+  n_examples: 10
+  visualization: false
+  overlay_plot: false
+snrs:
+- 0.1
+- 0.3
+- 0.5
+- 0.7
+- 1.0
+- 1.2
+- 1.5
+- 1.8
+- 2.0
+- 2.5
+- 3.5
+model:
+  model_name: CleanUNet
+  load_checkpoint: false
+  subset: null
+  batch_size: 512
+  lr: 0.0002
+  epochs: 600
+  use_amp: false
+  clipnorm: 1000000000.0
+  patience: 1000000000.0
+  min_delta: 1
+  log_checkpoints: true
+  checkpoint_freq: 100
+  lr_schedule: true
+  val_freq: 10
+  loss: clean_unet_loss
+  frame_lengths:
+  - 100
+  frame_steps:
+  - 16
+  fft_sizes:
+  - 127
+  stft_lambda: 1.0
+  sc_lambda: 0.5
+  mag_lambda: 0.5
+  architecture:
+    channels_input: 3
+    channels_output: 3
+    dropout: 0.0
+    channels_H: 8
+    encoder_n_layers: 5
+    kernel_size: 4
+    stride: 2
+    max_H: 256
+    bottleneck: transformer
+    tsfm_n_layers: 3
+    tsfm_n_head: 4
+    tsfm_d_model: 128
+    tsfm_d_inner: 256
+user:
+  data:
+    signal_path: /work/courses/dsl/team3/earthquake_data/event
+    noise_path: /work/courses/dsl/team3/earthquake_data/noise
+    filename: /work/courses/dsl/team3/earthquake_data/
+  model_path: /work/scratch/ckeusch/dsl-as24-challenge-3/outputs/2024-12-12/10-42-17/checkpoints/epoch_9.pth
+  deep_denoiser_folder: /work/scratch/ckeusch/dsl-as24-challenge-3/outputs/2024-12-12/10-42-17
+  clean_unet_folder: /work/scratch/ckeusch/dsl-as24-challenge-3/outputs/2024-12-13/14-23-43/
+  clean_unet2_folder: ''
+  prediction_path: /work/scratch/ckeusch/dsl-as24-challenge-3/outputs/2024-12-12/17-27-13/data.npz
+  metrics_model_path: /cluster/scratch/ckeusch/dsl-as24-challenge-3/outputs/2024-12-06/11-02-09/metrics_model.csv
+  metrics_butterworth_path: /cluster/scratch/ckeusch/dsl-as24-challenge-3/outputs/2024-12-03/10-59-47/metrics_butterworth.csv
+  metrics_deepdenoiser_path: /cluster/scratch/ckeusch/dsl-as24-challenge-3/outputs/2024-11-08/DeepDenoiser
+    Metrics/metrics_model.csv
+  wandb: false

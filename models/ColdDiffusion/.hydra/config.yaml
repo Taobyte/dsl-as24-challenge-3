@@ -1,0 +1,116 @@
+seed: 123
+trace_length: 4096
+random: true
+snr_lower: 0.1
+snr_upper: 2.0
+n_fft: 127
+hop_length: 16
+win_length: 1000
+T: 20
+dim: 32
+dim_multiples:
+- 1
+- 2
+- 4
+- 4
+- 8
+attn_dim_head: 64
+attn_heads: 8
+resnet_norm_groups: 8
+channels: 3
+scheduler_type: cosine
+s: 0.008
+penalization: 3.0
+learned_sinusoidal_cond: false
+freq_range:
+- 1
+- 45
+sampling_rate: 100
+training: true
+test: false
+inference_speed:
+  test: false
+  warmup_iterations: 5
+  timing_iterations: 20
+predictions: false
+wilcoxon_test: false
+plot:
+  metrics: false
+  channel_idx: 0
+  models:
+  - Butterworth
+  - DeepDenoiser
+  - CleanUNetTransformer
+  - ColdDiffusion
+  n_examples: 3
+  visualization: false
+  overlay_plot:
+    plot: false
+    specific:
+    - - 24
+      - 0.5
+    - - 26
+      - 1.5
+    - - 6
+      - 2.5
+    range: null
+    use_overlay: false
+    compare_clean: false
+    opacity: 0.8
+  training_run:
+    plot: false
+  dayplot: false
+snrs:
+- 0.1
+- 0.3
+- 0.5
+- 0.7
+- 1.0
+- 1.2
+- 1.5
+- 1.8
+- 2.0
+- 2.5
+- 3.5
+model:
+  model_name: ColdDiffusion
+  use_csv: true
+  architecture:
+    dim: 32
+    dim_mults:
+    - 1
+    - 2
+    - 4
+    - 4
+    - 8
+    channels: 3
+    learned_sinusoidal_cond: false
+    attn_dim_head: 64
+    attn_heads: 8
+    resnet_block_groups: 8
+  epochs: 50
+  batch_size: 32
+  lr: 0.0005
+  num_workers: 2
+  continue_from_pretrained: false
+  pretrained_path: /home/tlauner/DSLab/dsl-as24-challenge-3/outputs/2024-12-09/11-34-57/chkpt_epoch_26_20_cosine_cold_diffusion.pth
+  test_batch_size: 32
+  sampling: false
+  T: 20
+  scheduler_type: cosine
+  s: 0.008
+  penalization: 3.0
+user:
+  data:
+    signal_path: /work/courses/dsl/team3/earthquake_data/event
+    noise_path: /work/courses/dsl/team3/earthquake_data/noise
+    data_path: /work/courses/dsl/team3/earthquake_data/
+  model_path: /work/scratch/ckeusch/dsl-as24-challenge-3/outputs/2024-12-12/10-42-17/checkpoints/epoch_9.pth
+  deep_denoiser_folder: /work/scratch/ckeusch/dsl-as24-challenge-3/models/DeepDenoiser/15-03-38
+  clean_unet_folder_transformer: /work/scratch/ckeusch/dsl-as24-challenge-3/outputs/2024-12-13/21-09-54
+  clean_unet_folder_lstm: /work/scratch/ckeusch/dsl-as24-challenge-3/outputs/2024-12-14/02-34-10
+  clean_unet2_folder: ''
+  cold_diffusion_path: /work/scratch/ckeusch/dsl-as24-challenge-3/src/models/ColdDiffusion/chkpt_epoch_45_20_cosine_cold_diffusion.pth
+  prediction_path: /work/scratch/ckeusch/dsl-as24-challenge-3/outputs/2024-12-16/16-58-02
+  metrics_folder: /work/scratch/ckeusch/dsl-as24-challenge-3/metrics
+  wandb: false

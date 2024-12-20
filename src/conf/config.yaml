@@ -1,6 +1,6 @@
 defaults: 
   - _self_
-  - model: deepdenoiser
+  - model: colddiffusion
   - user: clemens
 
 seed: 123
@@ -45,10 +45,9 @@ inference_speed:
   timing_iterations: 20
 wilcoxon_test: False
 plot:
-  models: ["Butterworth", "DeepDenoiser", "CleanUNetTransformer", "ColdDiffusion"]
+  models: ["Butterworth", "DeepDenoiser", "CleanUNet", "ColdDiffusion"]
   metrics: False
   channel_idx: 0
-  #models: ["CleanUNetTransformer", "CleanUNetLSTM"]
   n_examples: 10
   visualization: True
   overlay_plot:
