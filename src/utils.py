@@ -32,8 +32,7 @@ class Model(Enum):
     Butterworth = "Butterworth"
     DeepDenoiser = "DeepDenoiser"
     ColdDiffusion = "ColdDiffusion"
-    CleanUNetLSTM = "CleanUNetLSTM"
-    CleanUNetTransformer = "CleanUNetTransformer"
+    CleanUNet = "CleanUNet"
     CleanSpecNet = "CleanSpecNet"
     CleanUNet2 = "CleanUNet2"
 
@@ -89,7 +88,7 @@ def get_trained_model(
             cfg.user.deep_denoiser_folder + "/model.pth",
             map_location=torch.device("cpu"),
         )
-    elif model_type == Model.CleanUNetTransformer:
+    elif model_type == Model.CleanUNet:
         config_path = cfg.user.clean_unet_folder_transformer + "/.hydra/config.yaml"
         config = OmegaConf.load(config_path)
         model = CleanUNetPytorch(**config.model.architecture).to(device)
