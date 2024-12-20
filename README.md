@@ -96,6 +96,17 @@ Note that you can always also change the `conifg.yaml` and `model/model_name.yam
 ![Qualitative Overlay Plot](plots/overlay_plot_specific.png)
 
 ## Conclusion & Future Work
+In this project we compared different deep learning approaches for denoising noisy earthquake events using a dataset provided by the Swiss Seismological Service ([SED](http://seismo.ethz.ch/en/home/)). From our results we conclude that deep learning approaches can be more effective than traditional bandpass filters such as the Butterworth filter. There is however still room for improvement. In the following we provide some potential future work: 
+-  Train with more pure noise signals to improve false positive
+rate and remove artifacts
+- Tune hyperparameters of all models with automatic hyper-
+parameter optimization, e.g bayesian optimization 
+- Make implementations trace length agnostic and test differ-
+ent trace lengths
+- Train Cold Diffusion model with CleanUNet loss
+- Condition Cold Diffusion model on the DeepDenoiser masks,
+similar to CleanUNet 2
 
 
 ## Acknowledgments
+This project would not have been possible without the guidance of [Dr. Niko Dahmen] and [Dr. Men-Andrin Meier], so special thanks to them. 
