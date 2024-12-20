@@ -16,6 +16,8 @@ This project was undertaken as part of the Data Science Lab course at ETH Zurich
     - [Testing](#testing)
     - [Plots](#plotting)
 4. [Results](#results) 
+    - [Qualitative Results](#qualitative-results)
+    - [Quantitative Results](#quantitative-results) 
 5. [Discussion & Future Work](#conclusion--future-work) 
 6. [Acknowledgments](#acknowledgments)
 
@@ -83,8 +85,15 @@ For plotting the loss curves of a training run:
 ```
 python src/main.py plot.training_run.plot=True model=deepdenoiser
 ```
+Note that you can always also change the `conifg.yaml` and `model/model_name.yaml` files to avoid having to pass the command line arguments.
 
 ## Results
+
+### Quantitative Results
+![Quantitative Metric Plot](plots/metrics.png)
+
+### Qualitative Results
+![Qualitative Overlay Plot](plots/overlay_plot_specific.png)
 
 ## Conclusion & Future Work
 

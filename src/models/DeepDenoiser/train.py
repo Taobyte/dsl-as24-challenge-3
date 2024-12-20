@@ -28,7 +28,7 @@ def fit_deep_denoiser_pytorch(cfg: omegaconf.DictConfig) -> torch.nn.Module:
     tb = SummaryWriter(output_dir)
 
     model = DeepDenoiser(**cfg.model.architecture).to(device)
-    log_model_size(model)
+    log_model_size(model, "DeepDenoiser")
 
     optimizer = torch.optim.AdamW(model.parameters(), cfg.model.lr)
     bce_loss = torch.nn.BCEWithLogitsLoss()

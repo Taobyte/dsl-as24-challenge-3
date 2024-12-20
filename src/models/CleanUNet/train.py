@@ -42,7 +42,7 @@ def fit_clean_unet_pytorch(cfg: omegaconf.DictConfig, model: Model) -> torch.nn.
     else:
         raise NotImplementedError
 
-    log_model_size(net)
+    log_model_size(net, "CleanUNet")
 
     optimizer = torch.optim.AdamW(net.parameters(), lr=cfg.model.lr)
 

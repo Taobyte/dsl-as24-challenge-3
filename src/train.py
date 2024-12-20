@@ -11,7 +11,7 @@ def train_model(cfg: omegaconf.DictConfig) -> torch.nn.Module:
     if cfg.model.model_name == "DeepDenoiser":
         model = fit_deep_denoiser_pytorch(cfg)
     elif cfg.model.model_name == "CleanUNet":
-        model = fit_clean_unet_pytorch(cfg, Model.CleanUNetTransformer)
+        model = fit_clean_unet_pytorch(cfg, Model.CleanUNet)
     elif cfg.model.model_name == "CleanUNet2":
         model = fit_clean_unet_pytorch(cfg, Model.CleanUNet2)
     elif cfg.model.model_name == "ColdDiffusion":

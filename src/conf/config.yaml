@@ -1,6 +1,6 @@
 defaults: 
   - _self_
-  - model: cleanunet
+  - model: deepdenoiser
   - user: clemens
 
 seed: 123
